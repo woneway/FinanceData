@@ -10,6 +10,8 @@ from finance_data.provider.stock.akshare import get_stock_info as akshare_get_st
 from finance_data.provider.stock.tushare import get_stock_info as tushare_get_stock_info
 from finance_data.provider.kline.akshare import get_kline as akshare_get_kline
 from finance_data.provider.kline.tushare import get_kline as tushare_get_kline
+from finance_data.provider.realtime.akshare import get_realtime_quote as akshare_get_realtime
+from finance_data.provider.realtime.tushare import get_realtime_quote as tushare_get_realtime
 from finance_data.provider.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -79,5 +81,24 @@ async def tool_get_kline(
             return _to_json(fn(symbol, period=period, start=start, end=end, adj=adj))
         except Exception as e:
             logger.warning(f"{name} get_kline 失败: {e}")
+            errors.append(str(e))
+    return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_realtime_quote(symbol: str) -> str:
+    """
+    获取股票实时行情（含 20 分钟缓存）。
+
+    Args:
+        symbol: 股票代码，如 "000001"
+    """
+    providers = [("akshare", akshare_get_realtime), ("tushare", tushare_get_realtime)]
+    errors = []
+    for name, fn in providers:
+        try:
+            return _to_json(fn(symbol))
+        except Exception as e:
+            logger.warning(f"{name} get_realtime_quote 失败: {e}")
             errors.append(str(e))
     return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
