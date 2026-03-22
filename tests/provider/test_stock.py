@@ -2,7 +2,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from finance_data.provider.akshare.stock import get_stock_info
+from finance_data.provider.stock.akshare import get_stock_info
 from finance_data.provider.types import DataResult, DataFetchError
 
 
@@ -31,7 +31,7 @@ def mock_xueqiu_df():
 
 
 def test_get_stock_info_returns_data_result(mock_xueqiu_df):
-    with patch("finance_data.provider.akshare.stock.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
                return_value=mock_xueqiu_df):
         result = get_stock_info("000001")
 
@@ -41,7 +41,7 @@ def test_get_stock_info_returns_data_result(mock_xueqiu_df):
 
 
 def test_get_stock_info_core_fields(mock_xueqiu_df):
-    with patch("finance_data.provider.akshare.stock.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
                return_value=mock_xueqiu_df):
         result = get_stock_info("000001")
 
@@ -54,7 +54,7 @@ def test_get_stock_info_core_fields(mock_xueqiu_df):
 
 
 def test_get_stock_info_extended_fields(mock_xueqiu_df):
-    with patch("finance_data.provider.akshare.stock.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
                return_value=mock_xueqiu_df):
         result = get_stock_info("000001")
 
@@ -77,7 +77,7 @@ def test_get_stock_info_extended_fields(mock_xueqiu_df):
 
 
 def test_get_stock_info_meta(mock_xueqiu_df):
-    with patch("finance_data.provider.akshare.stock.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
                return_value=mock_xueqiu_df):
         result = get_stock_info("000001")
 
@@ -86,7 +86,7 @@ def test_get_stock_info_meta(mock_xueqiu_df):
 
 
 def test_get_stock_info_network_error():
-    with patch("finance_data.provider.akshare.stock.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
             get_stock_info("000001")
@@ -96,7 +96,7 @@ def test_get_stock_info_network_error():
 
 
 def test_get_stock_info_data_error():
-    with patch("finance_data.provider.akshare.stock.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
                side_effect=Exception("股票代码不存在")):
         with pytest.raises(DataFetchError) as exc:
             get_stock_info("INVALID")

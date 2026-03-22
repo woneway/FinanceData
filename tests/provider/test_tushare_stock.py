@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import pytest
 
-from finance_data.provider.tushare.stock import get_stock_info
+from finance_data.provider.stock.tushare import get_stock_info
 from finance_data.provider.types import DataResult, DataFetchError
 
 
@@ -53,7 +53,7 @@ def _make_mock_pro(basic_df, company_df=None):
 
 def test_get_stock_info_returns_data_result(mock_basic_df, mock_company_df):
     mock_pro = _make_mock_pro(mock_basic_df, mock_company_df)
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         result = get_stock_info("000001")
 
     assert isinstance(result, DataResult)
@@ -63,7 +63,7 @@ def test_get_stock_info_returns_data_result(mock_basic_df, mock_company_df):
 
 def test_get_stock_info_basic_fields(mock_basic_df, mock_company_df):
     mock_pro = _make_mock_pro(mock_basic_df, mock_company_df)
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         result = get_stock_info("000001")
 
     row = result.data[0]
@@ -79,7 +79,7 @@ def test_get_stock_info_basic_fields(mock_basic_df, mock_company_df):
 
 def test_get_stock_info_company_fields(mock_basic_df, mock_company_df):
     mock_pro = _make_mock_pro(mock_basic_df, mock_company_df)
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         result = get_stock_info("000001")
 
     row = result.data[0]
@@ -102,7 +102,7 @@ def test_get_stock_info_company_fields(mock_basic_df, mock_company_df):
 def test_get_stock_info_company_fallback(mock_basic_df):
     """stock_company 失败时仍应返回基本信息，公司字段为空。"""
     mock_pro = _make_mock_pro(mock_basic_df, company_df=None)
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         result = get_stock_info("000001")
 
     row = result.data[0]
@@ -114,7 +114,7 @@ def test_get_stock_info_company_fallback(mock_basic_df):
 
 def test_get_stock_info_meta(mock_basic_df, mock_company_df):
     mock_pro = _make_mock_pro(mock_basic_df, mock_company_df)
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         result = get_stock_info("000001")
 
     assert result.meta["symbol"] == "000001"
@@ -123,7 +123,7 @@ def test_get_stock_info_meta(mock_basic_df, mock_company_df):
 
 def test_get_stock_info_empty_result_raises_data_fetch_error():
     mock_pro = _make_mock_pro(pd.DataFrame())
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         with pytest.raises(DataFetchError) as exc:
             get_stock_info("INVALID")
 
@@ -135,7 +135,7 @@ def test_get_stock_info_auth_error():
     mock_pro = MagicMock()
     mock_pro.stock_basic.side_effect = Exception("无权限访问该接口")
 
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         with pytest.raises(DataFetchError) as exc:
             get_stock_info("000001")
 
@@ -146,7 +146,7 @@ def test_get_stock_info_network_error():
     mock_pro = MagicMock()
     mock_pro.stock_basic.side_effect = ConnectionError("timeout")
 
-    with patch("finance_data.provider.tushare.stock._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.stock.tushare._get_pro", return_value=mock_pro):
         with pytest.raises(DataFetchError) as exc:
             get_stock_info("000001")
 
@@ -154,7 +154,7 @@ def test_get_stock_info_network_error():
 
 
 def test_get_stock_info_missing_token():
-    with patch("finance_data.provider.tushare.stock._get_pro",
+    with patch("finance_data.provider.stock.tushare._get_pro",
                side_effect=DataFetchError("tushare", "init", "TUSHARE_TOKEN 未设置", "auth")):
         with pytest.raises(DataFetchError) as exc:
             get_stock_info("000001")

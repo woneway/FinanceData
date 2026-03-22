@@ -6,8 +6,8 @@ import logging
 
 from fastmcp import FastMCP
 
-from finance_data.provider.akshare.stock import get_stock_info as akshare_get_stock_info
-from finance_data.provider.tushare.stock import get_stock_info as tushare_get_stock_info
+from finance_data.provider.stock.akshare import get_stock_info as akshare_get_stock_info
+from finance_data.provider.stock.tushare import get_stock_info as tushare_get_stock_info
 from finance_data.provider.types import DataFetchError
 
 logger = logging.getLogger(__name__)
