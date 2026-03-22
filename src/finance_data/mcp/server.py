@@ -8,6 +8,8 @@ from fastmcp import FastMCP
 
 from finance_data.provider.stock.akshare import get_stock_info as akshare_get_stock_info
 from finance_data.provider.stock.tushare import get_stock_info as tushare_get_stock_info
+from finance_data.provider.kline.akshare import get_kline as akshare_get_kline
+from finance_data.provider.kline.tushare import get_kline as tushare_get_kline
 from finance_data.provider.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -46,4 +48,36 @@ async def tool_get_stock_info(symbol: str) -> str:
             errors.append(str(e))
 
     logger.error(f"所有 provider 均失败: {errors}")
+    return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_kline(
+    symbol: str,
+    period: str = "daily",
+    start: str = "20240101",
+    end: str = "20241231",
+    adj: str = "qfq",
+) -> str:
+    """
+    获取 K线历史数据。
+
+    Args:
+        symbol: 股票代码，如 "000001"
+        period: daily/weekly/monthly/1min/5min/15min/30min/60min
+        start: 开始日期 YYYYMMDD
+        end: 结束日期 YYYYMMDD
+        adj: qfq（前复权）/ hfq（后复权）/ none
+    """
+    providers = [
+        ("akshare", akshare_get_kline),
+        ("tushare", tushare_get_kline),
+    ]
+    errors = []
+    for name, fn in providers:
+        try:
+            return _to_json(fn(symbol, period=period, start=start, end=end, adj=adj))
+        except Exception as e:
+            logger.warning(f"{name} get_kline 失败: {e}")
+            errors.append(str(e))
     return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
