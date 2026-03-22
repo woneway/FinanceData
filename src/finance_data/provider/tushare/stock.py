@@ -13,7 +13,7 @@ _FIELDS = "ts_code,name,industry,list_date,area,market"
 
 
 def _get_pro():
-    """初始化 tushare pro API，token 从环境变量读取。"""
+    """初始化 tushare pro API，token 和 API URL 从环境变量读取。"""
     token = os.environ.get("TUSHARE_TOKEN", "")
     if not token:
         raise DataFetchError(
@@ -22,7 +22,13 @@ def _get_pro():
             reason="TUSHARE_TOKEN 环境变量未设置",
             kind="auth",
         )
-    return ts.pro_api(token=token)
+    pro = ts.pro_api(token=token)
+    # 支持自定义 API 地址（如第三方代理），通过 TUSHARE_API_URL 环境变量配置
+    api_url = os.environ.get("TUSHARE_API_URL", "")
+    if api_url:
+        pro._DataApi__token = token
+        pro._DataApi__http_url = api_url
+    return pro
 
 
 def get_stock_info(symbol: str) -> DataResult:

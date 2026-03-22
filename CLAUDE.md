@@ -21,6 +21,7 @@
 ## 环境变量
 
 - `TUSHARE_TOKEN`：tushare API token（tushare 接口必须）
+- `TUSHARE_API_URL`：tushare API 地址（可选，默认官方地址；使用第三方代理时设置）
 
 ## 开发
 
