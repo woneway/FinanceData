@@ -41,4 +41,5 @@ python3 -m venv .venv
 
 | Tool | 数据源 | 说明 |
 |------|--------|------|
-| `get_stock_info` | akshare | 个股基本信息 |
+| `tool_get_stock_info` | akshare | 个股基本信息（无需 token） |
+| `tool_get_stock_info_tushare` | tushare | 个股基本信息（需 TUSHARE_TOKEN） |
