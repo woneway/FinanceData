@@ -1,0 +1,64 @@
+from unittest.mock import patch
+import pandas as pd
+import pytest
+from finance_data.provider.fundamental.akshare import (
+    get_financial_summary, get_dividend, get_earnings_forecast
+)
+from finance_data.provider.types import DataResult, DataFetchError
+
+
+@pytest.fixture
+def mock_financial_df():
+    return pd.DataFrame([{
+        "报告期": "20231231", "营业总收入": 1.8e11,
+        "净利润": 4.6e10, "净资产收益率": 11.2,
+        "毛利率": 28.5, "经营现金流量净额": 5.2e10,
+    }])
+
+
+def test_get_financial_summary_returns_data_result(mock_financial_df):
+    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+               return_value=mock_financial_df):
+        result = get_financial_summary("000001")
+    assert isinstance(result, DataResult)
+    assert result.source == "akshare"
+
+
+def test_get_financial_summary_fields(mock_financial_df):
+    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+               return_value=mock_financial_df):
+        result = get_financial_summary("000001")
+    row = result.data[0]
+    assert row["symbol"] == "000001"
+    assert row["roe"] == 11.2
+
+
+@pytest.fixture
+def mock_dividend_df():
+    return pd.DataFrame([{
+        "除权除息日": "20231215", "每股分红": 0.248, "股权登记日": "20231214",
+    }])
+
+
+def test_get_dividend_fields(mock_dividend_df):
+    with patch("finance_data.provider.fundamental.akshare.ak.stock_fhps_detail_em",
+               return_value=mock_dividend_df):
+        result = get_dividend("000001")
+    row = result.data[0]
+    assert row["per_share"] == 0.248
+
+
+def test_get_financial_summary_network_error():
+    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+               side_effect=ConnectionError("timeout")):
+        with pytest.raises(DataFetchError) as exc:
+            get_financial_summary("000001")
+    assert exc.value.kind == "network"
+
+
+def test_get_financial_summary_empty_raises():
+    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+               return_value=pd.DataFrame()):
+        with pytest.raises(DataFetchError) as exc:
+            get_financial_summary("INVALID")
+    assert exc.value.kind == "data"
