@@ -84,23 +84,31 @@ def _parse_stock_info(symbol: str, df) -> StockInfo:
     except (TypeError, ValueError):
         staff_num = None
 
+    # exchange 从 symbol 推导（雪球接口不直接提供）
+    exchange = "SSE" if symbol.startswith("6") else "SZSE"
+
     return StockInfo(
         symbol=symbol,
         name=_str(rows.get("org_short_name_cn")),
         industry=industry,
         list_date=list_date,
         area=_str(rows.get("provincial_name")),
-        market="",
+        market="",          # 雪球无市场分类
+        city="",            # 雪球无独立城市字段
+        exchange=exchange,
+        ts_code="",         # 雪球无 ts_code
         full_name=_str(rows.get("org_name_cn")),
         established_date=established_date,
-        ts_code="",
         main_business=_str(rows.get("main_operation_business")),
         introduction=_str(rows.get("org_cn_introduction")),
         chairman=_str(rows.get("chairman")),
         legal_representative=_str(rows.get("legal_representative")),
+        general_manager=_str(rows.get("general_manager")),
+        secretary=_str(rows.get("secretary")),
         reg_capital=reg_capital,
         staff_num=staff_num,
         website=_str(rows.get("org_website")),
+        email=_str(rows.get("email")),
         reg_address=_str(rows.get("reg_address_cn")),
         actual_controller=_str(rows.get("actual_controller")),
     )
