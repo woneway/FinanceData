@@ -42,7 +42,7 @@ def get_index_quote(symbol: str) -> DataResult:
         price=float(row.get("close", 0)),
         pct_chg=float(row.get("pct_chg", 0)),
         volume=float(row.get("vol", 0)),
-        amount=float(row.get("amount", 0)),
+        amount=float(row.get("amount", 0)) * 1000,  # tushare amount 单位为千元
         timestamp=datetime.datetime.now().isoformat(timespec="seconds"),
     )
     return DataResult(data=[quote.to_dict()], source="tushare",
@@ -70,7 +70,8 @@ def get_index_history(symbol: str, start: str, end: str) -> DataResult:
         date=str(row.get("trade_date", "")),
         open=float(row.get("open", 0)), high=float(row.get("high", 0)),
         low=float(row.get("low", 0)), close=float(row.get("close", 0)),
-        volume=float(row.get("vol", 0)), amount=float(row.get("amount", 0)),
+        volume=float(row.get("vol", 0)),
+        amount=float(row.get("amount", 0)) * 1000,  # tushare amount 单位为千元
         pct_chg=float(row.get("pct_chg", 0)),
     ).to_dict() for _, row in df.iterrows()]
 

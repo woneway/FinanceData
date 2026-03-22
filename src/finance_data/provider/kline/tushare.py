@@ -73,7 +73,7 @@ def get_kline(symbol: str, period: str, start: str, end: str,
             low=float(row.get("low", 0)),
             close=float(row.get("close", 0)),
             volume=float(row.get("vol", 0)),
-            amount=float(row.get("amount", 0)),
+            amount=float(row.get("amount", 0)) * 1000,  # tushare amount 单位为千元
             pct_chg=float(row.get("pct_chg", 0)),
             adj=adj,
         ).to_dict())

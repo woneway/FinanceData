@@ -58,7 +58,7 @@ def get_realtime_quote(symbol: str) -> DataResult:
         price=float(row.get("close", 0)),
         pct_chg=float(row.get("pct_chg", 0)),
         volume=float(row.get("vol", 0)),
-        amount=float(row.get("amount", 0)),
+        amount=float(row.get("amount", 0)) * 1000,  # tushare amount 单位为千元
         market_cap=None,
         pe=None,
         pb=None,
