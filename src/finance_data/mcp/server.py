@@ -13,7 +13,6 @@ from finance_data.provider.types import DataFetchError
 logger = logging.getLogger(__name__)
 mcp = FastMCP("finance-data")
 
-
 def _to_json(result) -> str:
     return json.dumps(
         {"data": result.data, "source": result.source, "meta": result.meta},
@@ -22,16 +21,10 @@ def _to_json(result) -> str:
     )
 
 
-def _error_json(e: Exception) -> str:
-    if isinstance(e, DataFetchError):
-        return json.dumps({"error": str(e), "kind": e.kind}, ensure_ascii=False)
-    return json.dumps({"error": f"未知错误: {e}"}, ensure_ascii=False)
-
-
 @mcp.tool()
 async def tool_get_stock_info(symbol: str) -> str:
     """
-    获取个股基本信息（akshare 数据源）。
+    获取个股基本信息。依次尝试 akshare、tushare，返回第一个成功的结果。
 
     Args:
         symbol: 股票代码，如 "000001"（平安银行）
@@ -39,26 +32,18 @@ async def tool_get_stock_info(symbol: str) -> str:
     Returns:
         JSON 格式的个股信息，包含股票代码、名称、行业、上市时间等
     """
-    try:
-        return _to_json(akshare_get_stock_info(symbol))
-    except Exception as e:
-        logger.error(f"akshare get_stock_info 失败: {e}")
-        return _error_json(e)
+    # provider 优先级：akshare 优先，失败时 fallback 到 tushare
+    providers = [
+        ("akshare", akshare_get_stock_info),
+        ("tushare", tushare_get_stock_info),
+    ]
+    errors = []
+    for name, provider in providers:
+        try:
+            return _to_json(provider(symbol))
+        except Exception as e:
+            logger.warning(f"{name} get_stock_info 失败: {e}")
+            errors.append(str(e))
 
-
-@mcp.tool()
-async def tool_get_stock_info_tushare(symbol: str) -> str:
-    """
-    获取个股基本信息（tushare 数据源，需设置 TUSHARE_TOKEN）。
-
-    Args:
-        symbol: 股票代码，如 "000001"（平安银行）
-
-    Returns:
-        JSON 格式的个股信息，包含 ts_code、名称、行业、上市日期、地区、市场等
-    """
-    try:
-        return _to_json(tushare_get_stock_info(symbol))
-    except Exception as e:
-        logger.error(f"tushare get_stock_info 失败: {e}")
-        return _error_json(e)
+    logger.error(f"所有 provider 均失败: {errors}")
+    return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)

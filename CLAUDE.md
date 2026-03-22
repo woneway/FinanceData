@@ -39,7 +39,10 @@ python3 -m venv .venv
 
 ## 当前接口
 
-| Tool | 数据源 | 说明 |
-|------|--------|------|
-| `tool_get_stock_info` | akshare | 个股基本信息（无需 token） |
-| `tool_get_stock_info_tushare` | tushare | 个股基本信息（需 TUSHARE_TOKEN） |
+| Tool | 说明 |
+|------|------|
+| `tool_get_stock_info` | 个股基本信息，akshare 优先，失败自动 fallback 到 tushare |
+
+## Provider 优先级
+
+`akshare`（无需 token）→ `tushare`（需 `TUSHARE_TOKEN`）
