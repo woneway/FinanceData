@@ -19,9 +19,12 @@ def mock_xueqiu_df():
         {"item": "org_cn_introduction", "value": "平安银行股份有限公司简介"},
         {"item": "chairman", "value": "谢永林"},
         {"item": "legal_representative", "value": "谢永林"},
+        {"item": "general_manager", "value": "冀光恒"},
+        {"item": "secretary", "value": "周强"},
         {"item": "reg_asset", "value": 19405918198.0},
         {"item": "staff_num", "value": 41698},
         {"item": "org_website", "value": "bank.pingan.com"},
+        {"item": "email", "value": "pab_db@pingan.com.cn"},
         {"item": "reg_address_cn", "value": "广东省深圳市罗湖区深南东路5047号"},
         {"item": "actual_controller", "value": ""},
     ])
@@ -62,11 +65,15 @@ def test_get_stock_info_extended_fields(mock_xueqiu_df):
     assert row["introduction"] == "平安银行股份有限公司简介"
     assert row["chairman"] == "谢永林"
     assert row["legal_representative"] == "谢永林"
+    assert row["general_manager"] == "冀光恒"
+    assert row["secretary"] == "周强"
     assert row["reg_capital"] == 19405918198.0
     assert row["staff_num"] == 41698
     assert row["website"] == "bank.pingan.com"
+    assert row["email"] == "pab_db@pingan.com.cn"
     assert row["reg_address"] == "广东省深圳市罗湖区深南东路5047号"
     assert row["actual_controller"] == ""
+    assert row["exchange"] == "SZSE"  # derived from symbol prefix
 
 
 def test_get_stock_info_meta(mock_xueqiu_df):

@@ -1,6 +1,6 @@
 """
 股票基础信息接口
-数据源: tushare pro
+数据源: tushare pro（stock_basic + stock_company）
 """
 import os
 
@@ -10,7 +10,12 @@ from finance_data.provider.models import StockInfo
 from finance_data.provider.types import DataResult, DataFetchError
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
-_FIELDS = "ts_code,name,industry,list_date,area,market"
+_BASIC_FIELDS = "ts_code,symbol,name,area,industry,market,list_date,act_name"
+_COMPANY_FIELDS = (
+    "ts_code,com_name,chairman,manager,secretary,reg_capital,"
+    "setup_date,province,city,introduction,website,email,"
+    "office,main_business,exchange,employees"
+)
 
 
 def _get_pro():
@@ -24,7 +29,6 @@ def _get_pro():
             kind="auth",
         )
     pro = ts.pro_api(token=token)
-    # 支持自定义 API 地址（如第三方代理），通过 TUSHARE_API_URL 环境变量配置
     api_url = os.environ.get("TUSHARE_API_URL", "")
     if api_url:
         pro._DataApi__token = token
@@ -32,62 +36,96 @@ def _get_pro():
     return pro
 
 
+def _str(val) -> str:
+    if val is None:
+        return ""
+    s = str(val).strip()
+    return "" if s in ("nan", "None") else s
+
+
 def get_stock_info(symbol: str) -> DataResult:
     """
-    获取个股基本信息。
+    获取个股基本信息。调用 stock_basic + stock_company 两个接口填充完整字段。
 
     Args:
-        symbol: 股票代码，如 "000001"（不含市场后缀）
+        symbol: 股票代码，如 "000001"
 
     Returns:
-        DataResult，data 为 [{"ts_code", "name", "industry", "list_date", "area", "market"}]
+        DataResult，data 为 [StockInfo.to_dict()]
 
     Raises:
         DataFetchError: auth / network / data 错误
     """
     pro = _get_pro()
-
-    # tushare 格式：000001.SZ 或 000001.SH，先尝试 SZ，再尝试 SH
     ts_code = _resolve_ts_code(symbol)
 
+    # --- stock_basic ---
     try:
-        df = pro.stock_basic(ts_code=ts_code, fields=_FIELDS)
+        df_basic = pro.stock_basic(ts_code=ts_code, fields=_BASIC_FIELDS)
     except _NETWORK_ERRORS as e:
-        raise DataFetchError(
-            source="tushare",
-            func="stock_basic",
-            reason=str(e),
-            kind="network",
-        ) from e
+        raise DataFetchError(source="tushare", func="stock_basic",
+                             reason=str(e), kind="network") from e
     except Exception as e:
         reason = str(e)
         kind = "auth" if "权限" in reason or "token" in reason.lower() else "data"
-        raise DataFetchError(
-            source="tushare",
-            func="stock_basic",
-            reason=reason,
-            kind=kind,
-        ) from e
+        raise DataFetchError(source="tushare", func="stock_basic",
+                             reason=reason, kind=kind) from e
 
-    if df.empty:
-        raise DataFetchError(
-            source="tushare",
-            func="stock_basic",
-            reason=f"未找到股票: {symbol}",
-            kind="data",
-        )
+    if df_basic.empty:
+        raise DataFetchError(source="tushare", func="stock_basic",
+                             reason=f"未找到股票: {symbol}", kind="data")
 
-    row = df.iloc[0]
+    # --- stock_company ---
+    try:
+        df_co = pro.stock_company(ts_code=ts_code, fields=_COMPANY_FIELDS)
+    except Exception:
+        df_co = None  # company 接口失败不影响主流程，降级处理
+
+    b = df_basic.iloc[0]
+    c = df_co.iloc[0] if df_co is not None and not df_co.empty else None
+
+    def _co(field):
+        return _str(c[field]) if c is not None and field in c.index else ""
+
+    def _co_num(field):
+        if c is None or field not in c.index:
+            return None
+        try:
+            v = c[field]
+            return None if v is None or str(v) in ("nan", "None") else float(v)
+        except (TypeError, ValueError):
+            return None
+
+    def _co_int(field):
+        v = _co_num(field)
+        return int(v) if v is not None else None
+
     info = StockInfo(
         symbol=symbol,
-        name=row.get("name", ""),
-        industry=row.get("industry", ""),
-        list_date=row.get("list_date", ""),
-        area=row.get("area", ""),
-        market=row.get("market", ""),
-        ts_code=row.get("ts_code", ""),
-        actual_controller=row.get("act_name", ""),
+        name=_str(b.get("name")),
+        industry=_str(b.get("industry")),
+        list_date=_str(b.get("list_date")),
+        area=_str(b.get("area")),
+        market=_str(b.get("market")),
+        city=_co("city"),
+        exchange=_co("exchange"),
+        ts_code=_str(b.get("ts_code")),
+        full_name=_co("com_name"),
+        established_date=_co("setup_date"),
+        main_business=_co("main_business"),
+        introduction=_co("introduction"),
+        chairman=_co("chairman"),
+        legal_representative="",    # tushare 无此字段
+        general_manager=_co("manager"),
+        secretary=_co("secretary"),
+        reg_capital=_co_num("reg_capital"),
+        staff_num=_co_int("employees"),
+        website=_co("website"),
+        email=_co("email"),
+        reg_address=_co("office"),
+        actual_controller=_str(b.get("act_name")),
     )
+
     return DataResult(
         data=[info.to_dict()],
         source="tushare",
@@ -96,10 +134,8 @@ def get_stock_info(symbol: str) -> DataResult:
 
 
 def _resolve_ts_code(symbol: str) -> str:
-    """将纯数字代码转换为 tushare ts_code 格式。"""
     if "." in symbol:
         return symbol
-    # 深交所：000/001/002/003/300 开头；上交所：600/601/603/605/688 开头
-    if symbol.startswith(("6",)):
+    if symbol.startswith("6"):
         return f"{symbol}.SH"
     return f"{symbol}.SZ"
