@@ -12,6 +12,17 @@ from finance_data.provider.kline.akshare import get_kline as akshare_get_kline
 from finance_data.provider.kline.tushare import get_kline as tushare_get_kline
 from finance_data.provider.realtime.akshare import get_realtime_quote as akshare_get_realtime
 from finance_data.provider.realtime.tushare import get_realtime_quote as tushare_get_realtime
+from finance_data.provider.index.akshare import (
+    get_index_quote as ak_index_quote,
+    get_index_history as ak_index_history,
+)
+from finance_data.provider.index.tushare import (
+    get_index_quote as ts_index_quote,
+    get_index_history as ts_index_history,
+)
+from finance_data.provider.sector.akshare import get_sector_rank as ak_sector_rank
+from finance_data.provider.sector.tushare import get_sector_rank as ts_sector_rank
+from finance_data.provider.chip.akshare import get_chip_distribution as ak_chip
 from finance_data.provider.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -102,3 +113,58 @@ async def tool_get_realtime_quote(symbol: str) -> str:
             logger.warning(f"{name} get_realtime_quote 失败: {e}")
             errors.append(str(e))
     return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_index_quote(symbol: str = "000001.SH") -> str:
+    """获取大盘指数实时行情。symbol 如 000001.SH / 399001.SZ"""
+    providers = [("akshare", ak_index_quote), ("tushare", ts_index_quote)]
+    errors = []
+    for name, fn in providers:
+        try:
+            return _to_json(fn(symbol))
+        except Exception as e:
+            logger.warning(f"{name} get_index_quote 失败: {e}")
+            errors.append(str(e))
+    return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_index_history(
+    symbol: str = "000001.SH",
+    start: str = "20240101",
+    end: str = "20241231",
+) -> str:
+    """获取大盘指数历史 K线。symbol 如 000001.SH / 399001.SZ"""
+    providers = [("akshare", ak_index_history), ("tushare", ts_index_history)]
+    errors = []
+    for name, fn in providers:
+        try:
+            return _to_json(fn(symbol, start=start, end=end))
+        except Exception as e:
+            logger.warning(f"{name} get_index_history 失败: {e}")
+            errors.append(str(e))
+    return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_sector_rank() -> str:
+    """获取行业板块涨跌排名（按涨跌幅排序）。"""
+    providers = [("akshare", ak_sector_rank), ("tushare", ts_sector_rank)]
+    errors = []
+    for name, fn in providers:
+        try:
+            return _to_json(fn())
+        except Exception as e:
+            logger.warning(f"{name} get_sector_rank 失败: {e}")
+            errors.append(str(e))
+    return json.dumps({"error": f"所有数据源均失败: {errors}"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_chip_distribution(symbol: str) -> str:
+    """获取个股筹码分布（获利比例、平均成本、集中度）。"""
+    try:
+        return _to_json(ak_chip(symbol))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
