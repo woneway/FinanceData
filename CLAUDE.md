@@ -31,18 +31,34 @@ python3 -m venv .venv
 .venv/bin/pytest tests/ -v
 ```
 
+## 目录结构
+
+Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立 models.py + akshare.py + tushare.py。
+
 ## 新增接口流程
 
-1. 在 `src/finance_data/provider/akshare/` 或 `tushare/` 下添加函数
-2. 在 `tests/provider/` 下添加对应测试
+1. 在 `src/finance_data/provider/<domain>/` 下新建或修改 akshare.py / tushare.py
+2. 在 `tests/provider/<domain>/` 下添加对应测试
 3. 在 `src/finance_data/mcp/server.py` 添加 MCP tool
 4. 更新 CLAUDE.md 接口列表
 
-## 当前接口
+## 当前接口（13 个）
 
-| Tool | 说明 |
-|------|------|
-| `tool_get_stock_info` | 个股基本信息，akshare 优先，失败自动 fallback 到 tushare |
+| Tool | 领域 | 说明 |
+|------|------|------|
+| `tool_get_stock_info` | stock | 个股基本信息，akshare 优先，fallback tushare |
+| `tool_get_kline` | kline | K线历史数据（daily/weekly/monthly/分钟级），akshare+tushare |
+| `tool_get_realtime_quote` | realtime | 实时行情（含 20 分钟缓存），akshare+tushare |
+| `tool_get_index_quote` | index | 大盘指数实时行情，akshare+tushare |
+| `tool_get_index_history` | index | 大盘指数历史 K线，akshare+tushare |
+| `tool_get_sector_rank` | sector | 行业板块涨跌排名，仅 akshare |
+| `tool_get_chip_distribution` | chip | 个股筹码分布（获利比例、成本、集中度），仅 akshare |
+| `tool_get_financial_summary` | fundamental | 财务摘要（营收、净利润、ROE、毛利率），akshare+tushare |
+| `tool_get_dividend` | fundamental | 历史分红记录，akshare+tushare |
+| `tool_get_earnings_forecast` | fundamental | 业绩预告，akshare 优先 |
+| `tool_get_fund_flow` | cashflow | 个股资金流向（主力净流入），仅 akshare |
+| `tool_get_trade_calendar` | calendar | 交易日历（is_open 标记），仅 tushare |
+| `tool_get_market_stats` | market | 市场涨跌统计（涨/跌/平家数、总成交额），仅 akshare |
 
 ## Provider 优先级
 
