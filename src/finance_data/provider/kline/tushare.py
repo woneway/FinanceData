@@ -63,7 +63,8 @@ def get_kline(symbol: str, period: str, start: str, end: str,
     date_col = "trade_time" if period in _MIN_FREQ else "trade_date"
     bars = []
     for _, row in df.iterrows():
-        raw_date = str(row.get(date_col, "")).replace("-", "").replace(" ", "")[:8]
+        s = str(row.get(date_col, "")).replace("-", "").replace(" ", "")[:8]
+        raw_date = s if s.isdigit() else ""
         bars.append(KlineBar(
             symbol=symbol,
             date=raw_date,

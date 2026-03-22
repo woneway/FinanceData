@@ -28,8 +28,8 @@ def _no_proxy():
 
 
 def _parse_date(val) -> str:
-    s = str(val).strip()
-    return s.replace("-", "").replace(" ", "")[:8]
+    s = str(val).strip().replace("-", "").replace(" ", "")[:8]
+    return s if s.isdigit() else ""
 
 
 def get_kline(symbol: str, period: str, start: str, end: str,

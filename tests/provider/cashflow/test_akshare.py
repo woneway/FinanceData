@@ -9,8 +9,7 @@ from finance_data.provider.types import DataResult, DataFetchError
 def mock_flow_df():
     return pd.DataFrame([{
         "日期": "2024-01-02",
-        "净流入": 1.2e8, "净流入占比": 2.3,
-        "主力净流入": 8.5e7, "主力净流入占比": 1.6,
+        "主力净流入-净额": 1.2e8, "主力净流入-净占比": 2.3,
     }])
 
 

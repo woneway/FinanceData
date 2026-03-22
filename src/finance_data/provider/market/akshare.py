@@ -26,30 +26,33 @@ def _no_proxy():
 
 
 def get_market_stats() -> DataResult:
-    """获取当日市场涨跌统计。"""
+    """获取当日市场涨跌统计（乐估数据源）。"""
     try:
         with _no_proxy():
-            df = ak.stock_zh_a_spot_em()
+            df = ak.stock_market_activity_legu()
     except _NETWORK_ERRORS as e:
-        raise DataFetchError("akshare", "stock_zh_a_spot_em", str(e), "network") from e
+        raise DataFetchError("akshare", "stock_market_activity_legu", str(e), "network") from e
     except Exception as e:
-        raise DataFetchError("akshare", "stock_zh_a_spot_em", str(e), "data") from e
+        raise DataFetchError("akshare", "stock_market_activity_legu", str(e), "data") from e
 
     if df is None or df.empty:
-        raise DataFetchError("akshare", "stock_zh_a_spot_em", "无数据", "data")
+        raise DataFetchError("akshare", "stock_market_activity_legu", "无数据", "data")
 
-    pct = df["涨跌幅"].fillna(0)
-    up = int((pct > 0).sum())
-    down = int((pct < 0).sum())
-    flat = int((pct == 0).sum())
-    total_amount = float(df["成交额"].sum()) if "成交额" in df.columns else None
+    item_map = dict(zip(df["item"], df["value"]))
+    up = int(item_map.get("上涨", 0) or 0)
+    down = int(item_map.get("下跌", 0) or 0)
+    flat = int(item_map.get("平盘", 0) or 0)
+
+    # 统计日期由接口返回，格式如 "2026-03-20 15:00:00"
+    date_str = str(item_map.get("统计日期", ""))
+    date = date_str[:10].replace("-", "") if date_str else datetime.date.today().strftime("%Y%m%d")
 
     stats = MarketStats(
-        date=datetime.date.today().strftime("%Y%m%d"),
-        total_count=len(df),
+        date=date,
+        total_count=up + down + flat,
         up_count=up,
         down_count=down,
         flat_count=flat,
-        total_amount=total_amount,
+        total_amount=None,
     )
     return DataResult(data=[stats.to_dict()], source="akshare", meta={"rows": 1})

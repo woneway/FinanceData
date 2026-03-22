@@ -24,8 +24,13 @@ def _no_proxy():
         requests.Session.__init__ = orig
 
 
-def get_fund_flow(symbol: str, market: str = "沪深A") -> DataResult:
+def _market(symbol: str) -> str:
+    return "sh" if symbol.startswith("6") else "sz"
+
+
+def get_fund_flow(symbol: str) -> DataResult:
     """获取个股资金流向（近期每日）。"""
+    market = _market(symbol)
     try:
         with _no_proxy():
             df = ak.stock_individual_fund_flow(stock=symbol, market=market)
@@ -40,10 +45,12 @@ def get_fund_flow(symbol: str, market: str = "沪深A") -> DataResult:
     rows = [FundFlow(
         symbol=symbol,
         date=str(r.get("日期", "")).replace("-", ""),
-        net_inflow=float(r.get("净流入", 0) or 0),
-        net_inflow_pct=float(r.get("净流入占比", 0) or 0),
-        main_inflow=float(r.get("主力净流入", 0) or 0),
-        main_inflow_pct=float(r.get("主力净流入占比", 0) or 0),
+        # A 股资金流向中"净流入" = "主力净流入"（超大单+大单净额），
+        # akshare 未提供独立的总净流入列，两者使用同一数据源。
+        net_inflow=float(r.get("主力净流入-净额", 0) or 0),
+        net_inflow_pct=float(r.get("主力净流入-净占比", 0) or 0),
+        main_inflow=float(r.get("主力净流入-净额", 0) or 0),
+        main_inflow_pct=float(r.get("主力净流入-净占比", 0) or 0),
     ).to_dict() for _, r in df.iterrows()]
 
     return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "symbol": symbol})

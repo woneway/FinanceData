@@ -39,6 +39,20 @@ from finance_data.provider.cashflow.tushare import get_fund_flow as ts_fund_flow
 from finance_data.provider.calendar.tushare import get_trade_calendar as ts_calendar
 from finance_data.provider.market.akshare import get_market_stats as ak_market
 from finance_data.provider.market.tushare import get_market_stats as ts_market
+from finance_data.provider.lhb.akshare import (
+    get_lhb_detail as ak_lhb_detail,
+    get_lhb_stock_stat as ak_lhb_stock_stat,
+    get_lhb_active_traders as ak_lhb_active_traders,
+    get_lhb_trader_stat as ak_lhb_trader_stat,
+    get_lhb_stock_detail as ak_lhb_stock_detail,
+)
+from finance_data.provider.lhb.tushare import (
+    get_lhb_detail as ts_lhb_detail,
+    get_lhb_stock_stat as ts_lhb_stock_stat,
+    get_lhb_active_traders as ts_lhb_active_traders,
+    get_lhb_trader_stat as ts_lhb_trader_stat,
+    get_lhb_stock_detail as ts_lhb_stock_detail,
+)
 from finance_data.provider.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -249,4 +263,131 @@ async def tool_get_market_stats() -> str:
             return _to_json(fn())
         except Exception as e:
             logger.warning(f"{name} get_market_stats 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_lhb_detail(
+    start_date: str,
+    end_date: str,
+) -> str:
+    """
+    获取龙虎榜每日上榜详情。
+
+    Args:
+        start_date: 开始日期 YYYYMMDD，如 "20240101"
+        end_date: 结束日期 YYYYMMDD，如 "20240131"
+
+    Returns:
+        JSON 列表，每条记录包含：symbol(代码)、name(名称)、date(上榜日)、
+        close(收盘价)、pct_change(涨跌幅%)、lhb_net_buy(净买额元)、
+        lhb_buy/lhb_sell/lhb_amount(买入/卖出/成交额元)、
+        market_amount(市场总成交额元)、net_rate/amount_rate(占比%)、
+        turnover_rate(换手率%)、float_value(流通市值元)、reason(上榜原因)
+
+    Note:
+        akshare 支持完整日期范围；tushare fallback 仅查询 start_date 单日。
+    """
+    for name, fn in [("akshare", ak_lhb_detail), ("tushare", ts_lhb_detail)]:
+        try:
+            return _to_json(fn(start_date, end_date))
+        except Exception as e:
+            logger.warning(f"{name} get_lhb_detail 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_lhb_stock_stat(period: str = "近一月") -> str:
+    """
+    获取个股上榜统计（哪些股票频繁上龙虎榜）。
+
+    Args:
+        period: 统计周期，choice of {"近一月", "近三月", "近六月", "近一年"}
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、last_date(最近上榜日)、times(上榜次数)、
+        lhb_net_buy/lhb_buy/lhb_sell/lhb_amount(龙虎榜资金)、
+        inst_buy_times/inst_sell_times(机构买卖次数)、inst_net_buy(机构净买额)
+    """
+    for name, fn in [("akshare", ak_lhb_stock_stat), ("tushare", ts_lhb_stock_stat)]:
+        try:
+            return _to_json(fn(period))
+        except Exception as e:
+            logger.warning(f"{name} get_lhb_stock_stat 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_lhb_active_traders(
+    start_date: str,
+    end_date: str,
+) -> str:
+    """
+    获取每日活跃游资营业部（龙虎榜席位追踪）。
+
+    Args:
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
+
+    Returns:
+        JSON 列表，每条包含：branch_name(营业部名称)、date(上榜日)、
+        buy_count/sell_count(买入/卖出个股数)、
+        buy_amount/sell_amount/net_amount(买入/卖出/净额元)、
+        stocks(买入股票列表)
+    """
+    for name, fn in [("akshare", ak_lhb_active_traders), ("tushare", ts_lhb_active_traders)]:
+        try:
+            return _to_json(fn(start_date, end_date))
+        except Exception as e:
+            logger.warning(f"{name} get_lhb_active_traders 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_lhb_trader_stat(period: str = "近一月") -> str:
+    """
+    获取营业部统计（游资战绩排行）。
+
+    Args:
+        period: 统计周期，choice of {"近一月", "近三月", "近六月", "近一年"}
+
+    Returns:
+        JSON 列表，每条包含：branch_name(营业部名称)、lhb_amount(龙虎榜成交金额元)、
+        times(上榜次数)、buy_amount/buy_times(买入额元/次数)、
+        sell_amount/sell_times(卖出额元/次数)
+    """
+    for name, fn in [("akshare", ak_lhb_trader_stat), ("tushare", ts_lhb_trader_stat)]:
+        try:
+            return _to_json(fn(period))
+        except Exception as e:
+            logger.warning(f"{name} get_lhb_trader_stat 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_lhb_stock_detail(
+    symbol: str,
+    date: str,
+    flag: str = "买入",
+) -> str:
+    """
+    获取个股某日龙虎榜席位明细（具体游资/机构）。
+
+    Args:
+        symbol: 股票代码，如 "600077"
+        date: 上榜日期 YYYYMMDD，如 "20240320"（必须是该股实际上榜的日期，
+              建议先调用 tool_get_lhb_detail 确认有效上榜日）
+        flag: "买入" 或 "卖出"
+
+    Returns:
+        JSON 列表，每条包含：symbol、date、flag、branch_name(交易营业部)、
+        trade_amount(交易金额元，买入方向为买入额/卖出方向为卖出额)、
+        buy_rate(买入占总成交%)、sell_rate(卖出占总成交%)、
+        net_amount(净额元)、seat_type(席位类型)
+    """
+    for name, fn in [("akshare", ak_lhb_stock_detail), ("tushare", ts_lhb_stock_detail)]:
+        try:
+            return _to_json(fn(symbol, date, flag))
+        except Exception as e:
+            logger.warning(f"{name} get_lhb_stock_detail 失败: {e}")
     return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
