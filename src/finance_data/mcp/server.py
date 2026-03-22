@@ -23,6 +23,7 @@ from finance_data.provider.index.tushare import (
 from finance_data.provider.sector.akshare import get_sector_rank as ak_sector_rank
 from finance_data.provider.sector.tushare import get_sector_rank as ts_sector_rank
 from finance_data.provider.chip.akshare import get_chip_distribution as ak_chip
+from finance_data.provider.chip.tushare import get_chip_distribution as ts_chip
 from finance_data.provider.fundamental.akshare import (
     get_financial_summary as ak_fin_summary,
     get_dividend as ak_dividend,
@@ -179,10 +180,12 @@ async def tool_get_sector_rank() -> str:
 @mcp.tool()
 async def tool_get_chip_distribution(symbol: str) -> str:
     """获取个股筹码分布（获利比例、平均成本、集中度）。"""
-    try:
-        return _to_json(ak_chip(symbol))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    for name, fn in [("akshare", ak_chip), ("tushare", ts_chip)]:
+        try:
+            return _to_json(fn(symbol))
+        except Exception as e:
+            logger.warning(f"{name} get_chip_distribution 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
 
 
 @mcp.tool()
