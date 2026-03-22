@@ -6,6 +6,7 @@ import os
 
 import tushare as ts
 
+from finance_data.provider.models import StockInfo
 from finance_data.provider.types import DataResult, DataFetchError
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -76,11 +77,19 @@ def get_stock_info(symbol: str) -> DataResult:
             kind="data",
         )
 
-    records = df.to_dict(orient="records")
+    row = df.iloc[0]
+    info = StockInfo(
+        symbol=symbol,
+        name=row.get("name", ""),
+        industry=row.get("industry", ""),
+        list_date=row.get("list_date", ""),
+        area=row.get("area", ""),
+        market=row.get("market", ""),
+    )
     return DataResult(
-        data=records,
+        data=[info.to_dict()],
         source="tushare",
-        meta={"rows": len(records), "symbol": symbol},
+        meta={"rows": 1, "symbol": symbol},
     )
 
 
