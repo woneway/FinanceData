@@ -46,6 +46,19 @@ def _ms_to_date(ms) -> str:
         return str(ms)
 
 
+def _str(val) -> str:
+    """安全转字符串，过滤 None/nan。"""
+    import math
+    if val is None:
+        return ""
+    try:
+        if math.isnan(float(val)):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    return str(val).strip()
+
+
 def _parse_stock_info(symbol: str, df) -> StockInfo:
     """将雪球 DataFrame 解析为 StockInfo。"""
     rows = {row["item"]: row["value"] for _, row in df.iterrows()}
@@ -56,13 +69,40 @@ def _parse_stock_info(symbol: str, df) -> StockInfo:
     listed_ms = rows.get("listed_date")
     list_date = _ms_to_date(listed_ms) if listed_ms else ""
 
+    established_ms = rows.get("established_date")
+    established_date = _ms_to_date(established_ms) if established_ms else ""
+
+    reg_asset = rows.get("reg_asset")
+    try:
+        reg_capital = float(reg_asset) if reg_asset is not None else None
+    except (TypeError, ValueError):
+        reg_capital = None
+
+    staff_raw = rows.get("staff_num")
+    try:
+        staff_num = int(staff_raw) if staff_raw is not None else None
+    except (TypeError, ValueError):
+        staff_num = None
+
     return StockInfo(
         symbol=symbol,
-        name=rows.get("org_short_name_cn", ""),
+        name=_str(rows.get("org_short_name_cn")),
         industry=industry,
         list_date=list_date,
-        area=rows.get("provincial_name", ""),
-        market="",  # 雪球接口无市场分类字段
+        area=_str(rows.get("provincial_name")),
+        market="",
+        full_name=_str(rows.get("org_name_cn")),
+        established_date=established_date,
+        ts_code="",
+        main_business=_str(rows.get("main_operation_business")),
+        introduction=_str(rows.get("org_cn_introduction")),
+        chairman=_str(rows.get("chairman")),
+        legal_representative=_str(rows.get("legal_representative")),
+        reg_capital=reg_capital,
+        staff_num=staff_num,
+        website=_str(rows.get("org_website")),
+        reg_address=_str(rows.get("reg_address_cn")),
+        actual_controller=_str(rows.get("actual_controller")),
     )
 
 

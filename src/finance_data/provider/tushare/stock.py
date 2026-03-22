@@ -85,6 +85,8 @@ def get_stock_info(symbol: str) -> DataResult:
         list_date=row.get("list_date", ""),
         area=row.get("area", ""),
         market=row.get("market", ""),
+        ts_code=row.get("ts_code", ""),
+        actual_controller=row.get("act_name", ""),
     )
     return DataResult(
         data=[info.to_dict()],

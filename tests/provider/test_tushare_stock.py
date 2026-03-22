@@ -15,6 +15,7 @@ def mock_tushare_df():
         "list_date": "19910403",
         "area": "深圳",
         "market": "主板",
+        "act_name": "无实际控制人",
     }])
 
 
@@ -44,6 +45,8 @@ def test_get_stock_info_data_matches_stock_info_schema(mock_tushare_df):
     assert row["list_date"] == "19910403"
     assert row["area"] == "深圳"
     assert row["market"] == "主板"
+    assert row["ts_code"] == "000001.SZ"
+    assert row["actual_controller"] == "无实际控制人"
 
 
 def test_get_stock_info_meta(mock_tushare_df):
