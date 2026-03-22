@@ -44,7 +44,7 @@ def test_get_financial_summary_empty_raises(mock_pro):
 
 
 def test_get_dividend_returns_data_result(mock_pro):
-    df = pd.DataFrame([{"ex_date": "20231215", "div_cash": 0.248, "record_date": "20231214"}])
+    df = pd.DataFrame([{"ex_date": "20231215", "cash_div": 0.248, "record_date": "20231214"}])
     mock_pro.dividend.return_value = df
     with patch("finance_data.provider.fundamental.tushare._get_pro", return_value=mock_pro):
         result = get_dividend("000001")

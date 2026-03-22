@@ -76,7 +76,7 @@ def get_dividend(symbol: str) -> DataResult:
     pro = _get_pro()
     ts_code = _ts_code(symbol)
     try:
-        df = pro.dividend(ts_code=ts_code, fields="ex_date,div_cash,record_date")
+        df = pro.dividend(ts_code=ts_code, fields="ex_date,cash_div,record_date")
     except _NETWORK_ERRORS as e:
         raise DataFetchError("tushare", "dividend", str(e), "network") from e
     except Exception as e:
@@ -90,7 +90,7 @@ def get_dividend(symbol: str) -> DataResult:
     rows = [DividendRecord(
         symbol=symbol,
         ex_date=str(r.get("ex_date", "")).replace("-", ""),
-        per_share=float(r.get("div_cash", 0) or 0),
+        per_share=float(r.get("cash_div", 0) or 0),
         record_date=str(r.get("record_date", "")).replace("-", ""),
     ).to_dict() for _, r in df.iterrows()]
 
