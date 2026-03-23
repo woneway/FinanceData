@@ -42,7 +42,7 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 3. 在 `src/finance_data/mcp/server.py` 添加 MCP tool
 4. 更新 CLAUDE.md 接口列表
 
-## 当前接口（18 个）
+## 当前接口（22 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -64,6 +64,10 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 | `tool_get_lhb_active_traders` | lhb | 每日活跃游资营业部（席位追踪），仅 akshare |
 | `tool_get_lhb_trader_stat` | lhb | 营业部统计-游资战绩排行（近一月等），仅 akshare |
 | `tool_get_lhb_stock_detail` | lhb | 个股某日龙虎榜席位明细（买入/卖出），仅 akshare |
+| `tool_get_zt_pool` | pool | 涨停股池（首板/连板检测），仅 akshare |
+| `tool_get_strong_stocks` | pool | 强势股池（60日新高/量比放大），仅 akshare |
+| `tool_get_previous_zt` | pool | 昨日涨停今日数据（低吸检测），仅 akshare |
+| `tool_get_zbgc_pool` | pool | 炸板股池（冲板后开板，低吸补充），仅 akshare |
 
 ## Provider 优先级
 

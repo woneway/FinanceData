@@ -53,6 +53,18 @@ from finance_data.provider.lhb.tushare import (
     get_lhb_trader_stat as ts_lhb_trader_stat,
     get_lhb_stock_detail as ts_lhb_stock_detail,
 )
+from finance_data.provider.pool.akshare import (
+    get_zt_pool as ak_zt_pool,
+    get_strong_stocks as ak_strong_stocks,
+    get_previous_zt as ak_previous_zt,
+    get_zbgc_pool as ak_zbgc_pool,
+)
+from finance_data.provider.pool.tushare import (
+    get_zt_pool as ts_zt_pool,
+    get_strong_stocks as ts_strong_stocks,
+    get_previous_zt as ts_previous_zt,
+    get_zbgc_pool as ts_zbgc_pool,
+)
 from finance_data.provider.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -390,4 +402,90 @@ async def tool_get_lhb_stock_detail(
             return _to_json(fn(symbol, date, flag))
         except Exception as e:
             logger.warning(f"{name} get_lhb_stock_detail 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_zt_pool(date: str) -> str:
+    """
+    获取涨停股池（首板/连板检测）。
+
+    Args:
+        date: 交易日期 YYYYMMDD，如 "20260320"
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_change(涨跌幅%)、price(最新价)、
+        amount(成交额元)、float_mv/total_mv(流通/总市值元)、turnover(换手率%)、
+        seal_amount(封板资金元)、first_seal_time/last_seal_time(首末封板时间HHMMSS)、
+        open_times(炸板次数)、continuous_days(连板数)、industry(行业)
+    """
+    for name, fn in [("akshare", ak_zt_pool), ("tushare", ts_zt_pool)]:
+        try:
+            return _to_json(fn(date))
+        except Exception as e:
+            logger.warning(f"{name} get_zt_pool 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_strong_stocks(date: str) -> str:
+    """
+    获取强势股池（60日新高/量比放大的龙头股）。
+
+    Args:
+        date: 交易日期 YYYYMMDD，如 "20260320"
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_change(涨跌幅%)、price、
+        limit_price(涨停价)、amount(成交额元)、float_mv/total_mv(流通/总市值元)、
+        turnover(换手率%)、volume_ratio(量比)、is_new_high(是否创新高)、
+        reason(入选理由)、industry(行业)
+    """
+    for name, fn in [("akshare", ak_strong_stocks), ("tushare", ts_strong_stocks)]:
+        try:
+            return _to_json(fn(date))
+        except Exception as e:
+            logger.warning(f"{name} get_strong_stocks 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_previous_zt(date: str) -> str:
+    """
+    获取昨日涨停今日数据（低吸检测：昨日涨停股的今日表现）。
+
+    Args:
+        date: 今日交易日期 YYYYMMDD，接口自动返回昨日涨停股今日数据
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_change(今日涨跌幅%)、price(今日最新价)、
+        limit_price(昨日涨停价)、amount(今日成交额元)、float_mv/total_mv、turnover、
+        prev_seal_time(昨日封板时间HHMMSS)、prev_continuous_days(昨日连板数)、industry
+    """
+    for name, fn in [("akshare", ak_previous_zt), ("tushare", ts_previous_zt)]:
+        try:
+            return _to_json(fn(date))
+        except Exception as e:
+            logger.warning(f"{name} get_previous_zt 失败: {e}")
+    return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_zbgc_pool(date: str) -> str:
+    """
+    获取炸板股池（今日冲板后开板，补充低吸候选）。
+
+    Args:
+        date: 交易日期 YYYYMMDD，如 "20260320"
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_change(涨跌幅%)、price、
+        limit_price(涨停价)、amount(成交额元)、float_mv/total_mv、turnover、
+        first_seal_time(首次封板时间)、open_times(炸板次数)、amplitude(振幅%)、industry
+    """
+    for name, fn in [("akshare", ak_zbgc_pool), ("tushare", ts_zbgc_pool)]:
+        try:
+            return _to_json(fn(date))
+        except Exception as e:
+            logger.warning(f"{name} get_zbgc_pool 失败: {e}")
     return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
