@@ -37,10 +37,14 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 
 ## 新增接口流程
 
+> 使用 `.claude/skills/add-new-interface.md` Skill 获得完整步骤指导。
+
 1. 在 `src/finance_data/provider/<domain>/` 下新建或修改 akshare.py / tushare.py
 2. 在 `tests/provider/<domain>/` 下添加对应测试
-3. 在 `src/finance_data/mcp/server.py` 添加 MCP tool
-4. 更新 CLAUDE.md 接口列表
+3. 在 `src/finance_data/mcp/server.py` 添加 MCP tool（含规范 docstring）
+4. 在 `src/finance_data/provider/metadata/registry.py` 注册 ToolMeta
+5. 运行校验：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
+6. 更新 CLAUDE.md 接口列表
 
 ## 当前接口（27 个）
 

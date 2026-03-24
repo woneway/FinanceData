@@ -162,30 +162,30 @@ FinanceData/.claude/skills/
 
 ## 5. 实施步骤
 
-### Phase 1: 基础设施（1天）
-- [ ] 创建 `src/finance_data/provider/metadata/` 目录
-- [ ] 定义 `ToolMeta` 数据类
-- [ ] 创建 `TOOL_REGISTRY` 配置字典
-- [ ] 实现 `validator.py` 校验脚本
+### Phase 1: 基础设施（1天）✅
+- [x] 创建 `src/finance_data/provider/metadata/` 目录
+- [x] 定义 `ToolMeta` 数据类
+- [x] 创建 `TOOL_REGISTRY` 配置字典
+- [x] 实现 `validator.py` 校验脚本
 
-### Phase 2: 存量接口规范化（2天）
-- [ ] 为 27 个现有接口生成 ToolMeta
-- [ ] 更新所有 docstring 对齐规范
-- [ ] 运行校验，修复不符合项
-- [ ] 更新 CLAUDE.md 同步
+### Phase 2: 存量接口规范化（2天）✅
+- [x] 为 27 个现有接口生成 ToolMeta
+- [x] 更新所有 docstring 对齐规范
+- [x] 运行校验，修复不符合项
+- [x] 更新 CLAUDE.md 同步
 
-### Phase 3: 命名优化（可选，1天）
-- [ ] 确定需要重命名的接口列表
-- [ ] 创建别名兼容机制
-- [ ] 逐步切换到规范名称
+### Phase 3: 命名优化（可选，1天）✅
+- [x] 确定需要重命名的接口列表（4个）
+- [x] 创建别名兼容机制（旧名称标记 deprecated，新增规范名称）
+- [x] 逐步切换到规范名称
 
-### Phase 4: Skill 落地（0.5天）
-- [ ] 创建 `.claude/skills/add-new-interface.md`
-- [ ] 更新 CLAUDE.md 中的"新增接口流程"
+### Phase 4: Skill 落地（0.5天）✅
+- [x] 创建 `.claude/skills/add-new-interface.md`
+- [x] 更新 CLAUDE.md 中的"新增接口流程"
 
-### Phase 5: 自动化（持续）
-- [ ] 在 CI 中集成校验
-- [ ] 新增接口时自动检查 ToolMeta
+### Phase 5: 自动化（持续）✅
+- [x] 在 CI 中集成校验（`.github/workflows/ci.yml`）
+- [x] 新增接口时自动检查 ToolMeta（validator 集成到 CI）
 
 ---
 

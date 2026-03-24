@@ -369,6 +369,8 @@ async def tool_get_fund_flow(symbol: str) -> str:
     """
     获取个股资金流向（主力净流入等）。
 
+    已废弃，请使用 tool_get_stock_capital_flow（命名更清晰）。
+
     数据源: akshare 优先，tushare fallback
     实时性: 盘中实时（T+0），收盘后数据更准确
     历史查询: 不支持
@@ -415,6 +417,8 @@ async def tool_get_trade_calendar(start: str, end: str) -> str:
 async def tool_get_market_stats() -> str:
     """
     获取当日市场涨跌家数、总成交额等统计信息。
+
+    已废弃，请使用 tool_get_market_stats_daily（命名更清晰）。
 
     数据源: 仅 akshare（tushare 无等效接口）
     实时性: 非实时，收盘后约 15:30 更新
@@ -688,6 +692,8 @@ async def tool_get_north_flow() -> str:
     """
     获取北向资金日频资金流（沪股通+深股通）。
 
+    已废弃，请使用 tool_get_market_north_capital（命名更清晰）。
+
     数据源: 仅 akshare（tushare 无等效接口）
     实时性: 非实时，收盘后约 15:30 更新
     历史查询: 不支持
@@ -844,6 +850,8 @@ async def tool_get_sector_fund_flow(
     """
     获取行业/概念/地域板块资金流排名（主/超大单/大单/中单/小单净流入）。
 
+    已废弃，请使用 tool_get_sector_capital_flow（命名更清晰）。
+
     数据源: 仅 akshare（tushare 无等效接口）
     实时性: 非实时，收盘后约 15:30 更新
     历史查询: 不支持
@@ -867,3 +875,90 @@ async def tool_get_sector_fund_flow(
         except Exception as e:
             logger.warning(f"{name} get_sector_fund_flow 失败: {e}")
     return json.dumps({"error": "所有数据源均失败"}, ensure_ascii=False)
+
+
+# === 规范化命名（canonical names）===
+# 以下为规范命名接口，旧名称已标记废弃，两者等价。
+
+@mcp.tool()
+async def tool_get_stock_capital_flow(symbol: str) -> str:
+    """
+    获取个股资金流向（主力净流入等）。
+
+    数据源: 仅 akshare（tushare 无等效接口）
+    实时性: 盘中实时（T+0），收盘后数据更准确
+    历史查询: 不支持
+
+    Args:
+        symbol: 股票代码，如 "000001"
+
+    Returns:
+        JSON 列表，包含 date、net_inflow(净流入)、main_net_inflow(主力净流入)、super_large_net_inflow(超大单净流入)
+    """
+    return await tool_get_fund_flow(symbol)
+
+
+@mcp.tool()
+async def tool_get_market_stats_daily() -> str:
+    """
+    获取当日市场涨跌家数、总成交额等统计信息。
+
+    数据源: 仅 akshare（tushare 无等效接口）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        无参数
+
+    Returns:
+        JSON 列表，包含 date、up_count、down_count、flat_count、total_amount
+    """
+    return await tool_get_market_stats()
+
+
+@mcp.tool()
+async def tool_get_market_north_capital() -> str:
+    """
+    获取北向资金日频资金流（沪股通+深股通）。
+
+    数据源: 仅 akshare（tushare 无等效接口）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        无参数
+
+    Returns:
+        JSON 列表，每条包含 date(YYYYMMDD)、market(沪股通/深股通)、
+        direction(北向/南向)、net_buy(成交净买额元)、net_inflow(资金净流入元)、
+        balance(当日资金余额元)、up_count、flat_count、down_count
+    """
+    return await tool_get_north_flow()
+
+
+@mcp.tool()
+async def tool_get_sector_capital_flow(
+    indicator: str = "今日",
+    sector_type: str = "行业资金流",
+) -> str:
+    """
+    获取行业/概念/地域板块资金流排名（主/超大单/大单/中单/小单净流入）。
+
+    数据源: 仅 akshare（tushare 无等效接口）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        indicator: choice of {"今日", "3日", "5日", "10日"}
+        sector_type: choice of {"行业资金流", "概念资金流", "地域资金流", "沪股通", "深股通"}
+
+    Returns:
+        JSON 列表，每条包含：rank、name、pct_change(涨跌幅%)、
+        main_net_inflow/main_net_inflow_pct(主力净流入元/%)、
+        super_large_net_inflow/super_large_net_inflow_pct(超大单%)、
+        large_net_inflow/large_net_inflow_pct(大单%)、
+        medium_net_inflow/medium_net_inflow_pct(中单%)、
+        small_net_inflow/small_net_inflow_pct(小单%)、
+        top_stock(资金流入最多股票)
+    """
+    return await tool_get_sector_fund_flow(indicator=indicator, sector_type=sector_type)
