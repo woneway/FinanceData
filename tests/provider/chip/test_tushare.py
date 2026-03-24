@@ -37,7 +37,7 @@ def test_get_chip_distribution_fields(mock_pro, mock_cyq_df):
     row = result.data[0]
     assert row["symbol"] == "000001"
     assert row["avg_cost"] == 11.8
-    assert row["profit_ratio"] == 55.3
+    assert row["cost_profit_ratio"] == 55.3
     assert row["cost_90"] == 14.2
     assert row["cost_10"] == 8.5
     assert row["concentration"] is None

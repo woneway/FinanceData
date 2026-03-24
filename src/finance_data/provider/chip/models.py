@@ -15,5 +15,5 @@ class ChipDistribution:
     def to_dict(self) -> Dict[str, Any]:
         return {"symbol": self.symbol, "date": self.date,
                 "avg_cost": self.avg_cost, "concentration": self.concentration,
-                "profit_ratio": self.profit_ratio,
+                "cost_profit_ratio": self.profit_ratio,
                 "cost_90": self.cost_90, "cost_10": self.cost_10}

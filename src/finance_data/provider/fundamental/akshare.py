@@ -137,8 +137,10 @@ def get_earnings_forecast(symbol: str) -> DataResult:
                 symbol=symbol,
                 period=quarter,
                 forecast_type=str(r.get("预告类型", "")),
-                change_low=_opt(r.get("业绩变动幅度")),
-                change_high=_opt(r.get("业绩变动幅度")),
+                net_profit_min=_opt(r.get("预计净利润-下限")),
+                net_profit_max=_opt(r.get("预计净利润-上限")),
+                change_low=_opt(r.get("预计净利润变动幅度-下限") or r.get("业绩变动幅度")),
+                change_high=_opt(r.get("预计净利润变动幅度-上限") or r.get("业绩变动幅度")),
                 summary=str(r.get("业绩变动原因", "")),
             ).to_dict() for _, r in filtered.iterrows()]
             return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "symbol": symbol})

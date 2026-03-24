@@ -70,6 +70,9 @@ def get_sector_fund_flow(
         raise DataFetchError("akshare", "stock_sector_fund_flow_rank",
                              f"无数据: indicator={indicator}, sector_type={sector_type}", "data")
 
+    # akshare 列名前缀："今日" 对应 indicator="今日"，其余直接用 indicator 值（"3日"/"5日"/"10日"）
+    p = "今日" if indicator == "今日" else indicator
+
     rows = []
     for _, row in df.iterrows():
         name = str(row.get("名称", "") or "")
@@ -78,18 +81,18 @@ def get_sector_fund_flow(
         rows.append(SectorFundFlow(
             rank=int(row.get("序号", 0) or 0),
             name=name,
-            pct_change=_safe_float(row.get("今日涨跌幅" if indicator == "今日" else f"{indicator}涨跌幅", 0)),
-            main_net_inflow=_safe_float(row.get("今日主力净流入-净额", 0)),
-            main_net_inflow_pct=_safe_float(row.get("今日主力净流入-净占比", 0)),
-            super_large_net_inflow=_safe_float(row.get("今日超大单净流入-净额", 0)),
-            super_large_net_inflow_pct=_safe_float(row.get("今日超大单净流入-净占比", 0)),
-            large_net_inflow=_safe_float(row.get("今日大单净流入-净额", 0)),
-            large_net_inflow_pct=_safe_float(row.get("今日大单净流入-净占比", 0)),
-            medium_net_inflow=_safe_float(row.get("今日中单净流入-净额", 0)),
-            medium_net_inflow_pct=_safe_float(row.get("今日中单净流入-净占比", 0)),
-            small_net_inflow=_safe_float(row.get("今日小单净流入-净额", 0)),
-            small_net_inflow_pct=_safe_float(row.get("今日小单净流入-净占比", 0)),
-            top_stock=str(row.get("今日主力净流入最大股", "") or ""),
+            pct_change=_safe_float(row.get(f"{p}涨跌幅", 0)),
+            main_net_inflow=_safe_float(row.get(f"{p}主力净流入-净额", 0)),
+            main_net_inflow_pct=_safe_float(row.get(f"{p}主力净流入-净占比", 0)),
+            super_large_net_inflow=_safe_float(row.get(f"{p}超大单净流入-净额", 0)),
+            super_large_net_inflow_pct=_safe_float(row.get(f"{p}超大单净流入-净占比", 0)),
+            large_net_inflow=_safe_float(row.get(f"{p}大单净流入-净额", 0)),
+            large_net_inflow_pct=_safe_float(row.get(f"{p}大单净流入-净占比", 0)),
+            medium_net_inflow=_safe_float(row.get(f"{p}中单净流入-净额", 0)),
+            medium_net_inflow_pct=_safe_float(row.get(f"{p}中单净流入-净占比", 0)),
+            small_net_inflow=_safe_float(row.get(f"{p}小单净流入-净额", 0)),
+            small_net_inflow_pct=_safe_float(row.get(f"{p}小单净流入-净占比", 0)),
+            top_stock=str(row.get(f"{p}主力净流入最大股", "") or ""),
         ).to_dict())
 
     return DataResult(

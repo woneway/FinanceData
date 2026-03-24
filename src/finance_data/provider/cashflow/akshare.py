@@ -45,12 +45,12 @@ def get_fund_flow(symbol: str) -> DataResult:
     rows = [FundFlow(
         symbol=symbol,
         date=str(r.get("日期", "")).replace("-", ""),
-        # A 股资金流向中"净流入" = "主力净流入"（超大单+大单净额），
-        # akshare 未提供独立的总净流入列，两者使用同一数据源。
         net_inflow=float(r.get("主力净流入-净额", 0) or 0),
         net_inflow_pct=float(r.get("主力净流入-净占比", 0) or 0),
-        main_inflow=float(r.get("主力净流入-净额", 0) or 0),
-        main_inflow_pct=float(r.get("主力净流入-净占比", 0) or 0),
+        main_net_inflow=float(r.get("主力净流入-净额", 0) or 0),
+        main_net_inflow_pct=float(r.get("主力净流入-净占比", 0) or 0),
+        super_large_net_inflow=float(r.get("超大单净流入-净额", 0) or 0),
+        super_large_net_inflow_pct=float(r.get("超大单净流入-净占比", 0) or 0),
     ).to_dict() for _, r in df.iterrows()]
 
     return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "symbol": symbol})

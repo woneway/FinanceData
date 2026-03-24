@@ -47,17 +47,20 @@ def get_kline(symbol: str, period: str, start: str, end: str,
     Returns:
         DataResult，data 为 [KlineBar.to_dict(), ...]
     """
+    # akshare 使用 "" 表示不复权，MCP 文档使用 "none"
+    adj_ak = {"qfq": "qfq", "hfq": "hfq", "none": ""}.get(adj, adj)
+
     try:
         with _no_proxy():
             if period in _PERIODS_DAILY:
                 df = ak.stock_zh_a_hist(
                     symbol=symbol, period=period,
-                    start_date=start, end_date=end, adjust=adj,
+                    start_date=start, end_date=end, adjust=adj_ak,
                 )
             elif period in _PERIODS_MIN:
                 df = ak.stock_zh_a_hist_min_em(
                     symbol=symbol, period=_MIN_MAP[period],
-                    start_date=start, end_date=end, adjust=adj,
+                    start_date=start, end_date=end, adjust=adj_ak,
                 )
             else:
                 raise DataFetchError("akshare", "get_kline",

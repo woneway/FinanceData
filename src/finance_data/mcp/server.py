@@ -195,7 +195,6 @@ async def tool_get_index_quote(symbol: str = "000001.SH") -> str:
     数据源: akshare 优先，tushare fallback
     实时性: 盘中实时（T+0）
     历史查询: 不支持
-    缓存: 有（20 分钟）
 
     Args:
         symbol: 指数代码，如 000001.SH（上证）/ 399001.SZ（深证）
@@ -308,7 +307,8 @@ async def tool_get_financial_summary(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，包含 date、revenue(营收)、net_profit(净利润)、roe(净资产收益率)、gross_margin(毛利率)
+        JSON 列表，包含 period(报告期YYYYMMDD)、revenue(营收元)、net_profit(净利润元)、
+        roe(净资产收益率%)、gross_margin(毛利率%)、cash_flow(经营现金流元)
     """
     for name, fn in [("akshare", ak_fin_summary), ("tushare", ts_fin_summary)]:
         try:
@@ -331,7 +331,7 @@ async def tool_get_dividend(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，包含 date、dividend(分红)、bonus_share(送股)、rights_issue(配股)
+        JSON 列表，包含 ex_date(除权除息日)、per_share(每股分红元)、record_date(股权登记日)
     """
     for name, fn in [("akshare", ak_dividend), ("tushare", ts_dividend)]:
         try:
@@ -354,7 +354,9 @@ async def tool_get_earnings_forecast(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，包含 date、forecast_type(预告类型)、net_profit_min/net_profit_max(净利润区间)
+        JSON 列表，包含 period(报告期)、forecast_type(预告类型)、
+        net_profit_min/net_profit_max(预计净利润区间元)、
+        change_low/change_high(变动幅度下限/上限%)、summary(变动原因)
     """
     for name, fn in [("akshare", ak_earnings), ("tushare", ts_earnings)]:
         try:
@@ -379,7 +381,8 @@ async def tool_get_fund_flow(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，包含 date、net_inflow(净流入)、main_net_inflow(主力净流入)、super_large_net_inflow(超大单净流入)
+        JSON 列表，包含 date、net_inflow(主力净流入元)、main_net_inflow(主力净流入元)、
+        super_large_net_inflow(超大单净流入元)、net_inflow_pct/main_net_inflow_pct/super_large_net_inflow_pct(占比%)
     """
     for name, fn in [("akshare", ak_fund_flow), ("tushare", ts_fund_flow)]:
         try:
@@ -405,7 +408,7 @@ async def tool_get_trade_calendar(start: str, end: str) -> str:
     Returns:
         JSON 列表，每条包含 cal_date(YYYYMMDD)、is_open(0/1)、pretrade_date
     """
-    for name, fn in [("akshare", ak_calendar), ("tushare", ts_calendar)]:
+    for name, fn in [("tushare", ts_calendar), ("akshare", ak_calendar)]:
         try:
             return _to_json(fn(start=start, end=end))
         except Exception as e:
@@ -893,7 +896,8 @@ async def tool_get_stock_capital_flow(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，包含 date、net_inflow(净流入)、main_net_inflow(主力净流入)、super_large_net_inflow(超大单净流入)
+        JSON 列表，包含 date、net_inflow(主力净流入元)、main_net_inflow(主力净流入元)、
+        super_large_net_inflow(超大单净流入元)、net_inflow_pct/main_net_inflow_pct/super_large_net_inflow_pct(占比%)
     """
     return await tool_get_fund_flow(symbol)
 

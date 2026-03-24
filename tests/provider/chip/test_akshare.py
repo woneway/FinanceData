@@ -28,7 +28,7 @@ def test_get_chip_distribution_fields(mock_chip_df):
         result = get_chip_distribution("000001")
     row = result.data[0]
     assert row["symbol"] == "000001"
-    assert row["profit_ratio"] == 55.3
+    assert row["cost_profit_ratio"] == 55.3
     assert row["avg_cost"] == 11.8
     assert row["concentration"] == 62.1
 
