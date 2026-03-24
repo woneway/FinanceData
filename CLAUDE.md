@@ -42,7 +42,7 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 3. 在 `src/finance_data/mcp/server.py` 添加 MCP tool
 4. 更新 CLAUDE.md 接口列表
 
-## 当前接口（22 个）
+## 当前接口（27 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -68,6 +68,11 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 | `tool_get_strong_stocks` | pool | 强势股池（60日新高/量比放大），仅 akshare |
 | `tool_get_previous_zt` | pool | 昨日涨停今日数据（低吸检测），仅 akshare |
 | `tool_get_zbgc_pool` | pool | 炸板股池（冲板后开板，低吸补充），仅 akshare |
+| `tool_get_north_flow` | north_flow | 北向资金日频资金流（沪股通+深股通），仅 akshare |
+| `tool_get_north_stock_hold` | north_flow | 北向资金持股明细（akshare 排行/tushare 个股），akshare 优先 |
+| `tool_get_margin` | margin | 融资融券汇总（按交易所），tushare 优先（支持日期范围） |
+| `tool_get_margin_detail` | margin | 融资融券个股明细，tushare 优先（支持日期范围+个股） |
+| `tool_get_sector_fund_flow` | sector_fund_flow | 板块资金流排名（行业/概念/地域/沪股通/深股通），仅 akshare |
 
 ## Provider 优先级
 
