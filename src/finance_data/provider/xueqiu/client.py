@@ -66,23 +66,49 @@ def _fetch_visitor_cookie(session: requests.Session) -> None:
         logger.warning("获取雪球访客 cookie 失败: %s", e)
 
 
+def _find_chrome_cookie_files() -> list[Path]:
+    """查找所有 Chrome Profile 的 Cookies 文件"""
+    chrome_dir = Path.home() / "Library" / "Application Support" / "Google" / "Chrome"
+    if not chrome_dir.exists():
+        return []
+    cookie_files = sorted(chrome_dir.glob("*/Cookies"))
+    return cookie_files
+
+
 def _extract_browser_cookies() -> dict[str, str] | None:
-    """尝试从浏览器提取雪球登录 cookie（Chrome → Safari）"""
+    """尝试从浏览器提取雪球登录 cookie（Chrome 所有 Profile → Safari）"""
     try:
         import browser_cookie3
     except ImportError:
         logger.debug("browser-cookie3 未安装，跳过浏览器 cookie 提取")
         return None
 
-    for fn in [browser_cookie3.chrome, browser_cookie3.safari]:
+    # Chrome: 扫描所有 Profile
+    for cookie_file in _find_chrome_cookie_files():
         try:
-            cj = fn(domain_name=".xueqiu.com")
+            cj = browser_cookie3.chrome(
+                cookie_file=str(cookie_file), domain_name=".xueqiu.com"
+            )
             cookies = {c.name: c.value for c in cj if "xueqiu" in c.domain}
             if cookies and any(k.startswith("xq_") or k == "u" for k in cookies):
-                logger.info("从 %s 提取到 %d 个雪球 cookie", fn.__name__, len(cookies))
+                logger.info(
+                    "从 Chrome(%s) 提取到 %d 个雪球 cookie",
+                    cookie_file.parent.name, len(cookies),
+                )
                 return cookies
         except Exception as e:
-            logger.debug("从 %s 提取 cookie 失败: %s", fn.__name__, e)
+            logger.debug("从 Chrome(%s) 提取 cookie 失败: %s", cookie_file.parent.name, e)
+
+    # Safari fallback
+    try:
+        cj = browser_cookie3.safari(domain_name=".xueqiu.com")
+        cookies = {c.name: c.value for c in cj if "xueqiu" in c.domain}
+        if cookies and any(k.startswith("xq_") or k == "u" for k in cookies):
+            logger.info("从 Safari 提取到 %d 个雪球 cookie", len(cookies))
+            return cookies
+    except Exception as e:
+        logger.debug("从 Safari 提取 cookie 失败: %s", e)
+
     return None
 
 
