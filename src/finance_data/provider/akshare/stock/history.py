@@ -7,6 +7,7 @@ import akshare as ak
 
 from finance_data.interface.stock.history import StockInfo
 from finance_data.interface.types import DataResult, DataFetchError
+from finance_data.provider.symbol import to_xueqiu
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
@@ -27,9 +28,7 @@ def _no_proxy():
 
 
 def _to_xq_symbol(symbol: str) -> str:
-    if symbol.startswith(("SH", "SZ")):
-        return symbol
-    return f"SH{symbol}" if symbol.startswith("6") else f"SZ{symbol}"
+    return to_xueqiu(symbol)
 
 
 def _ms_to_date(ms) -> str:
@@ -85,7 +84,7 @@ class AkshareStockHistory:
             area=_str(rows.get("provincial_name")),
             market="",
             city="",
-            exchange="SSE" if symbol.startswith("6") else "SZSE",
+            exchange="SSE" if to_xueqiu(symbol).startswith("SH") else "SZSE",
             ts_code="",
             full_name=_str(rows.get("org_name_cn")),
             established_date=_ms_to_date(established_ms) if established_ms else "",

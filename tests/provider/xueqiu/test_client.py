@@ -26,6 +26,7 @@ def _reset_session():
 
 class TestSymbolConversion:
     def test_sz_stock(self):
+        # 000xxx → SZ（现有行为兼容）
         assert _to_xueqiu_symbol("000001") == "SZ000001"
 
     def test_sh_stock(self):
@@ -48,7 +49,8 @@ class TestGetSession:
     @patch.dict("os.environ", {}, clear=False)
     @patch("finance_data.provider.xueqiu.client._load_cached_cookie", return_value=None)
     @patch("finance_data.provider.xueqiu.client._fetch_visitor_cookie")
-    def test_visitor_cookie_fetched(self, mock_fetch, mock_cache):
+    @patch("finance_data.provider.xueqiu.client._extract_browser_cookies", return_value=None)
+    def test_visitor_cookie_fetched(self, mock_browser, mock_fetch, mock_cache):
         # 清除 XUEQIU_COOKIE
         import os
         os.environ.pop("XUEQIU_COOKIE", None)
@@ -58,7 +60,8 @@ class TestGetSession:
 
     @patch.dict("os.environ", {}, clear=False)
     @patch("finance_data.provider.xueqiu.client._load_cached_cookie")
-    def test_cached_cookie_used(self, mock_cache):
+    @patch("finance_data.provider.xueqiu.client._extract_browser_cookies", return_value=None)
+    def test_cached_cookie_used(self, mock_browser, mock_cache):
         import os
         os.environ.pop("XUEQIU_COOKIE", None)
         mock_cache.return_value = {
@@ -84,7 +87,9 @@ class TestHasLoginCookie:
         assert has_login_cookie() is True
 
     @patch.dict("os.environ", {}, clear=False)
-    def test_returns_false(self):
+    @patch("finance_data.provider.xueqiu.client._extract_browser_cookies", return_value=None)
+    @patch("finance_data.provider.xueqiu.client._load_cached_cookie", return_value=None)
+    def test_returns_false(self, mock_cache, mock_browser):
         import os
         os.environ.pop("XUEQIU_COOKIE", None)
         assert has_login_cookie() is False

@@ -7,6 +7,7 @@ import requests
 from finance_data.interface.index.history import IndexBar
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.xueqiu.client import get_session, has_login_cookie, refresh_session
+from finance_data.provider.symbol import to_xueqiu_index
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +17,7 @@ _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
 def _to_xueqiu_index(symbol: str) -> str:
     """将指数代码转为雪球格式: 000001.SH → SH000001"""
-    code = symbol.split(".")[0]
-    suffix = symbol.split(".")[-1] if "." in symbol else ("SH" if code.startswith("0") else "SZ")
-    return f"{suffix}{code}"
+    return to_xueqiu_index(symbol)
 
 
 def _date_to_ts(date_str: str) -> int:

@@ -24,11 +24,8 @@ _cookie_ts: float = 0.0
 
 def _to_xueqiu_symbol(symbol: str) -> str:
     """将 A 股代码转为雪球格式：000001 → SZ000001，600519 → SH600519"""
-    if symbol.startswith(("SH", "SZ", "sh", "sz")):
-        return symbol.upper()
-    if symbol.startswith("6"):
-        return f"SH{symbol}"
-    return f"SZ{symbol}"
+    from finance_data.provider.symbol import to_xueqiu
+    return to_xueqiu(symbol)
 
 
 def _load_cached_cookie() -> dict | None:

@@ -27,10 +27,8 @@ def _no_proxy():
 
 class AkshareIndexQuote:
     def get_index_quote_realtime(self, symbol: str) -> DataResult:
-        parts = symbol.split(".")
-        pure_code = parts[0]
-        exchange = parts[1].lower() if len(parts) > 1 else ("sh" if pure_code.startswith("0") else "sz")
-        sina_code = f"{exchange}{pure_code}"
+        from finance_data.provider.symbol import to_sina
+        sina_code = to_sina(symbol)
         try:
             with _no_proxy():
                 df = ak.stock_zh_index_spot_sina()

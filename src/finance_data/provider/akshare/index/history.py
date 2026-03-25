@@ -34,9 +34,8 @@ def _parse_date(val) -> str:
 
 class AkshareIndexHistory:
     def get_index_history(self, symbol: str, start: str, end: str) -> DataResult:
-        code = symbol.split(".")[0]
-        prefix = "sh" if symbol.endswith(".SH") else "sz"
-        tx_symbol = f"{prefix}{code}"
+        from finance_data.provider.symbol import to_tencent
+        tx_symbol = to_tencent(symbol)
 
         try:
             with _no_proxy():

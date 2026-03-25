@@ -38,9 +38,8 @@ def _parse_date(val) -> str:
 
 def _symbol_to_tx(symbol: str) -> str:
     """纯数字 symbol 转腾讯格式: 6开头 -> sh, 其余 -> sz"""
-    code = symbol.lstrip("shSHszSZ").zfill(6)
-    prefix = "sh" if code.startswith("6") else "sz"
-    return f"{prefix}{code}"
+    from finance_data.provider.symbol import to_tencent
+    return to_tencent(symbol)
 
 
 def _prev_days(date_str: str, days: int = 5) -> str:

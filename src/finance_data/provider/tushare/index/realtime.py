@@ -10,9 +10,10 @@ _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
 class TushareIndexQuote:
     def get_index_quote_realtime(self, symbol: str) -> DataResult:
+        from finance_data.provider.symbol import to_tushare
         pro = get_pro()
         try:
-            df = pro.index_daily(ts_code=symbol, limit=1)
+            df = pro.index_daily(ts_code=to_tushare(symbol), limit=1)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "index_daily", str(e), "network") from e
         except Exception as e:

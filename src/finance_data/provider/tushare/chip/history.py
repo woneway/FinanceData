@@ -7,9 +7,8 @@ _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
 
 def _ts_code(symbol: str) -> str:
-    if "." in symbol:
-        return symbol
-    return f"{symbol}.SH" if symbol.startswith("6") else f"{symbol}.SZ"
+    from finance_data.provider.symbol import to_tushare
+    return to_tushare(symbol)
 
 
 class TushareChipHistory:

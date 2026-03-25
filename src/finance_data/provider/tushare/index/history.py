@@ -8,9 +8,10 @@ _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
 class TushareIndexHistory:
     def get_index_history(self, symbol: str, start: str, end: str) -> DataResult:
+        from finance_data.provider.symbol import to_tushare
         pro = get_pro()
         try:
-            df = pro.index_daily(ts_code=symbol, start_date=start, end_date=end)
+            df = pro.index_daily(ts_code=to_tushare(symbol), start_date=start, end_date=end)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "index_daily", str(e), "network") from e
         except Exception as e:

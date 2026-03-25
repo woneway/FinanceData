@@ -7,31 +7,17 @@ import requests
 from finance_data.interface.index.realtime import IndexQuote
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.xueqiu.client import get_session, refresh_session
+from finance_data.provider.symbol import to_xueqiu_index
 
 logger = logging.getLogger(__name__)
 
 _QUOTEC_URL = "https://stock.xueqiu.com/v5/stock/realtime/quotec.json"
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
-# 指数代码映射：000001.SH → SH000001
-_INDEX_MAP = {
-    "000001.SH": "SH000001",  # 上证指数
-    "399001.SZ": "SZ399001",  # 深证成指
-    "399006.SZ": "SZ399006",  # 创业板指
-    "000300.SH": "SH000300",  # 沪深300
-    "000016.SH": "SH000016",  # 上证50
-    "000905.SH": "SH000905",  # 中证500
-    "000852.SH": "SH000852",  # 中证1000
-}
-
 
 def _to_xueqiu_index(symbol: str) -> str:
     """将指数代码转为雪球格式"""
-    if symbol in _INDEX_MAP:
-        return _INDEX_MAP[symbol]
-    code = symbol.split(".")[0]
-    suffix = symbol.split(".")[-1] if "." in symbol else ("SH" if code.startswith("0") else "SZ")
-    return f"{suffix}{code}"
+    return to_xueqiu_index(symbol)
 
 
 class XueqiuIndexQuote:
