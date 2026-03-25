@@ -370,7 +370,10 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source=DataSource.BOTH,
         source_priority="akshare",
         api_name="stock_hsgt_hold_stock_em",
-        limitations=["tushare hk_hold 自2024年8月20日起改为季度披露"],
+        limitations=[
+            "tushare hk_hold 自2024年8月20日起改为季度披露",
+            "tushare close_price/pct_change/hold_market_cap/hold_total_ratio 为 0",
+        ],
         return_fields=["symbol", "name", "date", "hold_volume", "hold_market_cap"],
     ),
 
@@ -388,6 +391,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source=DataSource.BOTH,
         source_priority="tushare",
         api_name="margin",
+        limitations=["akshare SSE rzche 始终为 0（数据源不提供融资偿还额）"],
         return_fields=["date", "exchange", "rzye", "rzmre", "rqye", "rzrqye"],
     ),
 
@@ -404,6 +408,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source=DataSource.BOTH,
         source_priority="tushare",
         api_name="margin_detail",
+        limitations=["akshare 仅 SSE，rqye/rqyl/rqchl/rzrqye 为 0（不含融券数据）"],
         return_fields=["date", "symbol", "name", "rzye", "rqye", "rzmre", "rqyl"],
     ),
 
