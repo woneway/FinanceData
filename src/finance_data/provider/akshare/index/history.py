@@ -65,10 +65,10 @@ class AkshareIndexHistory:
             open_ = float(row.get("open", 0))
             high = float(row.get("high", 0))
             low = float(row.get("low", 0))
-            amount = float(row.get("amount", 0))
+            amount = float(row.get("amount", 0)) * 10000  # 万元→元
             # 从成交额估算成交量
             avg = (open_ + high + low + close) / 4
-            volume = round(amount * 10000 / avg) if avg > 0 else 0.0
+            volume = round(amount / avg) if avg > 0 else 0.0
 
             bars.append(IndexBar(
                 symbol=symbol,
