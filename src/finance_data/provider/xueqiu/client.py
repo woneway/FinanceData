@@ -66,6 +66,26 @@ def _fetch_visitor_cookie(session: requests.Session) -> None:
         logger.warning("获取雪球访客 cookie 失败: %s", e)
 
 
+def _extract_browser_cookies() -> dict[str, str] | None:
+    """尝试从浏览器提取雪球登录 cookie（Chrome → Safari）"""
+    try:
+        import browser_cookie3
+    except ImportError:
+        logger.debug("browser-cookie3 未安装，跳过浏览器 cookie 提取")
+        return None
+
+    for fn in [browser_cookie3.chrome, browser_cookie3.safari]:
+        try:
+            cj = fn(domain_name=".xueqiu.com")
+            cookies = {c.name: c.value for c in cj if "xueqiu" in c.domain}
+            if cookies and any(k.startswith("xq_") or k == "u" for k in cookies):
+                logger.info("从 %s 提取到 %d 个雪球 cookie", fn.__name__, len(cookies))
+                return cookies
+        except Exception as e:
+            logger.debug("从 %s 提取 cookie 失败: %s", fn.__name__, e)
+    return None
+
+
 def _build_session() -> requests.Session:
     """创建并初始化 session"""
     s = requests.Session()
@@ -78,7 +98,7 @@ def _build_session() -> requests.Session:
         "Referer": "https://xueqiu.com/",
     })
 
-    # 优先使用环境变量注入的登录 cookie
+    # Tier 1: 环境变量
     env_cookie = os.environ.get("XUEQIU_COOKIE", "")
     if env_cookie:
         for item in env_cookie.split(";"):
@@ -88,14 +108,22 @@ def _build_session() -> requests.Session:
                 s.cookies.set(k.strip(), v.strip())
         return s
 
-    # 尝试加载文件缓存
+    # Tier 2: 浏览器自动提取
+    browser_cookies = _extract_browser_cookies()
+    if browser_cookies:
+        for k, v in browser_cookies.items():
+            s.cookies.set(k, v)
+        _save_cookie_cache(browser_cookies)
+        return s
+
+    # Tier 3: 文件缓存
     cached = _load_cached_cookie()
     if cached and cached.get("cookies"):
         for k, v in cached["cookies"].items():
             s.cookies.set(k, v)
         return s
 
-    # 获取访客 cookie
+    # Tier 4: 访客 cookie
     _fetch_visitor_cookie(s)
     return s
 
@@ -121,5 +149,14 @@ def refresh_session() -> requests.Session:
 
 
 def has_login_cookie() -> bool:
-    """检查是否配置了登录 cookie（K线等需要认证的接口使用）"""
-    return bool(os.environ.get("XUEQIU_COOKIE", ""))
+    """检查是否有登录 cookie（env / 文件缓存 / 浏览器提取）"""
+    if os.environ.get("XUEQIU_COOKIE", ""):
+        return True
+    cached = _load_cached_cookie()
+    if cached and cached.get("cookies"):
+        cookies = cached["cookies"]
+        if any(k.startswith("xq_") or k == "u" for k in cookies):
+            return True
+    if _extract_browser_cookies():
+        return True
+    return False

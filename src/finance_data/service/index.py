@@ -7,6 +7,7 @@ from finance_data.interface.index.history import IndexHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.akshare.index.realtime import AkshareIndexQuote
 from finance_data.provider.akshare.index.history import AkshareIndexHistory
+from finance_data.provider.xueqiu.client import has_login_cookie
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ def _build_index_history() -> _IndexHistoryDispatcher:
         from finance_data.provider.tushare.index.history import TushareIndexHistory
         providers.append(TushareIndexHistory())
     # 雪球指数 K 线需要登录 cookie
-    if os.getenv("XUEQIU_COOKIE"):
+    if has_login_cookie():
         from finance_data.provider.xueqiu.index.history import XueqiuIndexHistory
         providers.append(XueqiuIndexHistory())
     return _IndexHistoryDispatcher(providers=providers)

@@ -5,6 +5,7 @@ import os
 from finance_data.interface.kline.history import KlineHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.akshare.kline.history import AkshareKlineHistory
+from finance_data.provider.xueqiu.client import has_login_cookie
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +29,8 @@ def _build_kline_history() -> _KlineHistoryDispatcher:
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.kline.history import TushareKlineHistory
         providers.append(TushareKlineHistory())
-    # 雪球 K 线需要登录 cookie，仅当配置了 XUEQIU_COOKIE 时启用
-    if os.getenv("XUEQIU_COOKIE"):
+    # 雪球 K 线需要登录 cookie
+    if has_login_cookie():
         from finance_data.provider.xueqiu.kline.history import XueqiuKlineHistory
         providers.append(XueqiuKlineHistory())
     return _KlineHistoryDispatcher(providers=providers)

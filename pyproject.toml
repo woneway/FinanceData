@@ -21,6 +21,7 @@ dev = [
     "pytest>=7.0.0",
     "pytest-mock>=3.0.0",
 ]
+browser = ["browser-cookie3>=0.11.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/finance_data"]
