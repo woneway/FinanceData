@@ -17,7 +17,7 @@ def test_tushare_realtime_timestamp_has_timezone():
         result = TushareRealtimeQuote().get_realtime_quote("000001")
 
     ts = result.data[0]["timestamp"]
-    assert "+08:00" in ts, f"timestamp 应含时区 +08:00，got: {ts}"
+    assert "+08:00" in ts, f"tushare realtime timestamp 应含时区 +08:00，got: {ts}"
 
 
 def test_tushare_index_timestamp_has_timezone():
@@ -34,4 +34,38 @@ def test_tushare_index_timestamp_has_timezone():
         result = TushareIndexQuote().get_index_quote_realtime("000001.SH")
 
     ts = result.data[0]["timestamp"]
-    assert "+08:00" in ts, f"timestamp 应含时区 +08:00，got: {ts}"
+    assert "+08:00" in ts, f"tushare index timestamp 应含时区 +08:00，got: {ts}"
+
+
+def test_akshare_realtime_timestamp_has_timezone():
+    from finance_data.provider.akshare.realtime.realtime import AkshareRealtimeQuote
+
+    mock_df = pd.DataFrame([{
+        "代码": "000001", "名称": "平安银行",
+        "最新价": 10.5, "涨跌幅": 1.2,
+        "成交量": 50000, "成交额": 525000,
+    }])
+
+    with patch("finance_data.provider.akshare.realtime.realtime.ak") as mock_ak:
+        mock_ak.stock_zh_a_spot.return_value = mock_df
+        result = AkshareRealtimeQuote().get_realtime_quote("000001")
+
+    ts = result.data[0]["timestamp"]
+    assert "+08:00" in ts, f"akshare realtime timestamp 应含时区 +08:00，got: {ts}"
+
+
+def test_akshare_index_realtime_timestamp_has_timezone():
+    from finance_data.provider.akshare.index.realtime import AkshareIndexQuote
+
+    mock_df = pd.DataFrame([{
+        "代码": "sh000001", "名称": "上证指数",
+        "最新价": 3200.0, "涨跌幅": 0.5,
+        "成交量": 1e9, "成交额": 3.2e12,
+    }])
+
+    with patch("finance_data.provider.akshare.index.realtime.ak") as mock_ak:
+        mock_ak.stock_zh_index_spot_sina.return_value = mock_df
+        result = AkshareIndexQuote().get_index_quote_realtime("000001.SH")
+
+    ts = result.data[0]["timestamp"]
+    assert "+08:00" in ts, f"akshare index timestamp 应含时区 +08:00，got: {ts}"

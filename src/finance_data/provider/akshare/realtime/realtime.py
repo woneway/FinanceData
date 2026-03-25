@@ -60,7 +60,9 @@ class AkshareRealtimeQuote:
             pe=None,          # 新浪源不含市盈率
             pb=None,          # 新浪源不含市净率
             turnover_rate=None,  # 新浪源不含换手率
-            timestamp=datetime.datetime.now().isoformat(timespec="seconds"),
+            timestamp=datetime.datetime.now(
+                tz=datetime.timezone(datetime.timedelta(hours=8))
+            ).isoformat(timespec="seconds"),
         )
         return DataResult(
             data=[quote.to_dict()], source="akshare",

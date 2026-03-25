@@ -77,7 +77,7 @@ def _build_bars_from_tx(df, symbol: str, period: str, adj: str, start: str) -> l
                 symbol=symbol, date=_parse_date(row.get("date", "")),
                 period=period,
                 open=open_, high=high, low=low, close=close,
-                volume=volume, amount=amount,
+                volume=volume, amount=amount * 10000,  # 万元→元
                 pct_chg=pct_chg, adj=adj,
             ).to_dict(),
         ))
