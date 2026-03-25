@@ -53,7 +53,7 @@ class TushareKlineHistory:
                 symbol=symbol, date=s if s.isdigit() else "", period=period,
                 open=float(row.get("open", 0)), high=float(row.get("high", 0)),
                 low=float(row.get("low", 0)), close=float(row.get("close", 0)),
-                volume=float(row.get("vol", 0)),
+                volume=float(row.get("vol", 0)) * 100,
                 amount=float(row.get("amount", 0)) * 1000,
                 pct_chg=float(row.get("pct_chg", 0)), adj=adj,
             ).to_dict())
