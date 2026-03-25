@@ -64,7 +64,7 @@ class XueqiuIndexQuote:
 
         quote = IndexQuote(
             symbol=symbol,
-            name=str(data.get("symbol", "")),
+            name=str(data.get("name", "")),
             price=float(data.get("current", 0) or 0),
             pct_chg=float(data.get("percent", 0) or 0),
             volume=float(data.get("volume", 0) or 0),

@@ -94,7 +94,7 @@ class XueqiuRealtimeQuote:
 
         return RealtimeQuote(
             symbol=symbol,
-            name=str(d.get("symbol", "")),
+            name=str(d.get("name", "")),
             price=float(d.get("current", 0) or 0),
             pct_chg=float(d.get("percent", 0) or 0),
             volume=float(d.get("volume", 0) or 0),
