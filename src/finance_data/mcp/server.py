@@ -1,6 +1,7 @@
 """
 MCP 接入层 - 薄封装，不含业务逻辑
 """
+import datetime
 import json
 import logging
 
@@ -62,7 +63,7 @@ async def tool_get_kline_history(
     symbol: str,
     period: str = "daily",
     start: str = "20240101",
-    end: str = "20241231",
+    end: str = "",
     adj: str = "qfq",
 ) -> str:
     """
@@ -76,12 +77,14 @@ async def tool_get_kline_history(
         symbol: 股票代码，如 "000001"
         period: daily/weekly/monthly/1min/5min/15min/30min/60min
         start: 开始日期 YYYYMMDD
-        end: 结束日期 YYYYMMDD
+        end: 结束日期 YYYYMMDD（默认当天）
         adj: qfq（前复权）/ hfq（后复权）/ none
 
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume、amount
     """
+    if not end:
+        end = datetime.date.today().strftime("%Y%m%d")
     try:
         result = kline_history.get_kline_history(symbol, period=period, start=start, end=end, adj=adj)
         return _to_json(result)
@@ -138,7 +141,7 @@ async def tool_get_index_quote_realtime(symbol: str = "000001.SH") -> str:
 async def tool_get_index_history(
     symbol: str = "000001.SH",
     start: str = "20240101",
-    end: str = "20241231",
+    end: str = "",
 ) -> str:
     """
     获取大盘指数历史 K线。
@@ -150,11 +153,13 @@ async def tool_get_index_history(
     Args:
         symbol: 指数代码，如 000001.SH（上证）/ 399001.SZ（深证）
         start: 开始日期 YYYYMMDD
-        end: 结束日期 YYYYMMDD
+        end: 结束日期 YYYYMMDD（默认当天）
 
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume
     """
+    if not end:
+        end = datetime.date.today().strftime("%Y%m%d")
     try:
         result = index_history.get_index_history(symbol, start=start, end=end)
         return _to_json(result)
