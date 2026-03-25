@@ -47,7 +47,9 @@ class TushareRealtimeQuote:
             volume=float(row.get("vol", 0)) * 100,
             amount=float(row.get("amount", 0)) * 1000,
             market_cap=None, pe=None, pb=None, turnover_rate=None,
-            timestamp=datetime.datetime.now().isoformat(timespec="seconds"),
+            timestamp=datetime.datetime.now(
+                tz=datetime.timezone(datetime.timedelta(hours=8))
+            ).isoformat(timespec="seconds"),
         )
         return DataResult(
             data=[quote.to_dict()], source="tushare",

@@ -30,7 +30,9 @@ class TushareIndexQuote:
             pct_chg=float(row.get("pct_chg", 0)),
             volume=float(row.get("vol", 0)) * 100,
             amount=float(row.get("amount", 0)) * 1000,
-            timestamp=datetime.datetime.now().isoformat(timespec="seconds"),
+            timestamp=datetime.datetime.now(
+                tz=datetime.timezone(datetime.timedelta(hours=8))
+            ).isoformat(timespec="seconds"),
         )
         return DataResult(data=[quote.to_dict()], source="tushare",
                           meta={"rows": 1, "symbol": symbol})
