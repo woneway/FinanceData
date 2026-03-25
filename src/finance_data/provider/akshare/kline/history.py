@@ -1,4 +1,4 @@
-"""K线历史数据 - akshare 实现"""
+"""K线历史数据 - akshare 实现（腾讯源优先）"""
 import contextlib
 import datetime
 import logging
@@ -100,60 +100,35 @@ class AkshareKlineHistory:
 
     def _get_daily(self, symbol: str, period: str, start: str, end: str,
                    adj: str, adj_ak: str) -> DataResult:
-        # 1) 尝试东方财富源
-        try:
-            with _no_proxy():
-                df = ak.stock_zh_a_hist(
-                    symbol=symbol, period=period,
-                    start_date=start, end_date=end, adjust=adj_ak,
-                )
-            if df is not None and not df.empty:
-                bars = []
-                for _, row in df.iterrows():
-                    bars.append(KlineBar(
-                        symbol=symbol, date=_parse_date(row.get("日期", "")),
-                        period=period,
-                        open=float(row.get("开盘", 0)), high=float(row.get("最高", 0)),
-                        low=float(row.get("最低", 0)), close=float(row.get("收盘", 0)),
-                        volume=float(row.get("成交量", 0)), amount=float(row.get("成交额", 0)),
-                        pct_chg=float(row.get("涨跌幅", 0)), adj=adj,
-                    ).to_dict())
-                return DataResult(data=bars, source="akshare",
-                                  meta={"rows": len(bars), "symbol": symbol,
-                                        "period": period, "upstream": "eastmoney"})
-        except DataFetchError:
-            raise
-        except Exception as em_err:
-            logger.info("eastmoney 源失败，尝试腾讯源: %s", em_err)
+        # 腾讯源（仅 daily）
+        if period == "daily":
+            try:
+                fetch_start = _prev_days(start, days=5)
+                with _no_proxy():
+                    df = ak.stock_zh_a_hist_tx(
+                        symbol=_symbol_to_tx(symbol),
+                        start_date=fetch_start, end_date=end, adjust=adj_ak,
+                    )
+                if df is not None and not df.empty:
+                    bars = _build_bars_from_tx(df, symbol, period, adj, start)
+                    if bars:
+                        return DataResult(data=bars, source="akshare",
+                                          meta={"rows": len(bars), "symbol": symbol,
+                                                "period": period, "upstream": "tencent"})
+            except DataFetchError:
+                raise
+            except _NETWORK_ERRORS as e:
+                raise DataFetchError("akshare", "get_kline_history", str(e), "network") from e
+            except Exception as tx_err:
+                logger.info("腾讯源失败: %s", tx_err)
 
-        # 2) fallback 腾讯源（仅日线）
-        if period != "daily":
-            raise DataFetchError("akshare", "get_kline_history",
-                                 f"腾讯源不支持 {period}，仅支持 daily", "data")
-        try:
-            # 多取 5 天用于计算首条 pct_chg，之后按 start 截断
-            fetch_start = _prev_days(start, days=5)
-            with _no_proxy():
-                df = ak.stock_zh_a_hist_tx(
-                    symbol=_symbol_to_tx(symbol),
-                    start_date=fetch_start, end_date=end, adjust=adj_ak,
-                )
-        except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "get_kline_history", str(e), "network") from e
-        except Exception as e:
-            raise DataFetchError("akshare", "get_kline_history", str(e), "data") from e
-
-        if df is None or df.empty:
-            raise DataFetchError("akshare", "get_kline_history",
-                                 f"无数据: {symbol} {period} {start}-{end}", "data")
-
-        bars = _build_bars_from_tx(df, symbol, period, adj, start)
-        return DataResult(data=bars, source="akshare",
-                          meta={"rows": len(bars), "symbol": symbol,
-                                "period": period, "upstream": "tencent"})
+        # weekly/monthly 无腾讯源替代，直接报错
+        raise DataFetchError("akshare", "get_kline_history",
+                             f"无可用数据源: {symbol} {period} {start}-{end}", "data")
 
     def _get_minute(self, symbol: str, period: str, start: str, end: str,
                     adj: str, adj_ak: str) -> DataResult:
+        # 分钟线仍使用 eastmoney（无替代），失败后由 service 层 fallback 到 tushare
         try:
             with _no_proxy():
                 df = ak.stock_zh_a_hist_min_em(

@@ -1,4 +1,5 @@
-from finance_data.provider.index.models import IndexQuote, IndexBar
+from finance_data.interface.index.realtime import IndexQuote
+from finance_data.interface.index.history import IndexBar
 
 
 def test_index_quote_to_dict_keys():

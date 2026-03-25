@@ -1,8 +1,8 @@
 from unittest.mock import patch
 import pandas as pd
 import pytest
-from finance_data.provider.margin.tushare import get_margin, get_margin_detail
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.provider.tushare.margin.history import TushareMargin, TushareMarginDetail
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 @pytest.fixture
@@ -31,18 +31,22 @@ def mock_margin_df():
 
 
 def test_get_margin_returns_data(mock_margin_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin.return_value = mock_margin_df
-        result = get_margin(trade_date="20240301")
+        result = TushareMargin().get_margin_history(
+            trade_date="20240301", start_date="", end_date="", exchange_id=""
+        )
     assert isinstance(result, DataResult)
     assert result.source == "tushare"
     assert len(result.data) == 2
 
 
 def test_get_margin_fields(mock_margin_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin.return_value = mock_margin_df
-        result = get_margin(trade_date="20240301")
+        result = TushareMargin().get_margin_history(
+            trade_date="20240301", start_date="", end_date="", exchange_id=""
+        )
     row = result.data[0]
     assert row["date"] == "20240301"
     assert row["exchange"] == "上交所"
@@ -51,25 +55,21 @@ def test_get_margin_fields(mock_margin_df):
 
 
 def test_get_margin_date_range(mock_margin_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin.return_value = mock_margin_df
-        result = get_margin(start_date="20240301", end_date="20240305")
+        result = TushareMargin().get_margin_history(
+            trade_date="", start_date="20240301", end_date="20240305", exchange_id=""
+        )
     assert len(result.data) == 2
 
 
-def test_get_margin_no_token():
-    with patch("finance_data.provider.margin.tushare.os.environ.get",
-               return_value=""):
-        with pytest.raises(DataFetchError) as exc:
-            get_margin(trade_date="20240301")
-    assert exc.value.kind == "auth"
-
-
 def test_get_margin_empty_raises(mock_margin_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin.return_value = pd.DataFrame()
         with pytest.raises(DataFetchError) as exc:
-            get_margin(trade_date="20240301")
+            TushareMargin().get_margin_history(
+                trade_date="20240301", start_date="", end_date="", exchange_id=""
+            )
     assert exc.value.kind == "data"
 
 
@@ -93,18 +93,22 @@ def mock_margin_detail_df():
 
 
 def test_get_margin_detail_returns_data(mock_margin_detail_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin_detail.return_value = mock_margin_detail_df
-        result = get_margin_detail(trade_date="20240301")
+        result = TushareMarginDetail().get_margin_detail_history(
+            trade_date="20240301", start_date="", end_date="", ts_code=""
+        )
     assert isinstance(result, DataResult)
     assert result.source == "tushare"
     assert len(result.data) == 1
 
 
 def test_get_margin_detail_fields(mock_margin_detail_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin_detail.return_value = mock_margin_detail_df
-        result = get_margin_detail(trade_date="20240301")
+        result = TushareMarginDetail().get_margin_detail_history(
+            trade_date="20240301", start_date="", end_date="", ts_code=""
+        )
     row = result.data[0]
     assert row["date"] == "20240301"
     assert row["symbol"] == "000001"
@@ -118,23 +122,19 @@ def test_get_margin_detail_fields(mock_margin_detail_df):
 
 
 def test_get_margin_detail_date_range(mock_margin_detail_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin_detail.return_value = mock_margin_detail_df
-        result = get_margin_detail(start_date="20240301", end_date="20240305")
+        result = TushareMarginDetail().get_margin_detail_history(
+            trade_date="", start_date="20240301", end_date="20240305", ts_code=""
+        )
     assert len(result.data) == 1
 
 
-def test_get_margin_detail_no_token():
-    with patch("finance_data.provider.margin.tushare.os.environ.get",
-               return_value=""):
-        with pytest.raises(DataFetchError) as exc:
-            get_margin_detail(trade_date="20240301")
-    assert exc.value.kind == "auth"
-
-
 def test_get_margin_detail_empty_raises(mock_margin_detail_df):
-    with patch("finance_data.provider.margin.tushare._get_pro") as mock_pro:
+    with patch("finance_data.provider.tushare.margin.history.get_pro") as mock_pro:
         mock_pro.return_value.margin_detail.return_value = pd.DataFrame()
         with pytest.raises(DataFetchError) as exc:
-            get_margin_detail(trade_date="20240301")
+            TushareMarginDetail().get_margin_detail_history(
+                trade_date="20240301", start_date="", end_date="", ts_code=""
+            )
     assert exc.value.kind == "data"

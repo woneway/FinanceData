@@ -4,14 +4,14 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from finance_data.provider.lhb.akshare import (
-    get_lhb_detail,
-    get_lhb_stock_stat,
-    get_lhb_active_traders,
-    get_lhb_trader_stat,
-    get_lhb_stock_detail,
+from finance_data.provider.akshare.lhb.history import (
+    AkshareLhbDetail,
+    AkshareLhbStockStat,
+    AkshareLhbActiveTraders,
+    AkshareLhbTraderStat,
+    AkshareLhbStockDetail,
 )
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
@@ -103,9 +103,9 @@ def lhb_stock_detail_sell_df():
 # ── get_lhb_detail ────────────────────────────────────────────────────────────
 
 def test_get_lhb_detail_returns_data_result(lhb_detail_df):
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_detail_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_detail_em",
                return_value=lhb_detail_df):
-        result = get_lhb_detail("20240320", "20240320")
+        result = AkshareLhbDetail().get_lhb_detail_history("20240320", "20240320")
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
     assert len(result.data) == 1
@@ -116,27 +116,27 @@ def test_get_lhb_detail_returns_data_result(lhb_detail_df):
 
 
 def test_get_lhb_detail_empty_raises():
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_detail_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_detail_em",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError) as exc:
-            get_lhb_detail("20240101", "20240101")
+            AkshareLhbDetail().get_lhb_detail_history("20240101", "20240101")
     assert exc.value.kind == "data"
 
 
 def test_get_lhb_detail_network_error():
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_detail_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_detail_em",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_lhb_detail("20240320", "20240320")
+            AkshareLhbDetail().get_lhb_detail_history("20240320", "20240320")
     assert exc.value.kind == "network"
 
 
 # ── get_lhb_stock_stat ────────────────────────────────────────────────────────
 
 def test_get_lhb_stock_stat_returns_data_result(lhb_stock_stat_df):
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_stock_statistic_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_statistic_em",
                return_value=lhb_stock_stat_df):
-        result = get_lhb_stock_stat("近一月")
+        result = AkshareLhbStockStat().get_lhb_stock_stat_history("近一月")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["symbol"] == "000001"
@@ -145,15 +145,15 @@ def test_get_lhb_stock_stat_returns_data_result(lhb_stock_stat_df):
 
 
 def test_get_lhb_stock_stat_empty_raises():
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_stock_statistic_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_statistic_em",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
-            get_lhb_stock_stat()
+            AkshareLhbStockStat().get_lhb_stock_stat_history("近一月")
 
 
 def test_get_lhb_stock_stat_invalid_period():
     with pytest.raises(DataFetchError) as exc:
-        get_lhb_stock_stat("近两月")
+        AkshareLhbStockStat().get_lhb_stock_stat_history("近两月")
     assert exc.value.kind == "data"
     assert "period" in exc.value.reason
 
@@ -161,9 +161,9 @@ def test_get_lhb_stock_stat_invalid_period():
 # ── get_lhb_active_traders ────────────────────────────────────────────────────
 
 def test_get_lhb_active_traders_returns_data_result(lhb_active_trader_df):
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_hyyyb_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_hyyyb_em",
                return_value=lhb_active_trader_df):
-        result = get_lhb_active_traders("20240320", "20240320")
+        result = AkshareLhbActiveTraders().get_lhb_active_traders_history("20240320", "20240320")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["branch_name"] == "华宝证券上海东大名路营业部"
@@ -174,25 +174,25 @@ def test_get_lhb_active_traders_returns_data_result(lhb_active_trader_df):
 
 def test_get_lhb_active_traders_nan_stocks(lhb_active_trader_nan_stocks_df):
     """NaN 买入股票字段应返回空字符串，而不是 'nan'。"""
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_hyyyb_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_hyyyb_em",
                return_value=lhb_active_trader_nan_stocks_df):
-        result = get_lhb_active_traders("20240320", "20240320")
+        result = AkshareLhbActiveTraders().get_lhb_active_traders_history("20240320", "20240320")
     assert result.data[0]["stocks"] == ""
 
 
 def test_get_lhb_active_traders_empty_raises():
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_hyyyb_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_hyyyb_em",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
-            get_lhb_active_traders("20240320", "20240320")
+            AkshareLhbActiveTraders().get_lhb_active_traders_history("20240320", "20240320")
 
 
 # ── get_lhb_trader_stat ───────────────────────────────────────────────────────
 
 def test_get_lhb_trader_stat_returns_data_result(lhb_trader_stat_df):
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_traderstatistic_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_traderstatistic_em",
                return_value=lhb_trader_stat_df):
-        result = get_lhb_trader_stat("近一月")
+        result = AkshareLhbTraderStat().get_lhb_trader_stat_history("近一月")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["branch_name"] == "华宝证券上海东大名路营业部"
@@ -201,71 +201,71 @@ def test_get_lhb_trader_stat_returns_data_result(lhb_trader_stat_df):
 
 
 def test_get_lhb_trader_stat_empty_raises():
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_traderstatistic_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_traderstatistic_em",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
-            get_lhb_trader_stat()
+            AkshareLhbTraderStat().get_lhb_trader_stat_history("近一月")
 
 
 def test_get_lhb_trader_stat_invalid_period():
     with pytest.raises(DataFetchError) as exc:
-        get_lhb_trader_stat("近两年")
+        AkshareLhbTraderStat().get_lhb_trader_stat_history("近两年")
     assert exc.value.kind == "data"
 
 
 # ── get_lhb_stock_detail ──────────────────────────────────────────────────────
 
 def test_get_lhb_stock_detail_buy_flag(lhb_stock_detail_buy_df):
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_stock_detail_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_detail_em",
                return_value=lhb_stock_detail_buy_df):
-        result = get_lhb_stock_detail("000001", "20240320", "买入")
+        result = AkshareLhbStockDetail().get_lhb_stock_detail_history("000001", "20240320", "买入")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["symbol"] == "000001"
     assert row["flag"] == "买入"
     assert row["branch_name"] == "华宝证券上海东大名路营业部"
-    assert row["trade_amount"] == 5e6   # 买入方向读"买入金额"列
+    assert row["trade_amount"] == 5e6
     assert row["buy_rate"] == 5.0
     assert row["sell_rate"] == 0.0
 
 
 def test_get_lhb_stock_detail_sell_flag(lhb_stock_detail_sell_df):
     """flag='卖出' 时，trade_amount 应读取'卖出金额'列而非'买入金额'列。"""
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_stock_detail_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_detail_em",
                return_value=lhb_stock_detail_sell_df):
-        result = get_lhb_stock_detail("000001", "20240320", "卖出")
+        result = AkshareLhbStockDetail().get_lhb_stock_detail_history("000001", "20240320", "卖出")
     row = result.data[0]
     assert row["flag"] == "卖出"
-    assert row["trade_amount"] == 3e6   # 卖出方向读"卖出金额"列
+    assert row["trade_amount"] == 3e6
     assert row["net_amount"] == pytest.approx(-3e6)
 
 
 def test_get_lhb_stock_detail_empty_raises():
-    with patch("finance_data.provider.lhb.akshare.ak.stock_lhb_stock_detail_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_detail_em",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
-            get_lhb_stock_detail("000001", "20240320", "买入")
+            AkshareLhbStockDetail().get_lhb_stock_detail_history("000001", "20240320", "买入")
 
 
 # ── helper edge cases ──────────────────────────────────────────────────────────
 
 def test_int_helper_handles_inf():
     """_int 对 inf 应返回默认值而不是抛出 OverflowError。"""
-    from finance_data.provider.lhb.akshare import _int
+    from finance_data.provider.akshare.lhb.history import _int
     assert _int(float("inf")) == 0
     assert _int(float("-inf")) == 0
     assert _int(float("nan")) == 0
 
 
 def test_date_helper_handles_none():
-    from finance_data.provider.lhb.akshare import _date
+    from finance_data.provider.akshare.lhb.history import _date
     assert _date(None) == ""
     assert _date("2024-03-20") == "20240320"
     assert _date("20240320") == "20240320"
 
 
 def test_str_helper_handles_nan():
-    from finance_data.provider.lhb.akshare import _str
+    from finance_data.provider.akshare.lhb.history import _str
     assert _str(float("nan")) == ""
     assert _str(None) == ""
     assert _str("平安银行") == "平安银行"

@@ -1,8 +1,8 @@
 from unittest.mock import patch
 import pandas as pd
 import pytest
-from finance_data.provider.market.akshare import get_market_stats
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.provider.akshare.market.realtime import AkshareMarketRealtime
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 @pytest.fixture
@@ -19,17 +19,17 @@ def mock_legu_df():
 
 
 def test_get_market_stats_returns_data_result(mock_legu_df):
-    with patch("finance_data.provider.market.akshare.ak.stock_market_activity_legu",
+    with patch("finance_data.provider.akshare.market.realtime.ak.stock_market_activity_legu",
                return_value=mock_legu_df):
-        result = get_market_stats()
+        result = AkshareMarketRealtime().get_market_stats_realtime()
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
 
 
 def test_get_market_stats_counts(mock_legu_df):
-    with patch("finance_data.provider.market.akshare.ak.stock_market_activity_legu",
+    with patch("finance_data.provider.akshare.market.realtime.ak.stock_market_activity_legu",
                return_value=mock_legu_df):
-        result = get_market_stats()
+        result = AkshareMarketRealtime().get_market_stats_realtime()
     row = result.data[0]
     assert row["up_count"] == 30
     assert row["down_count"] == 15
@@ -39,8 +39,8 @@ def test_get_market_stats_counts(mock_legu_df):
 
 
 def test_get_market_stats_network_error():
-    with patch("finance_data.provider.market.akshare.ak.stock_market_activity_legu",
+    with patch("finance_data.provider.akshare.market.realtime.ak.stock_market_activity_legu",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_market_stats()
+            AkshareMarketRealtime().get_market_stats_realtime()
     assert exc.value.kind == "network"

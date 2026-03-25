@@ -1,10 +1,10 @@
 from unittest.mock import patch
 import pandas as pd
 import pytest
-from finance_data.provider.fundamental.akshare import (
-    get_financial_summary, get_dividend, get_earnings_forecast
+from finance_data.provider.akshare.fundamental.history import (
+    AkshareFinancialSummary, AkshareDividend
 )
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 @pytest.fixture
@@ -20,17 +20,17 @@ def mock_financial_df():
 
 
 def test_get_financial_summary_returns_data_result(mock_financial_df):
-    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_financial_abstract",
                return_value=mock_financial_df):
-        result = get_financial_summary("000001")
+        result = AkshareFinancialSummary().get_financial_summary_history("000001")
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
 
 
 def test_get_financial_summary_fields(mock_financial_df):
-    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_financial_abstract",
                return_value=mock_financial_df):
-        result = get_financial_summary("000001")
+        result = AkshareFinancialSummary().get_financial_summary_history("000001")
     row = result.data[0]
     assert row["symbol"] == "000001"
     assert row["period"] == "20231231"
@@ -46,24 +46,24 @@ def mock_dividend_df():
 
 
 def test_get_dividend_fields(mock_dividend_df):
-    with patch("finance_data.provider.fundamental.akshare.ak.stock_fhps_detail_em",
+    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_fhps_detail_em",
                return_value=mock_dividend_df):
-        result = get_dividend("000001")
+        result = AkshareDividend().get_dividend_history("000001")
     row = result.data[0]
     assert row["per_share"] == 0.248
 
 
 def test_get_financial_summary_network_error():
-    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_financial_abstract",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_financial_summary("000001")
+            AkshareFinancialSummary().get_financial_summary_history("000001")
     assert exc.value.kind == "network"
 
 
 def test_get_financial_summary_empty_raises():
-    with patch("finance_data.provider.fundamental.akshare.ak.stock_financial_abstract",
+    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_financial_abstract",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError) as exc:
-            get_financial_summary("INVALID")
+            AkshareFinancialSummary().get_financial_summary_history("INVALID")
     assert exc.value.kind == "data"

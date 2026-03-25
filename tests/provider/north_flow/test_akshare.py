@@ -1,8 +1,8 @@
 from unittest.mock import patch, MagicMock
 import pandas as pd
 import pytest
-from finance_data.provider.north_flow.akshare import get_north_flow, get_north_stock_hold
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.provider.akshare.north_flow.history import AkshareNorthFlow, AkshareNorthStockHold
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 @pytest.fixture
@@ -46,17 +46,17 @@ def mock_hold_df():
 
 
 def test_get_north_flow_returns_data_result(mock_flow_df):
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_fund_flow_summary_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_fund_flow_summary_em",
                return_value=mock_flow_df):
-        result = get_north_flow()
+        result = AkshareNorthFlow().get_north_flow_history()
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
 
 
 def test_get_north_flow_fields(mock_flow_df):
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_fund_flow_summary_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_fund_flow_summary_em",
                return_value=mock_flow_df):
-        result = get_north_flow()
+        result = AkshareNorthFlow().get_north_flow_history()
     row = result.data[0]
     assert row["date"] == "20240301"
     assert row["market"] == "沪股通"
@@ -68,41 +68,45 @@ def test_get_north_flow_fields(mock_flow_df):
 def test_get_north_flow_skips_south(mock_flow_df):
     south_df = mock_flow_df.copy()
     south_df["资金方向"] = "南向"
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_fund_flow_summary_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_fund_flow_summary_em",
                return_value=pd.concat([mock_flow_df, south_df])):
-        result = get_north_flow()
+        result = AkshareNorthFlow().get_north_flow_history()
     assert all(r["direction"] == "北向" for r in result.data)
 
 
 def test_get_north_flow_network_error():
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_fund_flow_summary_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_fund_flow_summary_em",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_north_flow()
+            AkshareNorthFlow().get_north_flow_history()
     assert exc.value.kind == "network"
 
 
 def test_get_north_flow_empty_raises():
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_fund_flow_summary_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_fund_flow_summary_em",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError) as exc:
-            get_north_flow()
+            AkshareNorthFlow().get_north_flow_history()
     assert exc.value.kind == "data"
 
 
 def test_get_north_stock_hold_returns_data(mock_hold_df):
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_hold_stock_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_hold_stock_em",
                return_value=mock_hold_df):
-        result = get_north_stock_hold(market="沪股通", indicator="5日排行")
+        result = AkshareNorthStockHold().get_north_stock_hold_history(
+            market="沪股通", indicator="5日排行", symbol="", trade_date=""
+        )
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
     assert len(result.data) == 1
 
 
 def test_get_north_stock_hold_fields(mock_hold_df):
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_hold_stock_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_hold_stock_em",
                return_value=mock_hold_df):
-        result = get_north_stock_hold(market="沪股通", indicator="5日排行")
+        result = AkshareNorthStockHold().get_north_stock_hold_history(
+            market="沪股通", indicator="5日排行", symbol="", trade_date=""
+        )
     row = result.data[0]
     assert row["symbol"] == "600000"
     assert row["name"] == "浦发银行"
@@ -112,16 +116,20 @@ def test_get_north_stock_hold_fields(mock_hold_df):
 
 
 def test_get_north_stock_hold_network_error():
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_hold_stock_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_hold_stock_em",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_north_stock_hold(market="沪股通")
+            AkshareNorthStockHold().get_north_stock_hold_history(
+                market="沪股通", indicator="5日排行", symbol="", trade_date=""
+            )
     assert exc.value.kind == "network"
 
 
 def test_get_north_stock_hold_empty_raises():
-    with patch("finance_data.provider.north_flow.akshare.ak.stock_hsgt_hold_stock_em",
+    with patch("finance_data.provider.akshare.north_flow.history.ak.stock_hsgt_hold_stock_em",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError) as exc:
-            get_north_stock_hold(market="沪股通")
+            AkshareNorthStockHold().get_north_stock_hold_history(
+                market="沪股通", indicator="5日排行", symbol="", trade_date=""
+            )
     assert exc.value.kind == "data"

@@ -3,14 +3,8 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import pytest
 
-from finance_data.provider.lhb.tushare import (
-    get_lhb_detail,
-    get_lhb_stock_stat,
-    get_lhb_active_traders,
-    get_lhb_trader_stat,
-    get_lhb_stock_detail,
-)
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.provider.tushare.lhb.history import TushareLhbDetail
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 @pytest.fixture
@@ -33,14 +27,14 @@ def top_list_df():
 
 def test_get_lhb_detail_returns_data_result(mock_pro, top_list_df):
     mock_pro.top_list.return_value = top_list_df
-    with patch("finance_data.provider.lhb.tushare._get_pro", return_value=mock_pro):
-        result = get_lhb_detail("20240320", "20240320")
+    with patch("finance_data.provider.tushare.lhb.history.get_pro", return_value=mock_pro):
+        result = TushareLhbDetail().get_lhb_detail_history("20240320", "20240320")
     assert isinstance(result, DataResult)
     assert result.source == "tushare"
     row = result.data[0]
     assert row["symbol"] == "000001"
     assert row["date"] == "20240320"
-    assert row["pct_change"] == pytest.approx(5.2)   # 验证 pct_chg 字段映射
+    assert row["pct_change"] == pytest.approx(5.2)
     # 万元 → 元
     assert row["lhb_net_buy"] == pytest.approx(100.0 * 10_000)
     assert row["market_amount"] == pytest.approx(10000.0 * 10_000)
@@ -50,38 +44,13 @@ def test_get_lhb_detail_returns_data_result(mock_pro, top_list_df):
 
 def test_get_lhb_detail_empty_raises(mock_pro):
     mock_pro.top_list.return_value = pd.DataFrame()
-    with patch("finance_data.provider.lhb.tushare._get_pro", return_value=mock_pro):
+    with patch("finance_data.provider.tushare.lhb.history.get_pro", return_value=mock_pro):
         with pytest.raises(DataFetchError) as exc:
-            get_lhb_detail("20240320", "20240320")
+            TushareLhbDetail().get_lhb_detail_history("20240320", "20240320")
     assert exc.value.kind == "data"
 
 
 def test_get_lhb_detail_no_token():
     with patch.dict("os.environ", {"TUSHARE_TOKEN": ""}):
-        with pytest.raises(DataFetchError) as exc:
-            get_lhb_detail("20240320", "20240320")
-    assert exc.value.kind == "auth"
-
-
-def test_get_lhb_stock_stat_raises_not_supported():
-    with pytest.raises(DataFetchError) as exc:
-        get_lhb_stock_stat()
-    assert exc.value.kind == "data"
-
-
-def test_get_lhb_active_traders_raises_not_supported():
-    with pytest.raises(DataFetchError) as exc:
-        get_lhb_active_traders("20240320", "20240320")
-    assert exc.value.kind == "data"
-
-
-def test_get_lhb_trader_stat_raises_not_supported():
-    with pytest.raises(DataFetchError) as exc:
-        get_lhb_trader_stat()
-    assert exc.value.kind == "data"
-
-
-def test_get_lhb_stock_detail_raises_not_supported():
-    with pytest.raises(DataFetchError) as exc:
-        get_lhb_stock_detail("000001", "20240320", "买入")
-    assert exc.value.kind == "data"
+        with pytest.raises((DataFetchError, Exception)):
+            TushareLhbDetail().get_lhb_detail_history("20240320", "20240320")

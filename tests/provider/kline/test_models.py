@@ -1,4 +1,4 @@
-from finance_data.provider.kline.models import KlineBar
+from finance_data.interface.kline.history import KlineBar
 
 
 def test_kline_bar_required_fields():

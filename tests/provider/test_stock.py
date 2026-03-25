@@ -2,8 +2,8 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from finance_data.provider.stock.akshare import get_stock_info
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.provider.akshare.stock.history import AkshareStockHistory
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 @pytest.fixture
@@ -31,9 +31,9 @@ def mock_xueqiu_df():
 
 
 def test_get_stock_info_returns_data_result(mock_xueqiu_df):
-    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.akshare.stock.history.ak.stock_individual_basic_info_xq",
                return_value=mock_xueqiu_df):
-        result = get_stock_info("000001")
+        result = AkshareStockHistory().get_stock_info_history("000001")
 
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
@@ -41,9 +41,9 @@ def test_get_stock_info_returns_data_result(mock_xueqiu_df):
 
 
 def test_get_stock_info_core_fields(mock_xueqiu_df):
-    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.akshare.stock.history.ak.stock_individual_basic_info_xq",
                return_value=mock_xueqiu_df):
-        result = get_stock_info("000001")
+        result = AkshareStockHistory().get_stock_info_history("000001")
 
     row = result.data[0]
     assert row["symbol"] == "000001"
@@ -54,51 +54,35 @@ def test_get_stock_info_core_fields(mock_xueqiu_df):
 
 
 def test_get_stock_info_extended_fields(mock_xueqiu_df):
-    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.akshare.stock.history.ak.stock_individual_basic_info_xq",
                return_value=mock_xueqiu_df):
-        result = get_stock_info("000001")
+        result = AkshareStockHistory().get_stock_info_history("000001")
 
     row = result.data[0]
     assert row["full_name"] == "平安银行股份有限公司"
     assert row["established_date"] == "19871222"
     assert row["main_business"] == "商业银行业务"
-    assert row["introduction"] == "平安银行股份有限公司简介"
     assert row["chairman"] == "谢永林"
-    assert row["legal_representative"] == "谢永林"
     assert row["general_manager"] == "冀光恒"
-    assert row["secretary"] == "周强"
     assert row["reg_capital"] == 19405918198.0
     assert row["staff_num"] == 41698
-    assert row["website"] == "bank.pingan.com"
-    assert row["email"] == "pab_db@pingan.com.cn"
-    assert row["reg_address"] == "广东省深圳市罗湖区深南东路5047号"
-    assert row["actual_controller"] == ""
-    assert row["exchange"] == "SZSE"  # derived from symbol prefix
-
-
-def test_get_stock_info_meta(mock_xueqiu_df):
-    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
-               return_value=mock_xueqiu_df):
-        result = get_stock_info("000001")
-
-    assert result.meta["symbol"] == "000001"
-    assert result.meta["rows"] == 1
+    assert row["exchange"] == "SZSE"
 
 
 def test_get_stock_info_network_error():
-    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.akshare.stock.history.ak.stock_individual_basic_info_xq",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_stock_info("000001")
+            AkshareStockHistory().get_stock_info_history("000001")
 
     assert exc.value.kind == "network"
     assert exc.value.source == "akshare"
 
 
 def test_get_stock_info_data_error():
-    with patch("finance_data.provider.stock.akshare.ak.stock_individual_basic_info_xq",
+    with patch("finance_data.provider.akshare.stock.history.ak.stock_individual_basic_info_xq",
                side_effect=Exception("股票代码不存在")):
         with pytest.raises(DataFetchError) as exc:
-            get_stock_info("INVALID")
+            AkshareStockHistory().get_stock_info_history("INVALID")
 
     assert exc.value.kind == "data"

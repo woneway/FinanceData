@@ -1,4 +1,4 @@
-from finance_data.provider.stock.models import StockInfo
+from finance_data.interface.stock.history import StockInfo
 
 
 def test_stock_info_required_fields():

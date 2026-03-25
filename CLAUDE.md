@@ -22,6 +22,7 @@
 
 - `TUSHARE_TOKEN`：tushare API token（tushare 接口必须）
 - `TUSHARE_API_URL`：tushare API 地址（可选，默认官方地址；使用第三方代理时设置）
+- `XUEQIU_COOKIE`：雪球登录 cookie 字符串（可选，K线接口需要；实时行情无需）
 
 ## 开发
 
@@ -51,10 +52,10 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 | Tool | 领域 | 说明 |
 |------|------|------|
 | `tool_get_stock_info` | stock | 个股基本信息，akshare 优先，fallback tushare |
-| `tool_get_kline` | kline | K线历史数据（daily/weekly/monthly/分钟级），akshare+tushare |
-| `tool_get_realtime_quote` | realtime | 实时行情（含 20 分钟缓存），akshare+tushare |
-| `tool_get_index_quote` | index | 大盘指数实时行情，akshare+tushare |
-| `tool_get_index_history` | index | 大盘指数历史 K线，akshare+tushare |
+| `tool_get_kline` | kline | K线历史数据（daily/weekly/monthly/分钟级），akshare+tushare+xueqiu |
+| `tool_get_realtime_quote` | realtime | 实时行情（含 20 分钟缓存），akshare+tushare+xueqiu |
+| `tool_get_index_quote` | index | 大盘指数实时行情，akshare+tushare+xueqiu |
+| `tool_get_index_history` | index | 大盘指数历史 K线，akshare+tushare+xueqiu |
 | `tool_get_sector_rank` | sector | 行业板块涨跌排名，仅 akshare |
 | `tool_get_chip_distribution` | chip | 个股筹码分布（获利比例、成本、集中度），仅 akshare |
 | `tool_get_financial_summary` | fundamental | 财务摘要（营收、净利润、ROE、毛利率），akshare+tushare |
@@ -62,7 +63,7 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 | `tool_get_earnings_forecast` | fundamental | 业绩预告，akshare 优先 |
 | `tool_get_fund_flow` | cashflow | 个股资金流向（主力净流入），仅 akshare |
 | `tool_get_trade_calendar` | calendar | 交易日历（is_open 标记），仅 tushare |
-| `tool_get_market_stats` | market | 市场涨跌统计（涨/跌/平家数、总成交额），仅 akshare |
+| `tool_get_market_stats_realtime` | market | 市场涨跌统计（盘中实时，涨/跌/平家数），仅 akshare |
 | `tool_get_lhb_detail` | lhb | 龙虎榜每日上榜详情（按日期范围），akshare 优先+tushare |
 | `tool_get_lhb_stock_stat` | lhb | 个股上榜统计（近一月/三月/六月/一年），仅 akshare |
 | `tool_get_lhb_active_traders` | lhb | 每日活跃游资营业部（席位追踪），仅 akshare |
@@ -80,4 +81,4 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 
 ## Provider 优先级
 
-`akshare`（无需 token）→ `tushare`（需 `TUSHARE_TOKEN`）
+`akshare`（无需 token）→ `tushare`（需 `TUSHARE_TOKEN`）→ `xueqiu`（海外可达，实时行情无需认证，K线需 `XUEQIU_COOKIE`）

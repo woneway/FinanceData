@@ -6,25 +6,25 @@ from finance_data.provider.metadata.models import (
 
 TOOL_REGISTRY: Dict[str, ToolMeta] = {
     # === Stock ===
-    "tool_get_stock_info": ToolMeta(
-        name="tool_get_stock_info",
+    "tool_get_stock_info_history": ToolMeta(
+        name="tool_get_stock_info_history",
         description="获取个股基本信息",
         domain="stock",
-        entity="stock",
-        scope="daily",
+        entity="stock_info",
+        scope="history",
         data_freshness=DataFreshness.END_OF_DAY,
         update_timing=UpdateTiming.T_PLUS_1_16_00,
         supports_history=False,
         source=DataSource.BOTH,
         source_priority="akshare",
-        api_name="stock_info_a_code_name",
+        api_name="stock_individual_basic_info_xq",
         limitations=["tushare 提供更完整的财务数据"],
         return_fields=["symbol", "name", "industry", "list_date"],
     ),
 
     # === Kline ===
-    "tool_get_kline": ToolMeta(
-        name="tool_get_kline",
+    "tool_get_kline_history": ToolMeta(
+        name="tool_get_kline_history",
         description="获取K线历史数据",
         domain="kline",
         entity="stock",
@@ -57,8 +57,8 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === Index ===
-    "tool_get_index_quote": ToolMeta(
-        name="tool_get_index_quote",
+    "tool_get_index_quote_realtime": ToolMeta(
+        name="tool_get_index_quote_realtime",
         description="获取大盘指数实时行情",
         domain="index",
         entity="index",
@@ -90,8 +90,8 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === Sector ===
-    "tool_get_sector_rank": ToolMeta(
-        name="tool_get_sector_rank",
+    "tool_get_sector_rank_realtime": ToolMeta(
+        name="tool_get_sector_rank_realtime",
         description="获取行业板块涨跌排名",
         domain="sector",
         entity="sector",
@@ -107,8 +107,8 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === Chip ===
-    "tool_get_chip_distribution": ToolMeta(
-        name="tool_get_chip_distribution",
+    "tool_get_chip_distribution_history": ToolMeta(
+        name="tool_get_chip_distribution_history",
         description="获取个股筹码分布",
         domain="chip",
         entity="stock",
@@ -124,8 +124,8 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === Fundamental ===
-    "tool_get_financial_summary": ToolMeta(
-        name="tool_get_financial_summary",
+    "tool_get_financial_summary_history": ToolMeta(
+        name="tool_get_financial_summary_history",
         description="获取个股财务摘要",
         domain="fundamental",
         entity="stock",
@@ -141,8 +141,8 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         return_fields=["period", "revenue", "net_profit", "roe", "gross_margin"],
     ),
 
-    "tool_get_dividend": ToolMeta(
-        name="tool_get_dividend",
+    "tool_get_dividend_history": ToolMeta(
+        name="tool_get_dividend_history",
         description="获取个股历史分红记录",
         domain="fundamental",
         entity="stock",
@@ -156,8 +156,8 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         return_fields=["ex_date", "per_share", "record_date"],
     ),
 
-    "tool_get_earnings_forecast": ToolMeta(
-        name="tool_get_earnings_forecast",
+    "tool_get_earnings_forecast_history": ToolMeta(
+        name="tool_get_earnings_forecast_history",
         description="获取个股业绩预告",
         domain="fundamental",
         entity="stock",
@@ -173,12 +173,12 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === Cashflow ===
-    "tool_get_fund_flow": ToolMeta(
-        name="tool_get_fund_flow",
+    "tool_get_stock_capital_flow_realtime": ToolMeta(
+        name="tool_get_stock_capital_flow_realtime",
         description="获取个股资金流向",
         domain="cashflow",
         entity="stock",
-        scope="daily",
+        scope="realtime",
         data_freshness=DataFreshness.REALTIME,
         update_timing=UpdateTiming.T_PLUS_0,
         supports_history=False,
@@ -190,8 +190,8 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === Calendar ===
-    "tool_get_trade_calendar": ToolMeta(
-        name="tool_get_trade_calendar",
+    "tool_get_trade_calendar_history": ToolMeta(
+        name="tool_get_trade_calendar_history",
         description="获取交易日历",
         domain="calendar",
         entity="market",
@@ -207,22 +207,6 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === Market ===
-    "tool_get_market_stats": ToolMeta(
-        name="tool_get_market_stats",
-        description="获取当日市场涨跌统计",
-        domain="market",
-        entity="market",
-        scope="daily",
-        data_freshness=DataFreshness.END_OF_DAY,
-        update_timing=UpdateTiming.T_PLUS_1_15_30,
-        supports_history=False,
-        source=DataSource.AKSHARE,
-        source_priority="akshare",
-        api_name="stock_market_activity_legu",
-        limitations=["非实时，收盘后约15:30更新；无历史查询能力"],
-        return_fields=["date", "up_count", "down_count", "flat_count", "total_amount"],
-    ),
-
     # === LHB ===
     "tool_get_lhb_detail": ToolMeta(
         name="tool_get_lhb_detail",
@@ -374,22 +358,6 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
     ),
 
     # === North Flow ===
-    "tool_get_north_flow": ToolMeta(
-        name="tool_get_north_flow",
-        description="获取北向资金日频资金流",
-        domain="north_flow",
-        entity="market",
-        scope="daily",
-        data_freshness=DataFreshness.END_OF_DAY,
-        update_timing=UpdateTiming.T_PLUS_1_15_30,
-        supports_history=False,
-        source=DataSource.AKSHARE,
-        source_priority="akshare",
-        api_name="stock_hsgt_fund_flow_summary_em",
-        limitations=["非实时，收盘后约15:30更新；tushare 无等效接口"],
-        return_fields=["date", "market", "net_buy", "net_inflow", "balance"],
-    ),
-
     "tool_get_north_stock_hold": ToolMeta(
         name="tool_get_north_stock_hold",
         description="获取北向资金持股明细",
@@ -439,54 +407,21 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         return_fields=["date", "symbol", "name", "rzye", "rqye", "rzmre", "rqyl"],
     ),
 
-    # === Sector Fund Flow ===
-    "tool_get_sector_fund_flow": ToolMeta(
-        name="tool_get_sector_fund_flow",
-        description="获取板块资金流排名",
-        domain="sector_fund_flow",
-        entity="sector",
-        scope="daily",
-        data_freshness=DataFreshness.END_OF_DAY,
-        update_timing=UpdateTiming.T_PLUS_1_15_30,
-        supports_history=False,
-        source=DataSource.AKSHARE,
-        source_priority="akshare",
-        api_name="stock_sector_fund_flow_rank",
-        limitations=["非实时，收盘后约15:30更新；tushare 无等效接口"],
-        return_fields=["rank", "name", "pct_change", "main_net_inflow", "top_stock"],
-    ),
-
-    # === 规范化命名别名（canonical names）===
-    "tool_get_stock_capital_flow": ToolMeta(
-        name="tool_get_stock_capital_flow",
-        description="获取个股资金流向（主力净流入等）",
-        domain="cashflow",
-        entity="stock",
-        scope="daily",
+    # === Market ===
+    "tool_get_market_stats_realtime": ToolMeta(
+        name="tool_get_market_stats_realtime",
+        description="获取当日市场涨跌家数统计（盘中实时）",
+        domain="market",
+        entity="market_stats",
+        scope="realtime",
         data_freshness=DataFreshness.REALTIME,
         update_timing=UpdateTiming.T_PLUS_0,
         supports_history=False,
         source=DataSource.AKSHARE,
         source_priority="akshare",
-        api_name="stock_individual_fund_flow",
+        api_name="stock_market_activity_legu",
         limitations=["tushare 无等效接口"],
-        return_fields=["date", "net_inflow", "main_net_inflow", "super_large_net_inflow"],
-    ),
-
-    "tool_get_market_stats_daily": ToolMeta(
-        name="tool_get_market_stats_daily",
-        description="获取当日市场涨跌家数、总成交额等统计信息",
-        domain="market",
-        entity="market",
-        scope="daily",
-        data_freshness=DataFreshness.END_OF_DAY,
-        update_timing=UpdateTiming.T_PLUS_1_15_30,
-        supports_history=False,
-        source=DataSource.AKSHARE,
-        source_priority="akshare",
-        api_name="stock_advance_decline",
-        limitations=["非实时，收盘后约15:30更新；tushare 无等效接口"],
-        return_fields=["date", "up_count", "down_count", "flat_count", "total_amount"],
+        return_fields=["date", "up_count", "down_count", "flat_count", "total_count", "total_amount"],
     ),
 
     "tool_get_market_north_capital": ToolMeta(

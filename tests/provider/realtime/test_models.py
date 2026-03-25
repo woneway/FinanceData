@@ -1,4 +1,4 @@
-from finance_data.provider.realtime.models import RealtimeQuote
+from finance_data.interface.realtime.realtime import RealtimeQuote
 
 
 def test_realtime_quote_required_fields():

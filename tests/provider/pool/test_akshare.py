@@ -3,13 +3,13 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from finance_data.provider.pool.akshare import (
-    get_zt_pool,
-    get_strong_stocks,
-    get_previous_zt,
-    get_zbgc_pool,
+from finance_data.provider.akshare.pool.history import (
+    AkshareZtPool,
+    AkshareStrongStocks,
+    AksharePreviousZt,
+    AkshareZbgcPool,
 )
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.interface.types import DataResult, DataFetchError
 
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
@@ -63,9 +63,9 @@ def zbgc_pool_df():
 # ── get_zt_pool ────────────────────────────────────────────────────────────────
 
 def test_get_zt_pool_returns_data_result(zt_pool_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_em",
                return_value=zt_pool_df):
-        result = get_zt_pool("20260320")
+        result = AkshareZtPool().get_zt_pool_history("20260320")
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
     assert len(result.data) == 1
@@ -81,52 +81,52 @@ def test_get_zt_pool_returns_data_result(zt_pool_df):
 
 
 def test_get_zt_pool_empty_returns_empty_list():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_em",
                return_value=pd.DataFrame()):
-        result = get_zt_pool("20260101")
+        result = AkshareZtPool().get_zt_pool_history("20260101")
     assert result.data == []
     assert result.meta["rows"] == 0
 
 
 def test_get_zt_pool_continuous_days_ge_1(zt_pool_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_em",
                return_value=zt_pool_df):
-        result = get_zt_pool("20260320")
+        result = AkshareZtPool().get_zt_pool_history("20260320")
     for row in result.data:
         assert row["continuous_days"] >= 1
 
 
 def test_get_zt_pool_no_empty_symbol_or_zero_price(zt_pool_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_em",
                return_value=zt_pool_df):
-        result = get_zt_pool("20260320")
+        result = AkshareZtPool().get_zt_pool_history("20260320")
     for row in result.data:
         assert row["symbol"] != ""
         assert row["price"] > 0
 
 
 def test_get_zt_pool_network_error():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_em",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_zt_pool("20260320")
+            AkshareZtPool().get_zt_pool_history("20260320")
     assert exc.value.kind == "network"
 
 
 def test_get_zt_pool_data_error():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_em",
                side_effect=ValueError("bad data")):
         with pytest.raises(DataFetchError) as exc:
-            get_zt_pool("20260320")
+            AkshareZtPool().get_zt_pool_history("20260320")
     assert exc.value.kind == "data"
 
 
 # ── get_strong_stocks ─────────────────────────────────────────────────────────
 
 def test_get_strong_stocks_returns_data_result(strong_stocks_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_strong_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_strong_em",
                return_value=strong_stocks_df):
-        result = get_strong_stocks("20260320")
+        result = AkshareStrongStocks().get_strong_stocks_history("20260320")
     assert isinstance(result, DataResult)
     assert len(result.data) == 1
     row = result.data[0]
@@ -144,42 +144,42 @@ def test_get_strong_stocks_is_new_high_false():
         "换手率": 2.0, "量比": 1.5,
         "是否新高": "否", "入选理由": "量比放大", "所属行业": "房地产",
     }])
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_strong_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_strong_em",
                return_value=df):
-        result = get_strong_stocks("20260320")
+        result = AkshareStrongStocks().get_strong_stocks_history("20260320")
     assert result.data[0]["is_new_high"] is False
 
 
 def test_get_strong_stocks_empty_returns_empty_list():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_strong_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_strong_em",
                return_value=pd.DataFrame()):
-        result = get_strong_stocks("20260101")
+        result = AkshareStrongStocks().get_strong_stocks_history("20260101")
     assert result.data == []
 
 
 def test_get_strong_stocks_no_empty_symbol_or_zero_price(strong_stocks_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_strong_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_strong_em",
                return_value=strong_stocks_df):
-        result = get_strong_stocks("20260320")
+        result = AkshareStrongStocks().get_strong_stocks_history("20260320")
     for row in result.data:
         assert row["symbol"] != ""
         assert row["price"] > 0
 
 
 def test_get_strong_stocks_network_error():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_strong_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_strong_em",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_strong_stocks("20260320")
+            AkshareStrongStocks().get_strong_stocks_history("20260320")
     assert exc.value.kind == "network"
 
 
 # ── get_previous_zt ───────────────────────────────────────────────────────────
 
 def test_get_previous_zt_returns_data_result(previous_zt_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_previous_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_previous_em",
                return_value=previous_zt_df):
-        result = get_previous_zt("20260321")
+        result = AksharePreviousZt().get_previous_zt_history("20260321")
     assert isinstance(result, DataResult)
     assert len(result.data) == 1
     row = result.data[0]
@@ -190,35 +190,35 @@ def test_get_previous_zt_returns_data_result(previous_zt_df):
 
 
 def test_get_previous_zt_empty_returns_empty_list():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_previous_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_previous_em",
                return_value=pd.DataFrame()):
-        result = get_previous_zt("20260101")
+        result = AksharePreviousZt().get_previous_zt_history("20260101")
     assert result.data == []
 
 
 def test_get_previous_zt_no_empty_symbol_or_zero_price(previous_zt_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_previous_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_previous_em",
                return_value=previous_zt_df):
-        result = get_previous_zt("20260321")
+        result = AksharePreviousZt().get_previous_zt_history("20260321")
     for row in result.data:
         assert row["symbol"] != ""
         assert row["price"] > 0
 
 
 def test_get_previous_zt_network_error():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_previous_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_previous_em",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_previous_zt("20260321")
+            AksharePreviousZt().get_previous_zt_history("20260321")
     assert exc.value.kind == "network"
 
 
 # ── get_zbgc_pool ─────────────────────────────────────────────────────────────
 
 def test_get_zbgc_pool_returns_data_result(zbgc_pool_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_zbgc_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_zbgc_em",
                return_value=zbgc_pool_df):
-        result = get_zbgc_pool("20260320")
+        result = AkshareZbgcPool().get_zbgc_pool_history("20260320")
     assert isinstance(result, DataResult)
     assert len(result.data) == 1
     row = result.data[0]
@@ -229,33 +229,33 @@ def test_get_zbgc_pool_returns_data_result(zbgc_pool_df):
 
 
 def test_get_zbgc_pool_empty_returns_empty_list():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_zbgc_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_zbgc_em",
                return_value=pd.DataFrame()):
-        result = get_zbgc_pool("20260101")
+        result = AkshareZbgcPool().get_zbgc_pool_history("20260101")
     assert result.data == []
 
 
 def test_get_zbgc_pool_no_empty_symbol_or_zero_price(zbgc_pool_df):
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_zbgc_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_zbgc_em",
                return_value=zbgc_pool_df):
-        result = get_zbgc_pool("20260320")
+        result = AkshareZbgcPool().get_zbgc_pool_history("20260320")
     for row in result.data:
         assert row["symbol"] != ""
         assert row["price"] > 0
 
 
 def test_get_zbgc_pool_network_error():
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_zbgc_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_zbgc_em",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_zbgc_pool("20260320")
+            AkshareZbgcPool().get_zbgc_pool_history("20260320")
     assert exc.value.kind == "network"
 
 
 # ── helper edge cases ──────────────────────────────────────────────────────────
 
 def test_bool_from_str_handles_various_values():
-    from finance_data.provider.pool.akshare import _bool_from_str
+    from finance_data.provider.akshare.pool.history import _bool_from_str
     assert _bool_from_str("是") is True
     assert _bool_from_str("否") is False
     assert _bool_from_str("True") is True
@@ -275,9 +275,9 @@ def test_zt_pool_handles_nan_fields():
         "首次封板时间": float("nan"), "最后封板时间": float("nan"),
         "炸板次数": float("nan"), "连板数": 1, "所属行业": "银行",
     }])
-    with patch("finance_data.provider.pool.akshare.ak.stock_zt_pool_em",
+    with patch("finance_data.provider.akshare.pool.history.ak.stock_zt_pool_em",
                return_value=df):
-        result = get_zt_pool("20260320")
+        result = AkshareZtPool().get_zt_pool_history("20260320")
     row = result.data[0]
     assert row["pct_change"] == 0.0
     assert row["first_seal_time"] == ""

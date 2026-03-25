@@ -1,8 +1,13 @@
 from unittest.mock import patch
 import pandas as pd
 import pytest
-from finance_data.provider.sector.akshare import get_sector_rank
-from finance_data.provider.types import DataResult, DataFetchError
+from finance_data.provider.akshare.sector.realtime import AkshareSectorRank
+from finance_data.interface.types import DataResult, DataFetchError
+
+
+@pytest.fixture
+def provider():
+    return AkshareSectorRank()
 
 
 @pytest.fixture
@@ -14,28 +19,28 @@ def mock_sector_df():
     }])
 
 
-def test_get_sector_rank_returns_data_result(mock_sector_df):
-    with patch("finance_data.provider.sector.akshare.ak.stock_board_industry_summary_ths",
+def test_get_sector_rank_returns_data_result(provider, mock_sector_df):
+    with patch("finance_data.provider.akshare.sector.realtime.ak.stock_board_industry_summary_ths",
                return_value=mock_sector_df):
-        result = get_sector_rank()
+        result = provider.get_sector_rank_realtime()
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
     assert len(result.data) == 1
 
 
-def test_get_sector_rank_fields(mock_sector_df):
-    with patch("finance_data.provider.sector.akshare.ak.stock_board_industry_summary_ths",
+def test_get_sector_rank_fields(provider, mock_sector_df):
+    with patch("finance_data.provider.akshare.sector.realtime.ak.stock_board_industry_summary_ths",
                return_value=mock_sector_df):
-        result = get_sector_rank()
+        result = provider.get_sector_rank_realtime()
     row = result.data[0]
     assert row["name"] == "银行"
     assert row["pct_chg"] == 1.2
     assert row["leader_stock"] == "招商银行"
 
 
-def test_get_sector_rank_network_error():
-    with patch("finance_data.provider.sector.akshare.ak.stock_board_industry_summary_ths",
+def test_get_sector_rank_network_error(provider):
+    with patch("finance_data.provider.akshare.sector.realtime.ak.stock_board_industry_summary_ths",
                side_effect=ConnectionError("timeout")):
         with pytest.raises(DataFetchError) as exc:
-            get_sector_rank()
+            provider.get_sector_rank_realtime()
     assert exc.value.kind == "network"
