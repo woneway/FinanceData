@@ -32,5 +32,7 @@ class TushareIndexHistory:
             pct_chg=float(row.get("pct_chg", 0)),
         ).to_dict() for _, row in df.iterrows()]
 
+        bars.sort(key=lambda b: b["date"])
+
         return DataResult(data=bars, source="tushare",
                           meta={"rows": len(bars), "symbol": symbol})

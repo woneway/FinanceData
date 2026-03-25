@@ -58,5 +58,7 @@ class TushareKlineHistory:
                 pct_chg=float(row.get("pct_chg", 0)), adj=adj,
             ).to_dict())
 
+        bars.sort(key=lambda b: b["date"])
+
         return DataResult(data=bars, source="tushare",
                           meta={"rows": len(bars), "symbol": symbol, "period": period})
