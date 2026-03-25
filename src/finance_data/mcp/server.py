@@ -82,8 +82,11 @@ async def tool_get_kline_history(
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume、amount
     """
-    result = kline_history.get_kline_history(symbol, period=period, start=start, end=end, adj=adj)
-    return _to_json(result)
+    try:
+        result = kline_history.get_kline_history(symbol, period=period, start=start, end=end, adj=adj)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -102,8 +105,11 @@ async def tool_get_realtime_quote(symbol: str) -> str:
     Returns:
         JSON 列表，每条包含 symbol、name、price、pct_change、volume、amount
     """
-    result = realtime_quote.get_realtime_quote(symbol)
-    return _to_json(result)
+    try:
+        result = realtime_quote.get_realtime_quote(symbol)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -121,8 +127,11 @@ async def tool_get_index_quote_realtime(symbol: str = "000001.SH") -> str:
     Returns:
         JSON 列表，每条包含 symbol、name、price、pct_change、volume
     """
-    result = index_quote.get_index_quote_realtime(symbol)
-    return _to_json(result)
+    try:
+        result = index_quote.get_index_quote_realtime(symbol)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -146,8 +155,11 @@ async def tool_get_index_history(
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume
     """
-    result = index_history.get_index_history(symbol, start=start, end=end)
-    return _to_json(result)
+    try:
+        result = index_history.get_index_history(symbol, start=start, end=end)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -165,8 +177,11 @@ async def tool_get_sector_rank_realtime() -> str:
     Returns:
         JSON 列表，每条包含 rank、name、pct_change、volume、amount
     """
-    result = sector_rank.get_sector_rank_realtime()
-    return _to_json(result)
+    try:
+        result = sector_rank.get_sector_rank_realtime()
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -184,8 +199,11 @@ async def tool_get_chip_distribution_history(symbol: str) -> str:
     Returns:
         JSON 列表，包含 date、cost_profit_ratio(获利比例)、avg_cost(平均成本)、concentration(集中度)
     """
-    result = chip_history.get_chip_distribution_history(symbol)
-    return _to_json(result)
+    try:
+        result = chip_history.get_chip_distribution_history(symbol)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -204,8 +222,11 @@ async def tool_get_financial_summary_history(symbol: str) -> str:
         JSON 列表，包含 period(报告期YYYYMMDD)、revenue(营收元)、net_profit(净利润元)、
         roe(净资产收益率%)、gross_margin(毛利率%)、cash_flow(经营现金流元)
     """
-    result = financial_summary.get_financial_summary_history(symbol)
-    return _to_json(result)
+    try:
+        result = financial_summary.get_financial_summary_history(symbol)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -223,8 +244,11 @@ async def tool_get_dividend_history(symbol: str) -> str:
     Returns:
         JSON 列表，包含 ex_date(除权除息日)、per_share(每股分红元)、record_date(股权登记日)
     """
-    result = dividend.get_dividend_history(symbol)
-    return _to_json(result)
+    try:
+        result = dividend.get_dividend_history(symbol)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -244,8 +268,11 @@ async def tool_get_earnings_forecast_history(symbol: str) -> str:
         net_profit_min/net_profit_max(预计净利润区间元)、
         change_low/change_high(变动幅度下限/上限%)、summary(变动原因)
     """
-    result = earnings_forecast.get_earnings_forecast_history(symbol)
-    return _to_json(result)
+    try:
+        result = earnings_forecast.get_earnings_forecast_history(symbol)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -264,8 +291,11 @@ async def tool_get_stock_capital_flow_realtime(symbol: str) -> str:
         JSON 列表，包含 date、net_inflow(主力净流入元)、main_net_inflow(主力净流入元)、
         super_large_net_inflow(超大单净流入元)、net_inflow_pct/main_net_inflow_pct/super_large_net_inflow_pct(占比%)
     """
-    result = stock_capital_flow.get_stock_capital_flow_realtime(symbol)
-    return _to_json(result)
+    try:
+        result = stock_capital_flow.get_stock_capital_flow_realtime(symbol)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
