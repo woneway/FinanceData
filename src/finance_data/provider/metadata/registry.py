@@ -52,7 +52,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         cache_ttl=20,
         source=DataSource.BOTH,
         source_priority="akshare",
-        api_name="stock_zh_a_spot_em",
+        api_name="stock_zh_a_spot",
         return_fields=["symbol", "name", "price", "pct_chg", "volume", "amount"],
     ),
 
@@ -69,7 +69,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         cache_ttl=20,
         source=DataSource.BOTH,
         source_priority="akshare",
-        api_name="index_zh_a_spot_em",
+        api_name="stock_zh_index_spot_sina",
         return_fields=["symbol", "name", "price", "pct_chg", "volume"],
     ),
 
@@ -85,7 +85,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         history_start="19900101",
         source=DataSource.BOTH,
         source_priority="akshare",
-        api_name="index_zh_a_hist",
+        api_name="stock_zh_index_daily_tx",
         return_fields=["date", "open", "high", "low", "close", "volume"],
     ),
 
