@@ -53,7 +53,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source=DataSource.BOTH,
         source_priority="akshare",
         api_name="stock_zh_a_spot_em",
-        return_fields=["symbol", "name", "price", "pct_change", "volume", "amount"],
+        return_fields=["symbol", "name", "price", "pct_chg", "volume", "amount"],
     ),
 
     # === Index ===
@@ -70,7 +70,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source=DataSource.BOTH,
         source_priority="akshare",
         api_name="index_zh_a_spot_em",
-        return_fields=["symbol", "name", "price", "pct_change", "volume"],
+        return_fields=["symbol", "name", "price", "pct_chg", "volume"],
     ),
 
     "tool_get_index_history": ToolMeta(
@@ -103,7 +103,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source_priority="akshare",
         api_name="stock_board_industry_name_em",
         limitations=["tushare 无此接口"],
-        return_fields=["rank", "name", "pct_change", "volume", "amount"],
+        return_fields=["rank", "name", "pct_chg", "volume", "amount"],
     ),
 
     # === Chip ===
@@ -221,7 +221,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source=DataSource.BOTH,
         source_priority="akshare",
         api_name="stock_lhb_detail_em",
-        return_fields=["date", "symbol", "name", "close", "pct_change", "reason"],
+        return_fields=["date", "symbol", "name", "close", "pct_chg", "reason"],
     ),
 
     "tool_get_lhb_stock_stat": ToolMeta(
@@ -306,7 +306,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source_priority="akshare",
         api_name="stock_zt_pool_em",
         limitations=["tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"],
-        return_fields=["symbol", "name", "pct_change", "continuous_days", "seal_amount"],
+        return_fields=["symbol", "name", "pct_chg", "continuous_days", "seal_amount"],
     ),
 
     "tool_get_strong_stocks": ToolMeta(
@@ -322,7 +322,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source_priority="akshare",
         api_name="stock_strong_list_em",
         limitations=["tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"],
-        return_fields=["symbol", "name", "pct_change", "is_new_high", "volume_ratio"],
+        return_fields=["symbol", "name", "pct_chg", "is_new_high", "volume_ratio"],
     ),
 
     "tool_get_previous_zt": ToolMeta(
@@ -338,7 +338,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source_priority="akshare",
         api_name="stock_zt_pool_previous_em",
         limitations=["tushare 不支持此接口", "非实时；无历史查询"],
-        return_fields=["symbol", "name", "pct_change", "prev_seal_time", "prev_continuous_days"],
+        return_fields=["symbol", "name", "pct_chg", "prev_seal_time", "prev_continuous_days"],
     ),
 
     "tool_get_zbgc_pool": ToolMeta(
@@ -354,7 +354,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source_priority="akshare",
         api_name="stock_zbgc_em",
         limitations=["tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"],
-        return_fields=["symbol", "name", "pct_change", "open_times", "amplitude"],
+        return_fields=["symbol", "name", "pct_chg", "open_times", "amplitude"],
     ),
 
     # === North Flow ===
@@ -453,7 +453,7 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         source_priority="akshare",
         api_name="stock_sector_fund_flow_rank",
         limitations=["非实时，收盘后约15:30更新；tushare 无等效接口"],
-        return_fields=["rank", "name", "pct_change", "main_net_inflow", "top_stock"],
+        return_fields=["rank", "name", "pct_chg", "main_net_inflow", "top_stock"],
     ),
 }
 

@@ -106,7 +106,7 @@ async def tool_get_realtime_quote(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，每条包含 symbol、name、price、pct_change、volume、amount
+        JSON 列表，每条包含 symbol、name、price、pct_chg、volume、amount
     """
     try:
         result = realtime_quote.get_realtime_quote(symbol)
@@ -128,7 +128,7 @@ async def tool_get_index_quote_realtime(symbol: str = "000001.SH") -> str:
         symbol: 指数代码，如 000001.SH（上证）/ 399001.SZ（深证）
 
     Returns:
-        JSON 列表，每条包含 symbol、name、price、pct_change、volume
+        JSON 列表，每条包含 symbol、name、price、pct_chg、volume
     """
     try:
         result = index_quote.get_index_quote_realtime(symbol)
@@ -156,7 +156,7 @@ async def tool_get_index_history(
         end: 结束日期 YYYYMMDD（默认当天）
 
     Returns:
-        JSON 列表，每条包含 date、open、high、low、close、volume
+        JSON 列表，每条包含 date、open、high、low、close、volume、amount、pct_chg
     """
     if not end:
         end = datetime.date.today().strftime("%Y%m%d")
@@ -180,7 +180,7 @@ async def tool_get_sector_rank_realtime() -> str:
         无参数
 
     Returns:
-        JSON 列表，每条包含 rank、name、pct_change、volume、amount
+        JSON 列表，每条包含 rank、name、pct_chg、volume、amount
     """
     try:
         result = sector_rank.get_sector_rank_realtime()
@@ -341,7 +341,7 @@ async def tool_get_lhb_detail(
 
     Returns:
         JSON 列表，每条记录包含：symbol(代码)、name(名称)、date(上榜日)、
-        close(收盘价)、pct_change(涨跌幅%)、lhb_net_buy(净买额元)、
+        close(收盘价)、pct_chg(涨跌幅%)、lhb_net_buy(净买额元)、
         lhb_buy/lhb_sell/lhb_amount(买入/卖出/成交额元)、
         market_amount(市场总成交额元)、net_rate/amount_rate(占比%)、
         turnover_rate(换手率%)、float_value(流通市值元)、reason(上榜原因)
@@ -473,7 +473,7 @@ async def tool_get_zt_pool(date: str) -> str:
         date: 交易日期 YYYYMMDD，如 "20260320"
 
     Returns:
-        JSON 列表，每条包含：symbol、name、pct_change(涨跌幅%)、price(最新价)、
+        JSON 列表，每条包含：symbol、name、pct_chg(涨跌幅%)、price(最新价)、
         amount(成交额元)、float_mv/total_mv(流通/总市值元)、turnover(换手率%)、
         seal_amount(封板资金元)、first_seal_time/last_seal_time(首末封板时间HHMMSS)、
         open_times(炸板次数)、continuous_days(连板数)、industry(行业)
@@ -497,7 +497,7 @@ async def tool_get_strong_stocks(date: str) -> str:
         date: 交易日期 YYYYMMDD，如 "20260320"
 
     Returns:
-        JSON 列表，每条包含：symbol、name、pct_change(涨跌幅%)、price、
+        JSON 列表，每条包含：symbol、name、pct_chg(涨跌幅%)、price、
         limit_price(涨停价)、amount(成交额元)、float_mv/total_mv(流通/总市值元)、
         turnover(换手率%)、volume_ratio(量比)、is_new_high(是否创新高)、
         reason(入选理由)、industry(行业)
@@ -521,7 +521,7 @@ async def tool_get_previous_zt(date: str) -> str:
         date: 今日交易日期 YYYYMMDD，接口自动返回昨日涨停股今日数据
 
     Returns:
-        JSON 列表，每条包含：symbol、name、pct_change(今日涨跌幅%)、price(今日最新价)、
+        JSON 列表，每条包含：symbol、name、pct_chg(今日涨跌幅%)、price(今日最新价)、
         limit_price(昨日涨停价)、amount(今日成交额元)、float_mv/total_mv、turnover、
         prev_seal_time(昨日封板时间HHMMSS)、prev_continuous_days(昨日连板数)、industry
     """
@@ -544,7 +544,7 @@ async def tool_get_zbgc_pool(date: str) -> str:
         date: 交易日期 YYYYMMDD，如 "20260320"
 
     Returns:
-        JSON 列表，每条包含：symbol、name、pct_change(涨跌幅%)、price、
+        JSON 列表，每条包含：symbol、name、pct_chg(涨跌幅%)、price、
         limit_price(涨停价)、amount(成交额元)、float_mv/total_mv、turnover、
         first_seal_time(首次封板时间)、open_times(炸板次数)、amplitude(振幅%)、industry
     """
@@ -575,7 +575,7 @@ async def tool_get_north_stock_hold(
         trade_date: 交易日期 YYYYMMDD（tushare 专用，如 "20240301"）
 
     Returns:
-        JSON 列表，每条包含：symbol、name、date、close_price、pct_change、
+        JSON 列表，每条包含：symbol、name、date、close_price、pct_chg、
         hold_volume(持股数量股)、hold_market_cap(持股市值元)、hold_float_ratio(%),
         hold_total_ratio(%)、increase_5d_volume、increase_5d_cap 等（akshare 特有）
 
@@ -730,7 +730,7 @@ async def tool_get_sector_capital_flow(
         sector_type: choice of {"行业资金流", "概念资金流", "地域资金流", "沪股通", "深股通"}
 
     Returns:
-        JSON 列表，每条包含：rank、name、pct_change(涨跌幅%)、
+        JSON 列表，每条包含：rank、name、pct_chg(涨跌幅%)、
         main_net_inflow/main_net_inflow_pct(主力净流入元/%)、
         super_large_net_inflow/super_large_net_inflow_pct(超大单%)、
         large_net_inflow/large_net_inflow_pct(大单%)、
