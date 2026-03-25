@@ -22,19 +22,48 @@
 
 - `TUSHARE_TOKEN`：tushare API token（tushare 接口必须）
 - `TUSHARE_API_URL`：tushare API 地址（可选，默认官方地址；使用第三方代理时设置）
-- `XUEQIU_COOKIE`：雪球登录 cookie 字符串（可选，K线接口需要；实时行情无需）
+- `XUEQIU_COOKIE`：雪球登录 cookie 字符串（可选，手动指定时优先级最高）
+
+### 雪球 Cookie 自动获取
+
+雪球 K 线等需要登录的接口，cookie 通过 4 层 fallback 自动获取，通常无需手动配置：
+
+1. **环境变量** `XUEQIU_COOKIE`（手动设置时最优先）
+2. **浏览器自动提取**：从 Chrome 所有 Profile / Safari 读取（需 `browser-cookie3`，在浏览器中登录过 xueqiu.com 即可）
+3. **文件缓存** `~/.finance_data/xueqiu_cookie.json`（24h TTL，浏览器提取成功后自动缓存）
+4. **访客 cookie**（访问雪球首页获取，仅支持实时行情，不支持 K 线）
+
+检测逻辑：`finance_data.provider.xueqiu.client.has_login_cookie()` 按上述顺序检查。
 
 ## 开发
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
+.venv/bin/pip install -e ".[browser]"  # 可选：启用浏览器 cookie 自动提取
 .venv/bin/pytest tests/ -v
 ```
 
 ## 目录结构
 
-Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立 models.py + akshare.py + tushare.py。
+Domain-first 架构，四层分离：
+
+```
+src/finance_data/
+├── interface/          # 协议层：Protocol 定义 + Pydantic models
+│   └── <domain>/       # 每个领域: protocol.py + models.py
+├── provider/           # 数据源实现
+│   ├── akshare/        # akshare（无需 token，约 20 个领域）
+│   ├── tushare/        # tushare（需 TUSHARE_TOKEN，约 15 个领域）
+│   ├── xueqiu/         # 雪球（海外可达，4 个领域：realtime/kline/index + client.py）
+│   └── metadata/       # 元数据：registry.py（ToolMeta 注册）+ validator.py
+├── service/            # 业务编排层：Dispatcher 管理多 provider fallback 链
+│   └── <domain>.py     # 每个领域一个 service，构建 provider 优先级链
+└── mcp/
+    └── server.py       # MCP server：27 个 tool 定义，调用 service 层
+```
+
+关键路径：`mcp/server.py` → `service/<domain>.py` → `provider/<src>/<domain>/`
 
 ## 新增接口流程
 
@@ -81,4 +110,6 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 
 ## Provider 优先级
 
-`akshare`（无需 token）→ `tushare`（需 `TUSHARE_TOKEN`）→ `xueqiu`（海外可达，实时行情无需认证，K线需 `XUEQIU_COOKIE`）
+`akshare`（无需 token）→ `tushare`（需 `TUSHARE_TOKEN`）→ `xueqiu`（海外可达，实时行情无需认证，K线需登录 cookie — 自动从浏览器提取或手动设置 `XUEQIU_COOKIE`）
+
+Service 层在模块加载时根据 token/cookie 可用性动态构建 provider 链（见 `service/<domain>.py` 的 `_build_*()` 函数）。
