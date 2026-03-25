@@ -44,12 +44,12 @@ class TushareRealtimeQuote:
             name="",  # tushare daily 不含股票名称
             price=float(row.get("close", 0)),
             pct_chg=float(row.get("pct_chg", 0)),
-            volume=float(row.get("vol", 0)),
+            volume=float(row.get("vol", 0)) * 100,
             amount=float(row.get("amount", 0)) * 1000,
             market_cap=None, pe=None, pb=None, turnover_rate=None,
             timestamp=datetime.datetime.now().isoformat(timespec="seconds"),
         )
         return DataResult(
             data=[quote.to_dict()], source="tushare",
-            meta={"rows": 1, "symbol": symbol},
+            meta={"rows": 1, "symbol": symbol, "price_type": "eod_close"},
         )
