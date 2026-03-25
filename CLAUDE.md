@@ -51,18 +51,18 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 
 | Tool | 领域 | 说明 |
 |------|------|------|
-| `tool_get_stock_info` | stock | 个股基本信息，akshare 优先，fallback tushare |
-| `tool_get_kline` | kline | K线历史数据（daily/weekly/monthly/分钟级），akshare+tushare+xueqiu |
+| `tool_get_stock_info_history` | stock | 个股基本信息，akshare 优先，fallback tushare |
+| `tool_get_kline_history` | kline | K线历史数据（daily/weekly/monthly/分钟级），akshare+tushare+xueqiu |
 | `tool_get_realtime_quote` | realtime | 实时行情（含 20 分钟缓存），akshare+tushare+xueqiu |
-| `tool_get_index_quote` | index | 大盘指数实时行情，akshare+tushare+xueqiu |
+| `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare+tushare+xueqiu |
 | `tool_get_index_history` | index | 大盘指数历史 K线，akshare+tushare+xueqiu |
-| `tool_get_sector_rank` | sector | 行业板块涨跌排名，仅 akshare |
-| `tool_get_chip_distribution` | chip | 个股筹码分布（获利比例、成本、集中度），仅 akshare |
-| `tool_get_financial_summary` | fundamental | 财务摘要（营收、净利润、ROE、毛利率），akshare+tushare |
-| `tool_get_dividend` | fundamental | 历史分红记录，akshare+tushare |
-| `tool_get_earnings_forecast` | fundamental | 业绩预告，akshare 优先 |
-| `tool_get_fund_flow` | cashflow | 个股资金流向（主力净流入），仅 akshare |
-| `tool_get_trade_calendar` | calendar | 交易日历（is_open 标记），仅 tushare |
+| `tool_get_sector_rank_realtime` | sector | 行业板块涨跌排名，仅 akshare |
+| `tool_get_chip_distribution_history` | chip | 个股筹码分布（获利比例、成本、集中度），仅 akshare |
+| `tool_get_financial_summary_history` | fundamental | 财务摘要（营收、净利润、ROE、毛利率），akshare+tushare |
+| `tool_get_dividend_history` | fundamental | 历史分红记录，akshare+tushare |
+| `tool_get_earnings_forecast_history` | fundamental | 业绩预告，akshare 优先 |
+| `tool_get_stock_capital_flow_realtime` | cashflow | 个股资金流向（主力净流入），仅 akshare |
+| `tool_get_trade_calendar_history` | calendar | 交易日历（is_open 标记），仅 tushare |
 | `tool_get_market_stats_realtime` | market | 市场涨跌统计（盘中实时，涨/跌/平家数），仅 akshare |
 | `tool_get_lhb_detail` | lhb | 龙虎榜每日上榜详情（按日期范围），akshare 优先+tushare |
 | `tool_get_lhb_stock_stat` | lhb | 个股上榜统计（近一月/三月/六月/一年），仅 akshare |
@@ -73,11 +73,11 @@ Domain-first 架构：`src/finance_data/provider/<domain>/`，每个领域独立
 | `tool_get_strong_stocks` | pool | 强势股池（60日新高/量比放大），仅 akshare |
 | `tool_get_previous_zt` | pool | 昨日涨停今日数据（低吸检测），仅 akshare |
 | `tool_get_zbgc_pool` | pool | 炸板股池（冲板后开板，低吸补充），仅 akshare |
-| `tool_get_north_flow` | north_flow | 北向资金日频资金流（沪股通+深股通），仅 akshare |
+| `tool_get_market_north_capital` | north_flow | 北向资金日频资金流（沪股通+深股通），仅 akshare |
 | `tool_get_north_stock_hold` | north_flow | 北向资金持股明细（akshare 排行/tushare 个股），akshare 优先 |
 | `tool_get_margin` | margin | 融资融券汇总（按交易所），tushare 优先（支持日期范围） |
 | `tool_get_margin_detail` | margin | 融资融券个股明细，tushare 优先（支持日期范围+个股） |
-| `tool_get_sector_fund_flow` | sector_fund_flow | 板块资金流排名（行业/概念/地域/沪股通/深股通），仅 akshare |
+| `tool_get_sector_capital_flow` | sector_fund_flow | 板块资金流排名（行业/概念/地域/沪股通/深股通），仅 akshare |
 
 ## Provider 优先级
 
