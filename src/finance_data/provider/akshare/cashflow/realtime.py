@@ -26,10 +26,12 @@ def _no_proxy():
 
 class AkshareStockCapitalFlow:
     def get_stock_capital_flow_realtime(self, symbol: str) -> DataResult:
-        market = "sh" if symbol.startswith("6") else "sz"
+        from finance_data.provider.symbol import normalize
+        code, exchange = normalize(symbol)
+        market = exchange.lower()  # "sh" or "sz"
         try:
             with _no_proxy():
-                df = ak.stock_individual_fund_flow(stock=symbol, market=market)
+                df = ak.stock_individual_fund_flow(stock=code, market=market)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("akshare", "stock_individual_fund_flow", str(e), "network") from e
         except Exception as e:

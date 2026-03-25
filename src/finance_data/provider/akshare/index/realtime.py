@@ -47,7 +47,7 @@ class AkshareIndexQuote:
             name=str(row.get("名称", "")),
             price=float(row.get("最新价", 0)),
             pct_chg=float(row.get("涨跌幅", 0)),
-            volume=float(row.get("成交量", 0)),
+            volume=float(row.get("成交量", 0)) * 100,  # 手→股
             amount=float(row.get("成交额", 0)),
             timestamp=datetime.datetime.now(
                 tz=datetime.timezone(datetime.timedelta(hours=8))

@@ -49,11 +49,11 @@ def _prev_days(date_str: str, days: int = 5) -> str:
 
 
 def _calc_volume(amount: float, open_: float, high: float, low: float, close: float) -> float:
-    """从成交额估算成交量: volume = amount * 10000 / 均价"""
+    """从成交额估算成交量: volume = amount * 1000 / 均价（腾讯源 amount 单位为千元）"""
     avg = (open_ + high + low + close) / 4
     if avg <= 0:
         return 0.0
-    return round(amount * 10000 / avg)
+    return round(amount * 1000 / avg)
 
 
 def _build_bars_from_tx(df, symbol: str, period: str, adj: str, start: str) -> list:
@@ -76,7 +76,7 @@ def _build_bars_from_tx(df, symbol: str, period: str, adj: str, start: str) -> l
                 symbol=symbol, date=_parse_date(row.get("date", "")),
                 period=period,
                 open=open_, high=high, low=low, close=close,
-                volume=volume, amount=amount * 10000,  # 万元→元
+                volume=volume, amount=amount * 1000,  # 千元→元
                 pct_chg=pct_chg, adj=adj,
             ).to_dict(),
         ))

@@ -35,6 +35,8 @@ def _opt_float(val) -> float | None:
 
 class AkshareRealtimeQuote:
     def get_realtime_quote(self, symbol: str) -> DataResult:
+        from finance_data.provider.symbol import to_sina
+        sina_code = to_sina(symbol)
         try:
             with _no_proxy():
                 df = ak.stock_zh_a_spot()
@@ -43,7 +45,7 @@ class AkshareRealtimeQuote:
         except Exception as e:
             raise DataFetchError("akshare", "stock_zh_a_spot", str(e), "data") from e
 
-        row_df = df[df["代码"] == symbol]
+        row_df = df[df["代码"] == sina_code]
         if row_df.empty:
             raise DataFetchError("akshare", "stock_zh_a_spot",
                                  f"未找到股票: {symbol}", "data")

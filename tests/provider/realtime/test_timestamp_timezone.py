@@ -41,7 +41,7 @@ def test_akshare_realtime_timestamp_has_timezone():
     from finance_data.provider.akshare.realtime.realtime import AkshareRealtimeQuote
 
     mock_df = pd.DataFrame([{
-        "代码": "000001", "名称": "平安银行",
+        "代码": "sz000001", "名称": "平安银行",
         "最新价": 10.5, "涨跌幅": 1.2,
         "成交量": 50000, "成交额": 525000,
     }])

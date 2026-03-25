@@ -4,13 +4,13 @@ import pandas as pd
 
 
 def test_akshare_kline_tencent_amount_in_yuan():
-    """腾讯源 amount 原始值为万元，KlineBar.amount 应转换为元"""
+    """腾讯源 amount 原始值为千元，KlineBar.amount 应转换为元"""
     from finance_data.provider.akshare.kline.history import AkshareKlineHistory
 
     mock_df = pd.DataFrame([{
         "date": "2026-03-24",
         "open": 10.0, "high": 11.0, "low": 9.5, "close": 10.5,
-        "amount": 100.0,  # 万元
+        "amount": 100.0,  # 千元
     }])
 
     with patch("finance_data.provider.akshare.kline.history.ak") as mock_ak:
@@ -21,6 +21,6 @@ def test_akshare_kline_tencent_amount_in_yuan():
         )
 
     bar = result.data[0]
-    # amount 原始 100 万元，应转换为 1,000,000 元
-    assert bar["amount"] == 1_000_000, \
-        f"amount 应为 1000000 元，got: {bar['amount']}"
+    # amount 原始 100 千元，应转换为 100,000 元
+    assert bar["amount"] == 100_000, \
+        f"amount 应为 100000 元，got: {bar['amount']}"

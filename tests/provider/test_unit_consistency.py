@@ -5,7 +5,7 @@
 
 各上游原始单位:
 - tushare: vol=手(×100→股), amount=千元(×1000→元)
-- akshare 腾讯: amount=万元(×10000→元), volume=估算
+- akshare 腾讯: amount=千元(×1000→元), volume=估算
 - xueqiu: volume=股, amount=元 (直出)
 """
 from unittest.mock import patch, MagicMock
@@ -191,13 +191,13 @@ def test_index_history_tushare_units():
 
 
 def test_kline_akshare_amount_unit():
-    """akshare kline 腾讯源: amount=元 (万元×10000)"""
+    """akshare kline 腾讯源: amount=元 (千元×1000)"""
     from finance_data.provider.akshare.kline.history import AkshareKlineHistory
 
     mock_df = pd.DataFrame([{
         "date": "2026-03-24",
         "open": 10.0, "high": 11.0, "low": 9.5, "close": 10.5,
-        "amount": 50.0,  # 万元
+        "amount": 50.0,  # 千元
     }])
 
     with patch("finance_data.provider.akshare.kline.history.ak") as mock_ak:
@@ -206,4 +206,4 @@ def test_kline_akshare_amount_unit():
             "000001", "daily", "20260324", "20260324")
 
     bar = result.data[0]
-    assert bar["amount"] == 500000.0, f"akshare amount should be 500000 元, got: {bar['amount']}"
+    assert bar["amount"] == 50000.0, f"akshare amount should be 50000 元, got: {bar['amount']}"
