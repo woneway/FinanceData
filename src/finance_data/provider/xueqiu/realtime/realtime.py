@@ -63,8 +63,10 @@ class XueqiuRealtimeQuote:
             resp.raise_for_status()
             body = resp.json()
         except requests.HTTPError as e:
+            status = getattr(e.response, "status_code", None)
+            kind = "auth" if status in (401, 403) else "network"
             raise DataFetchError(
-                "xueqiu", "quotec", str(e), "network"
+                "xueqiu", "quotec", str(e), kind
             ) from e
         except _NETWORK_ERRORS as e:
             raise DataFetchError(

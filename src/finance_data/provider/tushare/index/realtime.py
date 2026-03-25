@@ -28,7 +28,7 @@ class TushareIndexQuote:
             symbol=symbol, name="",
             price=float(row.get("close", 0)),
             pct_chg=float(row.get("pct_chg", 0)),
-            volume=float(row.get("vol", 0)),
+            volume=float(row.get("vol", 0)) * 100,
             amount=float(row.get("amount", 0)) * 1000,
             timestamp=datetime.datetime.now().isoformat(timespec="seconds"),
         )
