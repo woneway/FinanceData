@@ -59,8 +59,23 @@ src/finance_data/
 │   └── metadata/       # 元数据：registry.py（ToolMeta 注册）+ validator.py
 ├── service/            # 业务编排层：Dispatcher 管理多 provider fallback 链
 │   └── <domain>.py     # 每个领域一个 service，构建 provider 优先级链
+├── dashboard/          # 健康监控看板（FastAPI 后端 + 静态前端）
+│   ├── app.py          # FastAPI 路由：/api/tools, /api/providers, /api/health, /api/metrics
+│   ├── health.py       # 探测逻辑：逐 tool×provider 调用并返回 SSE 流
+│   ├── metrics.py      # 内存指标存储（调用次数、耗时、成功率）
+│   ├── models.py       # Pydantic models（ToolInfo, HealthResult, InvokeResponse 等）
+│   └── static/         # Vite 构建产物（由 frontend/ 编译生成）
 └── mcp/
     └── server.py       # MCP server：27 个 tool 定义，调用 service 层
+
+frontend/               # Dashboard 前端源码（React + shadcn/ui + Tailwind）
+├── src/
+│   ├── App.tsx         # 主布局：Header + Tabs（健康监控 / 工具调用）
+│   ├── pages/
+│   │   ├── HealthCheck.tsx  # 总览卡片 + Provider 概览 + 状态矩阵 + 异常记录
+│   │   └── ToolInvoke.tsx   # 工具列表 + 参数输入 + 多 Provider 对比调用
+│   └── lib/api.ts      # API 客户端（fetch + SSE）
+└── vite.config.ts      # 构建输出到 src/finance_data/dashboard/static/
 ```
 
 关键路径：`mcp/server.py` → `service/<domain>.py` → `provider/<src>/<domain>/`

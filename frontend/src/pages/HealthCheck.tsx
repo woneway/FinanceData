@@ -247,7 +247,42 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
   return (
     <div className="space-y-6">
       {/* Provider Overview Cards */}
-      <div className={`grid gap-4 ${allProviders.length <= 3 ? "grid-cols-3" : `grid-cols-${allProviders.length}`}`}>
+      <div className={`grid gap-4 ${allProviders.length <= 3 ? "grid-cols-4" : `grid-cols-${allProviders.length + 1}`}`}>
+        {/* Total overview card */}
+        <Card className="relative overflow-hidden border-primary/20 bg-primary/[0.02]">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">总览</CardTitle>
+              <Badge className="text-xs bg-primary/10 text-primary hover:bg-primary/10">
+                {tools.length} 个接口
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">领域</span>
+                <div className="font-semibold mt-0.5">{domainGroups.size} 个</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">数据源</span>
+                <div className="font-semibold mt-0.5">{allProviders.length} 个</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">探测点</span>
+                <div className="font-mono text-xs mt-0.5">{total} 个</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">覆盖率</span>
+                <div className="font-mono text-xs mt-0.5">
+                  {tools.length > 0
+                    ? `${((total / (tools.length * allProviders.length)) * 100).toFixed(0)}%`
+                    : "--"}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         {providerSummaries.map((p) => (
           <Card key={p.name} className="relative overflow-hidden">
             <CardHeader className="pb-2">
