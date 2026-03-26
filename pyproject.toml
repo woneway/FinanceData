@@ -22,6 +22,7 @@ dev = [
     "pytest-mock>=3.0.0",
 ]
 browser = ["browser-cookie3>=0.11.0"]
+dashboard = ["fastapi>=0.110.0", "uvicorn[standard]>=0.27.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/finance_data"]
