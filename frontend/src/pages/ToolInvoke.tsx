@@ -83,8 +83,10 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
   const [search, setSearch] = useState("")
   const [selectedTool, setSelectedTool] = useState<string>("")
   const [params, setParams] = useState<Record<string, string>>({})
+  const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set())
   const [invoking, setInvoking] = useState(false)
-  const [result, setResult] = useState<InvokeResponse | null>(null)
+  // Map of provider -> result for comparison view
+  const [results, setResults] = useState<Map<string, InvokeResponse>>(new Map())
 
   const filteredTools = search
     ? tools.filter(
@@ -101,34 +103,70 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
   const handleSelectTool = (name: string) => {
     setSelectedTool(name)
     setParams({})
-    setResult(null)
+    setSelectedProviders(new Set())
+    setResults(new Map())
+  }
+
+  const toggleProvider = (provider: string) => {
+    setSelectedProviders((prev) => {
+      const next = new Set(prev)
+      if (next.has(provider)) next.delete(provider)
+      else next.add(provider)
+      return next
+    })
   }
 
   const handleSubmit = async () => {
     if (!selectedTool) return
     setInvoking(true)
-    setResult(null)
-    try {
-      // Filter out empty params
-      const cleanParams: Record<string, string> = {}
-      for (const [k, v] of Object.entries(params)) {
-        if (v.trim()) cleanParams[k] = v.trim()
-      }
-      const res = await invokeTool(selectedTool, cleanParams)
-      setResult(res)
-    } catch (e) {
-      setResult({
-        tool: selectedTool,
-        provider: "unknown",
-        status: "error",
-        response_time_ms: 0,
-        data: null,
-        error: String(e),
-      })
-    } finally {
-      setInvoking(false)
+    setResults(new Map())
+
+    const cleanParams: Record<string, string> = {}
+    for (const [k, v] of Object.entries(params)) {
+      if (v.trim()) cleanParams[k] = v.trim()
     }
+
+    // Determine which calls to make
+    const calls: { key: string; provider?: string }[] = []
+    if (selectedProviders.size === 0) {
+      // No provider selected = auto dispatcher
+      calls.push({ key: "auto" })
+    } else {
+      for (const p of selectedProviders) {
+        calls.push({ key: p, provider: p })
+      }
+    }
+
+    // Fire all calls in parallel
+    const promises = calls.map(async ({ key, provider }) => {
+      try {
+        const res = await invokeTool(selectedTool, cleanParams, provider)
+        return { key, res }
+      } catch (e) {
+        return {
+          key,
+          res: {
+            tool: selectedTool,
+            provider: provider ?? "unknown",
+            status: "error" as const,
+            response_time_ms: 0,
+            data: null,
+            error: String(e),
+          },
+        }
+      }
+    })
+
+    const settled = await Promise.all(promises)
+    const newResults = new Map<string, InvokeResponse>()
+    for (const { key, res } of settled) {
+      newResults.set(key, res)
+    }
+    setResults(newResults)
+    setInvoking(false)
   }
+
+  const isCompareMode = selectedProviders.size > 1
 
   return (
     <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
@@ -176,12 +214,49 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                 <p className="text-sm text-muted-foreground">
                   {selectedToolInfo.description}
                 </p>
-                <div className="flex gap-2 pt-1">
-                  <Badge variant="secondary">{selectedToolInfo.domain}</Badge>
-                  <Badge variant="outline">
-                    {selectedToolInfo.providers.join(", ")}
-                  </Badge>
+                {/* Provider multi-select */}
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <span className="text-xs text-muted-foreground">Provider:</span>
+                  {selectedToolInfo.providers.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => toggleProvider(p)}
+                      className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer ${
+                        selectedProviders.has(p)
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  {selectedProviders.size > 0 && (
+                    <button
+                      onClick={() => setSelectedProviders(new Set())}
+                      className="text-xs text-muted-foreground hover:text-foreground underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <span className="text-xs text-muted-foreground ml-1">
+                    {selectedProviders.size === 0
+                      ? "(auto dispatcher)"
+                      : selectedProviders.size > 1
+                        ? `(${selectedProviders.size} selected — compare mode)`
+                        : ""}
+                  </span>
                 </div>
+                {/* Select all providers shortcut */}
+                {selectedToolInfo.providers.length > 1 && (
+                  <button
+                    onClick={() =>
+                      setSelectedProviders(new Set(selectedToolInfo.providers))
+                    }
+                    className="text-xs text-muted-foreground hover:text-foreground underline w-fit"
+                  >
+                    Select all for comparison
+                  </button>
+                )}
               </CardHeader>
               <CardContent>
                 {paramDefs.length > 0 ? (
@@ -212,14 +287,30 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                   onClick={handleSubmit}
                   disabled={invoking}
                 >
-                  {invoking ? "Invoking..." : "Invoke"}
+                  {invoking
+                    ? "Invoking..."
+                    : isCompareMode
+                      ? `Compare ${selectedProviders.size} Providers`
+                      : "Invoke"}
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Result */}
-            {invoking && <Skeleton className="h-40 w-full" />}
-            {result && <ResultDisplay result={result} />}
+            {/* Results */}
+            {invoking && (
+              <div className={isCompareMode ? "grid gap-4 grid-cols-1 lg:grid-cols-2" : ""}>
+                {Array.from({ length: Math.max(1, selectedProviders.size) }).map((_, i) => (
+                  <Skeleton key={i} className="h-40 w-full" />
+                ))}
+              </div>
+            )}
+            {results.size > 0 && (
+              isCompareMode ? (
+                <CompareView results={results} />
+              ) : (
+                <ResultDisplay result={Array.from(results.values())[0]} />
+              )
+            )}
           </>
         ) : (
           <Card>
@@ -228,6 +319,51 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
             </CardContent>
           </Card>
         )}
+      </div>
+    </div>
+  )
+}
+
+/** Side-by-side comparison of multiple provider results */
+function CompareView({ results }: { results: Map<string, InvokeResponse> }) {
+  const entries = Array.from(results.entries())
+
+  return (
+    <div className="space-y-4">
+      {/* Summary comparison bar */}
+      <Card>
+        <CardContent className="py-3">
+          <div className="flex flex-wrap gap-4">
+            {entries.map(([key, r]) => (
+              <div key={key} className="flex items-center gap-2">
+                <Badge
+                  className={
+                    r.status === "ok"
+                      ? "bg-green-600 text-white hover:bg-green-600"
+                      : "bg-red-600 text-white hover:bg-red-600"
+                  }
+                >
+                  {r.provider}
+                </Badge>
+                <span className="text-sm font-mono">
+                  {r.status === "ok" ? `${r.response_time_ms}ms` : "Error"}
+                </span>
+                {r.status === "ok" && r.data != null && (
+                  <span className="text-xs text-muted-foreground">
+                    {(r.data as { data?: unknown[] })?.data?.length ?? 0} rows
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Side-by-side results */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        {entries.map(([key, r]) => (
+          <ResultDisplay key={key} result={r} />
+        ))}
       </div>
     </div>
   )
@@ -242,7 +378,9 @@ function ResultDisplay({ result }: { result: InvokeResponse }) {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <CardTitle className="text-base">Result</CardTitle>
+          <CardTitle className="text-base">
+            {result.provider}
+          </CardTitle>
           <Badge
             className={
               result.status === "ok"
@@ -253,7 +391,8 @@ function ResultDisplay({ result }: { result: InvokeResponse }) {
             {result.status}
           </Badge>
           <span className="text-sm text-muted-foreground">
-            Provider: {result.provider} | {result.response_time_ms}ms
+            {result.response_time_ms}ms
+            {data?.data && Array.isArray(data.data) && ` | ${data.data.length} rows`}
           </span>
         </div>
       </CardHeader>

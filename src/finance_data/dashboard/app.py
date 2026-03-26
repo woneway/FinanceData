@@ -38,27 +38,12 @@ _metrics = MetricsStore()
 
 # --- Static files for production ---
 _STATIC_DIR = Path(__file__).parent / "static"
-if _STATIC_DIR.is_dir():
-    app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 
 def _get_providers_for_tool_name(tool_name: str) -> list[str]:
-    """Determine which providers support a tool based on source metadata"""
-    meta = TOOL_REGISTRY.get(tool_name)
-    if not meta:
-        return []
-    from finance_data.provider.metadata.models import DataSource
-    if meta.source == DataSource.AKSHARE:
-        return ["akshare"]
-    if meta.source == DataSource.TUSHARE:
-        return ["tushare"]
-    # DataSource.BOTH
-    providers = ["akshare", "tushare"]
-    # Some tools also have xueqiu
-    xueqiu_domains = {"kline", "realtime", "index"}
-    if meta.domain in xueqiu_domains:
-        providers.append("xueqiu")
-    return providers
+    """Return actual provider names from _TOOL_PROVIDERS mapping"""
+    from finance_data.dashboard.health import _TOOL_PROVIDERS
+    return list(_TOOL_PROVIDERS.get(tool_name, {}).keys())
 
 
 # ------------------------------------------------------------------
@@ -220,25 +205,55 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
             tool=tool_name, provider="unknown", status="error",
             error=f"unknown tool: {tool_name}",
         )
-    module_path, dispatcher_attr, method_name = _INVOKE_MAP[tool_name]
+
+    chosen_provider = req.provider
     try:
-        import importlib
-        mod = importlib.import_module(module_path)
-        dispatcher = getattr(mod, dispatcher_attr)
-        method = getattr(dispatcher, method_name)
         start = time.monotonic()
-        result = method(**req.params)
+
+        if chosen_provider:
+            # Direct provider call — bypass dispatcher
+            from finance_data.dashboard.health import (
+                _import_class,
+                get_providers_for_tool,
+            )
+            provider_entries = get_providers_for_tool(tool_name)
+            class_path = None
+            method_name = None
+            for pname, cpath, mname in provider_entries:
+                if pname == chosen_provider:
+                    class_path = cpath
+                    method_name = mname
+                    break
+            if not class_path:
+                return InvokeResponse(
+                    tool=tool_name, provider=chosen_provider, status="error",
+                    error=f"provider '{chosen_provider}' not available for {tool_name}",
+                )
+            cls = _import_class(class_path)
+            instance = cls()
+            method = getattr(instance, method_name)
+            result = method(**req.params)
+        else:
+            # Dispatcher fallback chain
+            import importlib
+            module_path, dispatcher_attr, method_name = _INVOKE_MAP[tool_name]
+            mod = importlib.import_module(module_path)
+            dispatcher = getattr(mod, dispatcher_attr)
+            method = getattr(dispatcher, method_name)
+            result = method(**req.params)
+
         elapsed = round((time.monotonic() - start) * 1000, 1)
+        actual_provider = chosen_provider or result.source
         _metrics.record(
             tool=tool_name,
-            provider=result.source,
+            provider=actual_provider,
             status="ok",
             response_time_ms=elapsed,
             source="invoke",
         )
         return InvokeResponse(
             tool=tool_name,
-            provider=result.source,
+            provider=actual_provider,
             status="ok",
             response_time_ms=elapsed,
             data={"data": result.data, "source": result.source, "meta": result.meta},
@@ -246,7 +261,7 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
     except Exception as e:
         _metrics.record(
             tool=tool_name,
-            provider="unknown",
+            provider=chosen_provider or "unknown",
             status="error",
             response_time_ms=0,
             error=str(e)[:200],
@@ -254,7 +269,7 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
         )
         return InvokeResponse(
             tool=tool_name,
-            provider="unknown",
+            provider=chosen_provider or "unknown",
             status="error",
             error=str(e)[:200],
         )
@@ -266,8 +281,15 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
 
 @app.get("/{path:path}")
 async def spa_fallback(path: str):
-    index_file = _STATIC_DIR / "index.html"
-    if _STATIC_DIR.is_dir() and index_file.exists():
-        from fastapi.responses import FileResponse
-        return FileResponse(str(index_file))
+    from fastapi.responses import FileResponse
+
+    if _STATIC_DIR.is_dir():
+        # Serve static assets (JS, CSS, fonts, images) directly
+        static_file = _STATIC_DIR / path
+        if static_file.is_file() and _STATIC_DIR in static_file.resolve().parents:
+            return FileResponse(str(static_file))
+        # SPA fallback — all other routes get index.html
+        index_file = _STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
     return {"message": "FinanceData Dashboard API", "docs": "/docs"}

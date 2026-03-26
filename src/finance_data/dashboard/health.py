@@ -11,8 +11,6 @@ from finance_data.provider.metadata.registry import TOOL_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# Map tool -> list of (provider_name, callable_factory)
-# callable_factory returns a function that executes the probe
 _PROBE_TIMEOUT = 30  # seconds
 
 
@@ -31,75 +29,107 @@ def _get_available_providers() -> Dict[str, bool]:
     }
 
 
-# Provider class locations for each domain
-_PROVIDER_MAP: Dict[str, Dict[str, str]] = {
-    "stock": {
-        "akshare": "finance_data.provider.akshare.stock.history:AkshareStockHistory",
-        "tushare": "finance_data.provider.tushare.stock.history:TushareStockHistory",
+# Per-tool provider mapping: tool_name -> {provider_name: (class_path, method_name)}
+# Generated from actual service dispatcher introspection.
+_TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
+    "tool_get_stock_info_history": {
+        "akshare": ("finance_data.provider.akshare.stock.history:AkshareStockHistory", "get_stock_info_history"),
+        "tushare": ("finance_data.provider.tushare.stock.history:TushareStockHistory", "get_stock_info_history"),
     },
-    "kline": {
-        "akshare": "finance_data.provider.akshare.kline.history:AkshareKlineHistory",
-        "tushare": "finance_data.provider.tushare.kline.history:TushareKlineHistory",
-        "xueqiu": "finance_data.provider.xueqiu.kline.history:XueqiuKlineHistory",
+    "tool_get_kline_history": {
+        "akshare": ("finance_data.provider.akshare.kline.history:AkshareKlineHistory", "get_kline_history"),
+        "tushare": ("finance_data.provider.tushare.kline.history:TushareKlineHistory", "get_kline_history"),
+        "xueqiu": ("finance_data.provider.xueqiu.kline.history:XueqiuKlineHistory", "get_kline_history"),
     },
-    "realtime": {
-        "akshare": "finance_data.provider.akshare.realtime.realtime:AkshareRealtimeQuote",
-        "tushare": "finance_data.provider.tushare.realtime.realtime:TushareRealtimeQuote",
-        "xueqiu": "finance_data.provider.xueqiu.realtime.realtime:XueqiuRealtimeQuote",
+    "tool_get_realtime_quote": {
+        "akshare": ("finance_data.provider.akshare.realtime.realtime:AkshareRealtimeQuote", "get_realtime_quote"),
+        "tushare": ("finance_data.provider.tushare.realtime.realtime:TushareRealtimeQuote", "get_realtime_quote"),
+        "xueqiu": ("finance_data.provider.xueqiu.realtime.realtime:XueqiuRealtimeQuote", "get_realtime_quote"),
     },
-    "index": {
-        "akshare_realtime": "finance_data.provider.akshare.index.realtime:AkshareIndexQuote",
-        "tushare_realtime": "finance_data.provider.tushare.index.realtime:TushareIndexQuote",
-        "xueqiu_realtime": "finance_data.provider.xueqiu.index.realtime:XueqiuIndexQuote",
-        "akshare_history": "finance_data.provider.akshare.index.history:AkshareIndexHistory",
-        "tushare_history": "finance_data.provider.tushare.index.history:TushareIndexHistory",
-        "xueqiu_history": "finance_data.provider.xueqiu.index.history:XueqiuIndexHistory",
+    "tool_get_index_quote_realtime": {
+        "akshare": ("finance_data.provider.akshare.index.realtime:AkshareIndexQuote", "get_index_quote_realtime"),
+        "tushare": ("finance_data.provider.tushare.index.realtime:TushareIndexQuote", "get_index_quote_realtime"),
+        "xueqiu": ("finance_data.provider.xueqiu.index.realtime:XueqiuIndexQuote", "get_index_quote_realtime"),
     },
-    "sector": {
-        "akshare": "finance_data.provider.akshare.sector.realtime:AkshareSectorRank",
+    "tool_get_index_history": {
+        "akshare": ("finance_data.provider.akshare.index.history:AkshareIndexHistory", "get_index_history"),
+        "tushare": ("finance_data.provider.tushare.index.history:TushareIndexHistory", "get_index_history"),
+        "xueqiu": ("finance_data.provider.xueqiu.index.history:XueqiuIndexHistory", "get_index_history"),
     },
-    "chip": {
-        "akshare": "finance_data.provider.akshare.chip.history:AkshareChipHistory",
-        "tushare": "finance_data.provider.tushare.chip.history:TushareChipHistory",
+    "tool_get_sector_rank_realtime": {
+        "akshare": ("finance_data.provider.akshare.sector.realtime:AkshareSectorRank", "get_sector_rank_realtime"),
     },
-    "fundamental": {
-        "akshare": "finance_data.provider.akshare.fundamental.history:AkshareFundamentalHistory",
-        "tushare": "finance_data.provider.tushare.fundamental.history:TushareFundamentalHistory",
+    "tool_get_chip_distribution_history": {
+        "akshare": ("finance_data.provider.akshare.chip.history:AkshareChipHistory", "get_chip_distribution_history"),
+        "tushare": ("finance_data.provider.tushare.chip.history:TushareChipHistory", "get_chip_distribution_history"),
     },
-    "cashflow": {
-        "akshare": "finance_data.provider.akshare.cashflow.realtime:AkshareCashflowRealtime",
+    "tool_get_financial_summary_history": {
+        "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareFinancialSummary", "get_financial_summary_history"),
+        "tushare": ("finance_data.provider.tushare.fundamental.history:TushareFinancialSummary", "get_financial_summary_history"),
     },
-    "calendar": {
-        "akshare": "finance_data.provider.akshare.calendar.history:AkshareCalendarHistory",
-        "tushare": "finance_data.provider.tushare.calendar.history:TushareCalendarHistory",
+    "tool_get_dividend_history": {
+        "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareDividend", "get_dividend_history"),
+        "tushare": ("finance_data.provider.tushare.fundamental.history:TushareDividend", "get_dividend_history"),
     },
-    "market": {
-        "akshare": "finance_data.provider.akshare.market.realtime:AkshareMarketRealtime",
+    "tool_get_earnings_forecast_history": {
+        "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareEarningsForecast", "get_earnings_forecast_history"),
     },
-    "lhb": {
-        "akshare": "finance_data.provider.akshare.lhb.history:AkshareLhbHistory",
-        "tushare": "finance_data.provider.tushare.lhb.history:TushareLhbHistory",
+    "tool_get_stock_capital_flow_realtime": {
+        "akshare": ("finance_data.provider.akshare.cashflow.realtime:AkshareStockCapitalFlow", "get_stock_capital_flow_realtime"),
     },
-    "pool": {
-        "akshare": "finance_data.provider.akshare.pool.history:AksharePoolHistory",
+    "tool_get_trade_calendar_history": {
+        "tushare": ("finance_data.provider.tushare.calendar.history:TushareTradeCalendar", "get_trade_calendar_history"),
+        "akshare": ("finance_data.provider.akshare.calendar.history:AkshareTradeCalendar", "get_trade_calendar_history"),
     },
-    "north_flow": {
-        "akshare": "finance_data.provider.akshare.north_flow.history:AkshareNorthFlowHistory",
-        "tushare": "finance_data.provider.tushare.north_flow.history:TushareNorthFlowHistory",
+    "tool_get_lhb_detail": {
+        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbDetail", "get_lhb_detail_history"),
+        "tushare": ("finance_data.provider.tushare.lhb.history:TushareLhbDetail", "get_lhb_detail_history"),
     },
-    "margin": {
-        "akshare": "finance_data.provider.akshare.margin.history:AkshareMarginHistory",
-        "tushare": "finance_data.provider.tushare.margin.history:TushareMarginHistory",
+    "tool_get_lhb_stock_stat": {
+        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbStockStat", "get_lhb_stock_stat_history"),
     },
-    "sector_fund_flow": {
-        "akshare": "finance_data.provider.akshare.sector_fund_flow.history:AkshareSectorFundFlowHistory",
+    "tool_get_lhb_active_traders": {
+        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbActiveTraders", "get_lhb_active_traders_history"),
     },
-}
-
-# Tool -> provider key mapping (handles tools that share a domain)
-_TOOL_PROVIDER_KEYS: Dict[str, List[str]] = {
-    "tool_get_index_quote_realtime": ["akshare_realtime", "tushare_realtime", "xueqiu_realtime"],
-    "tool_get_index_history": ["akshare_history", "tushare_history", "xueqiu_history"],
+    "tool_get_lhb_trader_stat": {
+        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbTraderStat", "get_lhb_trader_stat_history"),
+    },
+    "tool_get_lhb_stock_detail": {
+        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbStockDetail", "get_lhb_stock_detail_history"),
+    },
+    "tool_get_zt_pool": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZtPool", "get_zt_pool_history"),
+    },
+    "tool_get_strong_stocks": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AkshareStrongStocks", "get_strong_stocks_history"),
+    },
+    "tool_get_previous_zt": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AksharePreviousZt", "get_previous_zt_history"),
+    },
+    "tool_get_zbgc_pool": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZbgcPool", "get_zbgc_pool_history"),
+    },
+    "tool_get_north_stock_hold": {
+        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthStockHold", "get_north_stock_hold_history"),
+        "tushare": ("finance_data.provider.tushare.north_flow.history:TushareNorthStockHold", "get_north_stock_hold_history"),
+    },
+    "tool_get_margin": {
+        "tushare": ("finance_data.provider.tushare.margin.history:TushareMargin", "get_margin_history"),
+        "akshare": ("finance_data.provider.akshare.margin.history:AkshareMargin", "get_margin_history"),
+    },
+    "tool_get_margin_detail": {
+        "tushare": ("finance_data.provider.tushare.margin.history:TushareMarginDetail", "get_margin_detail_history"),
+        "akshare": ("finance_data.provider.akshare.margin.history:AkshareMarginDetail", "get_margin_detail_history"),
+    },
+    "tool_get_market_stats_realtime": {
+        "akshare": ("finance_data.provider.akshare.market.realtime:AkshareMarketRealtime", "get_market_stats_realtime"),
+    },
+    "tool_get_market_north_capital": {
+        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthFlow", "get_north_flow_history"),
+    },
+    "tool_get_sector_capital_flow": {
+        "akshare": ("finance_data.provider.akshare.sector_fund_flow.history:AkshareSectorCapitalFlow", "get_sector_capital_flow_history"),
+    },
 }
 
 
@@ -161,81 +191,34 @@ def _get_test_params(tool_name: str) -> dict:
     return params_map.get(tool_name, {})
 
 
-def _get_probe_method_name(tool_name: str) -> str:
-    """Map tool name to provider method name"""
-    method_map = {
-        "tool_get_stock_info_history": "get_stock_info_history",
-        "tool_get_kline_history": "get_kline_history",
-        "tool_get_realtime_quote": "get_realtime_quote",
-        "tool_get_index_quote_realtime": "get_index_quote_realtime",
-        "tool_get_index_history": "get_index_history",
-        "tool_get_sector_rank_realtime": "get_sector_rank_realtime",
-        "tool_get_chip_distribution_history": "get_chip_distribution_history",
-        "tool_get_financial_summary_history": "get_financial_summary_history",
-        "tool_get_dividend_history": "get_dividend_history",
-        "tool_get_earnings_forecast_history": "get_earnings_forecast_history",
-        "tool_get_stock_capital_flow_realtime": "get_stock_capital_flow_realtime",
-        "tool_get_trade_calendar_history": "get_trade_calendar_history",
-        "tool_get_lhb_detail": "get_lhb_detail_history",
-        "tool_get_lhb_stock_stat": "get_lhb_stock_stat_history",
-        "tool_get_lhb_active_traders": "get_lhb_active_traders_history",
-        "tool_get_lhb_trader_stat": "get_lhb_trader_stat_history",
-        "tool_get_lhb_stock_detail": "get_lhb_stock_detail_history",
-        "tool_get_zt_pool": "get_zt_pool_history",
-        "tool_get_strong_stocks": "get_strong_stocks_history",
-        "tool_get_previous_zt": "get_previous_zt_history",
-        "tool_get_zbgc_pool": "get_zbgc_pool_history",
-        "tool_get_north_stock_hold": "get_north_stock_hold_history",
-        "tool_get_margin": "get_margin_history",
-        "tool_get_margin_detail": "get_margin_detail_history",
-        "tool_get_market_stats_realtime": "get_market_stats_realtime",
-        "tool_get_market_north_capital": "get_north_flow_history",
-        "tool_get_sector_capital_flow": "get_sector_capital_flow_history",
-    }
-    return method_map.get(tool_name, "")
+def get_providers_for_tool(tool_name: str) -> List[Tuple[str, str, str]]:
+    """Return (provider_name, class_path, method_name) tuples for a tool.
 
-
-def _get_providers_for_tool(tool_name: str) -> List[Tuple[str, str]]:
-    """Return (provider_name, dotted_path) pairs for a tool"""
-    meta = TOOL_REGISTRY.get(tool_name)
-    if not meta:
+    Only includes providers whose credentials are available.
+    """
+    tool_providers = _TOOL_PROVIDERS.get(tool_name, {})
+    if not tool_providers:
         return []
 
-    domain = meta.domain
-    domain_providers = _PROVIDER_MAP.get(domain, {})
     available = _get_available_providers()
-
-    # Some tools in the same domain use different provider keys (e.g., index)
-    provider_keys = _TOOL_PROVIDER_KEYS.get(tool_name)
-
     results = []
-    if provider_keys:
-        for key in provider_keys:
-            if key in domain_providers:
-                # Extract base provider name (e.g., "akshare_realtime" -> "akshare")
-                base_provider = key.split("_")[0]
-                if available.get(base_provider, False):
-                    results.append((base_provider, domain_providers[key]))
-    else:
-        for key, path in domain_providers.items():
-            base_provider = key.split("_")[0]
-            if available.get(base_provider, False):
-                results.append((base_provider, path))
-
+    for provider_name, (class_path, method_name) in tool_providers.items():
+        if available.get(provider_name, False):
+            results.append((provider_name, class_path, method_name))
     return results
 
 
 def _run_single_probe(
     tool_name: str,
     provider_name: str,
-    dotted_path: str,
+    class_path: str,
+    method_name: str,
 ) -> HealthResult:
     """Execute a single probe"""
-    method_name = _get_probe_method_name(tool_name)
     params = _get_test_params(tool_name)
 
     try:
-        cls = _import_class(dotted_path)
+        cls = _import_class(class_path)
         instance = cls()
         method = getattr(instance, method_name)
         start = time.monotonic()
@@ -269,7 +252,7 @@ def run_probes(
     Args:
         tool_name: If given, only probe this specific tool. Otherwise probe all.
     """
-    tasks: List[Tuple[str, str, str]] = []
+    tasks: List[Tuple[str, str, str, str]] = []
 
     if tool_name:
         tools = {tool_name: TOOL_REGISTRY[tool_name]} if tool_name in TOOL_REGISTRY else {}
@@ -277,16 +260,16 @@ def run_probes(
         tools = TOOL_REGISTRY
 
     for tname in tools:
-        for provider_name, dotted_path in _get_providers_for_tool(tname):
-            tasks.append((tname, provider_name, dotted_path))
+        for provider_name, class_path, method_name in get_providers_for_tool(tname):
+            tasks.append((tname, provider_name, class_path, method_name))
 
     if not tasks:
         return
 
     with ThreadPoolExecutor(max_workers=min(8, len(tasks))) as pool:
         futures = {
-            pool.submit(_run_single_probe, t, p, d): (t, p)
-            for t, p, d in tasks
+            pool.submit(_run_single_probe, t, p, c, m): (t, p)
+            for t, p, c, m in tasks
         }
         for future in as_completed(futures):
             yield future.result()

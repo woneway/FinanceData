@@ -60,6 +60,7 @@ class HealthResult(BaseModel):
 class InvokeRequest(BaseModel):
     """Request to invoke a tool"""
     params: Dict[str, Any] = Field(default_factory=dict)
+    provider: Optional[str] = None  # None = dispatcher fallback chain
 
 
 class InvokeResponse(BaseModel):

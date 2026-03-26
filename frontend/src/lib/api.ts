@@ -102,11 +102,14 @@ export async function fetchHistory(
 export async function invokeTool(
   tool: string,
   params: Record<string, unknown>,
+  provider?: string,
 ): Promise<InvokeResponse> {
+  const body: Record<string, unknown> = { params }
+  if (provider) body.provider = provider
   const res = await fetch(`/api/tools/${tool}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ params }),
+    body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`Failed to invoke tool: ${res.status}`)
   return res.json()

@@ -30,6 +30,16 @@ EOF
     exit 1
 }
 
+kill_old() {
+    local pids
+    pids=$(lsof -ti :"$PORT" 2>/dev/null || true)
+    if [[ -n "$pids" ]]; then
+        echo "Killing existing process on :$PORT (PIDs: $pids)"
+        echo "$pids" | xargs kill 2>/dev/null || true
+        sleep 1
+    fi
+}
+
 check_deps() {
     if [[ ! -x "$VENV/python" ]]; then
         echo "Error: .venv not found. Run: python3 -m venv .venv && $VENV/pip install -e '.[dashboard]'"
@@ -59,17 +69,16 @@ build_frontend() {
 cmd_dev() {
     check_deps
     check_frontend_deps
+    kill_old
     echo "Starting dev mode: API :$PORT + frontend :5173"
     echo "  Dashboard UI → http://localhost:5173"
     echo "  API docs     → http://localhost:$PORT/docs"
     echo ""
 
     # Start API in background
-    "$VENV/python" -c "
-import uvicorn
-from finance_data.dashboard.app import app
-uvicorn.run(app, host='0.0.0.0', port=$PORT, reload=True, reload_dirs=['src'])
-" &
+    "$VENV/python" -m uvicorn finance_data.dashboard.app:app \
+        --host 0.0.0.0 --port "$PORT" \
+        --reload --reload-dir src &
     API_PID=$!
 
     # Start frontend dev server
@@ -82,6 +91,7 @@ uvicorn.run(app, host='0.0.0.0', port=$PORT, reload=True, reload_dirs=['src'])
 
 cmd_prod() {
     check_deps
+    kill_old
     if [[ ! -f "$STATIC_DIR/index.html" ]]; then
         build_frontend
     fi
@@ -101,6 +111,7 @@ cmd_build() {
 
 cmd_api() {
     check_deps
+    kill_old
     echo "Starting API only on :$PORT"
     "$VENV/python" -c "
 import uvicorn
