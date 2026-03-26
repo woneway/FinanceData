@@ -77,9 +77,6 @@ class XueqiuStockCapitalFlow:
         total_amount = buy_total + sell_total
         net_inflow_pct = (net_inflow / total_amount * 100) if total_amount > 0 else 0.0
 
-        main_net = buy_large - sell_large
-        main_pct = (main_net / total_amount * 100) if total_amount > 0 else 0.0
-
         # 超大单可能为 None
         if buy_xlarge is not None and sell_xlarge is not None:
             super_net = float(buy_xlarge) - float(sell_xlarge)
@@ -87,6 +84,10 @@ class XueqiuStockCapitalFlow:
         else:
             super_net = 0.0
             super_pct = 0.0
+
+        # 主力 = 大单 + 超大单（与东方财富定义一致）
+        main_net = (buy_large - sell_large) + super_net
+        main_pct = (main_net / total_amount * 100) if total_amount > 0 else 0.0
 
         # timestamp → date
         ts_ms = d.get("timestamp")

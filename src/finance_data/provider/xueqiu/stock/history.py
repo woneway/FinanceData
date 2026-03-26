@@ -11,6 +11,7 @@ from finance_data.provider.xueqiu.client import (
     get_session,
     refresh_session,
 )
+from finance_data.provider.symbol import to_xueqiu
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +25,17 @@ def _str(val) -> str:
     return str(val)
 
 
+_CN_TZ = datetime.timezone(datetime.timedelta(hours=8))
+
+
 def _ms_to_date(val) -> str:
-    """Convert millisecond timestamp to YYYYMMDD string."""
+    """Convert millisecond timestamp to YYYYMMDD string (UTC+8)."""
     if val is None:
         return ""
     try:
         ts = float(val) / 1000
         dt = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)
-        return dt.strftime("%Y%m%d")
+        return dt.astimezone(_CN_TZ).strftime("%Y%m%d")
     except (TypeError, ValueError, OSError):
         return ""
 
@@ -93,6 +97,7 @@ class XueqiuStockHistory:
             industry=industry,
             list_date=_ms_to_date(d.get("listed_date")),
             area=_str(d.get("provincial_name", "")),
+            exchange="SSE" if to_xueqiu(symbol).startswith("SH") else "SZSE",
             full_name=_str(d.get("org_name_cn", "")),
             established_date=_ms_to_date(d.get("established_date")),
             main_business=_str(d.get("main_operation_business", "")),

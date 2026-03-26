@@ -1,4 +1,4 @@
-"""大盘指数历史 K线 - akshare 实现（腾讯源）"""
+"""大盘指数历史 K线 - akshare 实现（东方财富源）"""
 import contextlib
 import logging
 import requests
@@ -35,21 +35,22 @@ def _parse_date(val) -> str:
 class AkshareIndexHistory:
     def get_index_history(self, symbol: str, start: str, end: str) -> DataResult:
         from finance_data.provider.symbol import to_tencent
-        tx_symbol = to_tencent(symbol)
+        em_symbol = to_tencent(symbol)  # sh000001 格式，东财源也适用
 
         try:
             with _no_proxy():
-                df = ak.stock_zh_index_daily_tx(symbol=tx_symbol)
+                df = ak.stock_zh_index_daily_em(
+                    symbol=em_symbol, start_date=start, end_date=end,
+                )
         except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "stock_zh_index_daily_tx", str(e), "network") from e
+            raise DataFetchError("akshare", "stock_zh_index_daily_em", str(e), "network") from e
         except Exception as e:
-            raise DataFetchError("akshare", "stock_zh_index_daily_tx", str(e), "data") from e
+            raise DataFetchError("akshare", "stock_zh_index_daily_em", str(e), "data") from e
 
         if df is None or df.empty:
-            raise DataFetchError("akshare", "stock_zh_index_daily_tx",
+            raise DataFetchError("akshare", "stock_zh_index_daily_em",
                                  f"无数据: {symbol}", "data")
 
-        # 腾讯源返回 date/open/close/high/low/amount，需要计算 pct_chg
         bars = []
         prev_close = 0.0
         for _, row in df.iterrows():
@@ -61,29 +62,22 @@ class AkshareIndexHistory:
             close = float(row.get("close", 0))
             pct_chg = round((close - prev_close) / prev_close * 100, 2) if prev_close > 0 else 0.0
 
-            open_ = float(row.get("open", 0))
-            high = float(row.get("high", 0))
-            low = float(row.get("low", 0))
-            raw = float(row.get("amount", 0))
-            volume = round(raw * 100)  # 腾讯源 "amount" 实为成交量（手→股）
-            amount = 0.0  # 腾讯源不提供指数成交额
-
             bars.append(IndexBar(
                 symbol=symbol,
                 date=date,
-                open=open_,
-                high=high,
-                low=low,
+                open=float(row.get("open", 0)),
+                high=float(row.get("high", 0)),
+                low=float(row.get("low", 0)),
                 close=close,
-                volume=volume,
-                amount=amount,
+                volume=float(row.get("volume", 0)),
+                amount=float(row.get("amount", 0)),
                 pct_chg=pct_chg,
             ).to_dict())
             prev_close = close
 
         if not bars:
-            raise DataFetchError("akshare", "stock_zh_index_daily_tx",
+            raise DataFetchError("akshare", "stock_zh_index_daily_em",
                                  f"无数据: {symbol} {start}-{end}", "data")
 
         return DataResult(data=bars, source="akshare",
-                          meta={"rows": len(bars), "symbol": symbol, "upstream": "tencent"})
+                          meta={"rows": len(bars), "symbol": symbol, "upstream": "eastmoney"})

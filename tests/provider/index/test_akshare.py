@@ -44,27 +44,36 @@ def test_get_index_quote_fields(quote_provider, mock_index_df):
 
 
 @pytest.fixture
-def mock_tx_index_df():
-    """腾讯源返回 date/open/close/high/low/amount"""
+def mock_em_index_df():
+    """东方财富源返回 date/open/close/high/low/volume/amount"""
     return pd.DataFrame([
-        {"date": "2023-12-29", "open": 3050.0, "close": 3080.0, "high": 3090.0, "low": 3040.0, "amount": 5e11},
-        {"date": "2024-01-02", "open": 3090.0, "close": 3100.0, "high": 3110.0, "low": 3085.0, "amount": 1e12},
+        {"date": "2023-12-29", "open": 3050.0, "close": 3080.0, "high": 3090.0, "low": 3040.0, "volume": 5e9, "amount": 5e11},
+        {"date": "2024-01-02", "open": 3090.0, "close": 3100.0, "high": 3110.0, "low": 3085.0, "volume": 6e9, "amount": 1e12},
     ])
 
 
-def test_get_index_history_returns_data_result(history_provider, mock_tx_index_df):
-    with patch("finance_data.provider.akshare.index.history.ak.stock_zh_index_daily_tx",
-               return_value=mock_tx_index_df):
+def test_get_index_history_returns_data_result(history_provider, mock_em_index_df):
+    with patch("finance_data.provider.akshare.index.history.ak.stock_zh_index_daily_em",
+               return_value=mock_em_index_df):
         result = history_provider.get_index_history("000001.SH", start="20240101", end="20240102")
     assert isinstance(result, DataResult)
     assert result.source == "akshare"
     assert result.data[0]["close"] == 3100.0
-    assert result.meta["upstream"] == "tencent"
+    assert result.meta["upstream"] == "eastmoney"
 
 
-def test_get_index_history_pct_chg_calculated(history_provider, mock_tx_index_df):
-    with patch("finance_data.provider.akshare.index.history.ak.stock_zh_index_daily_tx",
-               return_value=mock_tx_index_df):
+def test_get_index_history_has_amount(history_provider, mock_em_index_df):
+    with patch("finance_data.provider.akshare.index.history.ak.stock_zh_index_daily_em",
+               return_value=mock_em_index_df):
+        result = history_provider.get_index_history("000001.SH", start="20240101", end="20240102")
+    bar = result.data[0]
+    assert bar["amount"] == 1e12
+    assert bar["volume"] == 6e9
+
+
+def test_get_index_history_pct_chg_calculated(history_provider, mock_em_index_df):
+    with patch("finance_data.provider.akshare.index.history.ak.stock_zh_index_daily_em",
+               return_value=mock_em_index_df):
         result = history_provider.get_index_history("000001.SH", start="20240101", end="20240102")
     bar = result.data[0]
     # pct_chg = (3100 - 3080) / 3080 * 100 ≈ 0.65

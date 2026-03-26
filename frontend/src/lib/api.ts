@@ -106,6 +106,12 @@ export async function fetchStats(hours = 24): Promise<ToolStats[]> {
   return res.json()
 }
 
+export async function fetchConsistencyLatest(): Promise<ConsistencyResult[]> {
+  const res = await fetch("/api/consistency/latest")
+  if (!res.ok) throw new Error(`Failed to fetch consistency: ${res.status}`)
+  return res.json()
+}
+
 export async function fetchHistory(
   tool: string,
   provider: string,

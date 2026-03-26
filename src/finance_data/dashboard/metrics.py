@@ -1,11 +1,12 @@
 """SQLite metrics storage for dashboard"""
+import json
 import sqlite3
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
 
-from finance_data.dashboard.models import CallRecord, ToolStats
+from finance_data.dashboard.models import CallRecord, ConsistencyResult, FieldDiff, ToolStats
 
 _DEFAULT_DB = Path.home() / ".finance_data" / "dashboard_metrics.db"
 
@@ -22,6 +23,18 @@ CREATE TABLE IF NOT EXISTS call_records (
 );
 CREATE INDEX IF NOT EXISTS idx_tool_provider ON call_records(tool, provider);
 CREATE INDEX IF NOT EXISTS idx_timestamp ON call_records(timestamp);
+
+CREATE TABLE IF NOT EXISTS consistency_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tool TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    status TEXT NOT NULL,
+    providers_compared TEXT NOT NULL,
+    record_counts TEXT NOT NULL DEFAULT '{}',
+    diffs TEXT NOT NULL DEFAULT '[]'
+);
+CREATE INDEX IF NOT EXISTS idx_consistency_tool ON consistency_results(tool);
+CREATE INDEX IF NOT EXISTS idx_consistency_timestamp ON consistency_results(timestamp);
 """
 
 
@@ -151,6 +164,43 @@ class MetricsStore:
                 last_status=last["status"] if last else None,
                 last_check_time=datetime.fromisoformat(last["timestamp"]) if last else None,
                 last_error=last["error"] if last else None,
+            ))
+        return results
+
+    def record_consistency(self, result: ConsistencyResult) -> None:
+        conn = self._get_conn()
+        conn.execute(
+            "INSERT INTO consistency_results (tool, timestamp, status, providers_compared, record_counts, diffs) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                result.tool,
+                datetime.utcnow().isoformat(),
+                result.status,
+                json.dumps(result.providers_compared),
+                json.dumps(result.record_counts),
+                json.dumps([d.model_dump() for d in result.diffs]),
+            ),
+        )
+        conn.commit()
+
+    def get_latest_consistency(self) -> List[ConsistencyResult]:
+        conn = self._get_conn()
+        rows = conn.execute(
+            "SELECT c.tool, c.status, c.providers_compared, c.record_counts, c.diffs "
+            "FROM consistency_results c "
+            "INNER JOIN ("
+            "  SELECT tool, MAX(id) as max_id FROM consistency_results GROUP BY tool"
+            ") latest ON c.id = latest.max_id "
+            "ORDER BY c.tool",
+        ).fetchall()
+        results = []
+        for r in rows:
+            results.append(ConsistencyResult(
+                tool=r["tool"],
+                status=r["status"],
+                providers_compared=json.loads(r["providers_compared"]),
+                record_counts=json.loads(r["record_counts"]),
+                diffs=[FieldDiff(**d) for d in json.loads(r["diffs"])],
             ))
         return results
 

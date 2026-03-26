@@ -137,10 +137,17 @@ class AkshareMarginDetail:
             raise DataFetchError("akshare", "stock_margin_detail_sse",
                                  f"无数据: date={date}", "data")
 
+        # 提取 ts_code 中的纯数字代码用于过滤
+        filter_code = ""
+        if ts_code:
+            filter_code = ts_code.split(".")[0].strip()
+
         rows = []
         for _, row in df.iterrows():
             code = str(row.get("标的证券代码", "")).strip()
             if not code:
+                continue
+            if filter_code and code != filter_code:
                 continue
             rows.append(MarginDetail(
                 date=date,
@@ -155,6 +162,10 @@ class AkshareMarginDetail:
                 rqmcl=_safe_float(row.get("融券卖出量")),
                 rzrqye=0,
             ).to_dict())
+
+        if not rows:
+            raise DataFetchError("akshare", "stock_margin_detail_sse",
+                                 f"无数据: date={date} ts_code={ts_code}", "data")
 
         return DataResult(data=rows, source="akshare",
                           meta={"rows": len(rows), "date": date})

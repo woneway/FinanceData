@@ -29,6 +29,7 @@ import {
   type HealthResult,
   type ToolInfo,
   type ToolStats,
+  fetchConsistencyLatest,
   fetchStats,
   runHealthCheck,
 } from "@/lib/api"
@@ -98,9 +99,21 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
     }
   }, [timeRange])
 
+  const loadConsistency = useCallback(async () => {
+    try {
+      const data = await fetchConsistencyLatest()
+      if (data.length > 0) {
+        setConsistencyResults(new Map(data.map((c) => [c.tool, c])))
+      }
+    } catch (e) {
+      console.error("Failed to load consistency:", e)
+    }
+  }, [])
+
   useEffect(() => {
     loadStats()
-  }, [loadStats])
+    loadConsistency()
+  }, [loadStats, loadConsistency])
 
   useEffect(() => {
     const count = tools.reduce((sum, t) => sum + t.providers.length, 0)

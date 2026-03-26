@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from finance_data.dashboard.health import run_probes
 from finance_data.dashboard.metrics import MetricsStore
+from finance_data.dashboard.models import ConsistencyResult
 from finance_data.dashboard.models import (
     HealthResult,
     InvokeRequest,
@@ -108,7 +109,6 @@ async def get_providers() -> list[ProviderStatus]:
 
 def _sse_stream(tool_name: Optional[str] = None):
     for result in run_probes(tool_name=tool_name):
-        # Only record metrics for probe results, not consistency checks
         if isinstance(result, HealthResult):
             _metrics.record(
                 tool=result.tool,
@@ -118,6 +118,8 @@ def _sse_stream(tool_name: Optional[str] = None):
                 error=result.error,
                 source="probe",
             )
+        elif isinstance(result, ConsistencyResult):
+            _metrics.record_consistency(result)
         data = result.model_dump_json()
         yield f"data: {data}\n\n"
     yield "data: [DONE]\n\n"
@@ -170,6 +172,12 @@ async def metrics_stats(
 async def metrics_history(tool: str, provider: str, limit: int = Query(50)):
     records = _metrics.get_history(tool=tool, provider=provider, limit=limit)
     return [r.model_dump() for r in records]
+
+
+@app.get("/api/consistency/latest")
+async def consistency_latest():
+    results = _metrics.get_latest_consistency()
+    return [r.model_dump() for r in results]
 
 
 # ------------------------------------------------------------------

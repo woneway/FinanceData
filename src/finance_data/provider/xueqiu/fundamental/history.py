@@ -23,14 +23,17 @@ _BONUS_URL = "https://stock.xueqiu.com/v5/stock/f10/cn/bonus.json"
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
 
+_CN_TZ = datetime.timezone(datetime.timedelta(hours=8))
+
+
 def _ms_to_date(val) -> str:
-    """Convert millisecond timestamp to YYYYMMDD string."""
+    """Convert millisecond timestamp to YYYYMMDD string (UTC+8)."""
     if val is None:
         return ""
     try:
         ts = float(val) / 1000
         dt = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)
-        return dt.strftime("%Y%m%d")
+        return dt.astimezone(_CN_TZ).strftime("%Y%m%d")
     except (TypeError, ValueError, OSError):
         return ""
 
@@ -99,7 +102,7 @@ class XueqiuFinancialSummary:
                     "symbol": xq_symbol,
                     "type": "Q4",
                     "is_detail": "true",
-                    "count": "10",
+                    "count": "20",
                 },
                 timeout=10,
             )
