@@ -15,63 +15,81 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { type InvokeResponse, type ToolInfo, invokeTool } from "@/lib/api"
 
+const DOMAIN_LABELS: Record<string, string> = {
+  stock: "个股信息",
+  kline: "K线数据",
+  realtime: "实时行情",
+  index: "指数数据",
+  sector: "板块排名",
+  chip: "筹码分布",
+  fundamental: "基本面",
+  cashflow: "资金流向",
+  calendar: "交易日历",
+  lhb: "龙虎榜",
+  pool: "题材股池",
+  north_flow: "北向资金",
+  margin: "融资融券",
+  market: "大盘统计",
+  sector_fund_flow: "板块资金流",
+}
+
 // Known parameters for each tool (matching backend _get_test_params)
 const TOOL_PARAMS: Record<string, { key: string; label: string; placeholder: string }[]> = {
-  tool_get_stock_info_history: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001" }],
+  tool_get_stock_info_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
   tool_get_kline_history: [
-    { key: "symbol", label: "Symbol", placeholder: "e.g. 000001" },
-    { key: "period", label: "Period", placeholder: "daily/weekly/monthly" },
-    { key: "start", label: "Start Date", placeholder: "YYYYMMDD" },
-    { key: "end", label: "End Date", placeholder: "YYYYMMDD" },
-    { key: "adj", label: "Adjust", placeholder: "qfq/hfq/empty" },
+    { key: "symbol", label: "股票代码", placeholder: "如 000001" },
+    { key: "period", label: "周期", placeholder: "daily/weekly/monthly" },
+    { key: "start", label: "开始日期", placeholder: "YYYYMMDD" },
+    { key: "end", label: "结束日期", placeholder: "YYYYMMDD" },
+    { key: "adj", label: "复权方式", placeholder: "qfq(前复权)/hfq(后复权)/留空" },
   ],
-  tool_get_realtime_quote: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001" }],
-  tool_get_index_quote_realtime: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001.SH" }],
+  tool_get_realtime_quote: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
+  tool_get_index_quote_realtime: [{ key: "symbol", label: "指数代码", placeholder: "如 000001.SH" }],
   tool_get_index_history: [
-    { key: "symbol", label: "Symbol", placeholder: "e.g. 000001.SH" },
-    { key: "start", label: "Start Date", placeholder: "YYYYMMDD" },
-    { key: "end", label: "End Date", placeholder: "YYYYMMDD" },
+    { key: "symbol", label: "指数代码", placeholder: "如 000001.SH" },
+    { key: "start", label: "开始日期", placeholder: "YYYYMMDD" },
+    { key: "end", label: "结束日期", placeholder: "YYYYMMDD" },
   ],
   tool_get_sector_rank_realtime: [],
-  tool_get_chip_distribution_history: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001" }],
-  tool_get_financial_summary_history: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001" }],
-  tool_get_dividend_history: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001" }],
-  tool_get_earnings_forecast_history: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001" }],
-  tool_get_stock_capital_flow_realtime: [{ key: "symbol", label: "Symbol", placeholder: "e.g. 000001" }],
+  tool_get_chip_distribution_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
+  tool_get_financial_summary_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
+  tool_get_dividend_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
+  tool_get_earnings_forecast_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
+  tool_get_stock_capital_flow_realtime: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
   tool_get_trade_calendar_history: [
-    { key: "start", label: "Start Date", placeholder: "YYYYMMDD" },
-    { key: "end", label: "End Date", placeholder: "YYYYMMDD" },
+    { key: "start", label: "开始日期", placeholder: "YYYYMMDD" },
+    { key: "end", label: "结束日期", placeholder: "YYYYMMDD" },
   ],
   tool_get_lhb_detail: [
-    { key: "start_date", label: "Start Date", placeholder: "YYYYMMDD" },
-    { key: "end_date", label: "End Date", placeholder: "YYYYMMDD" },
+    { key: "start_date", label: "开始日期", placeholder: "YYYYMMDD" },
+    { key: "end_date", label: "结束日期", placeholder: "YYYYMMDD" },
   ],
-  tool_get_lhb_stock_stat: [{ key: "period", label: "Period", placeholder: "近一月/近三月/近六月/近一年" }],
+  tool_get_lhb_stock_stat: [{ key: "period", label: "统计周期", placeholder: "近一月/近三月/近六月/近一年" }],
   tool_get_lhb_active_traders: [
-    { key: "start_date", label: "Start Date", placeholder: "YYYYMMDD" },
-    { key: "end_date", label: "End Date", placeholder: "YYYYMMDD" },
+    { key: "start_date", label: "开始日期", placeholder: "YYYYMMDD" },
+    { key: "end_date", label: "结束日期", placeholder: "YYYYMMDD" },
   ],
-  tool_get_lhb_trader_stat: [{ key: "period", label: "Period", placeholder: "近一月/近三月/近六月/近一年" }],
+  tool_get_lhb_trader_stat: [{ key: "period", label: "统计周期", placeholder: "近一月/近三月/近六月/近一年" }],
   tool_get_lhb_stock_detail: [
-    { key: "symbol", label: "Symbol", placeholder: "e.g. 600077" },
-    { key: "date", label: "Date", placeholder: "YYYYMMDD" },
-    { key: "flag", label: "Flag", placeholder: "买入/卖出" },
+    { key: "symbol", label: "股票代码", placeholder: "如 600077" },
+    { key: "date", label: "日期", placeholder: "YYYYMMDD" },
+    { key: "flag", label: "方向", placeholder: "买入/卖出" },
   ],
-  tool_get_zt_pool: [{ key: "date", label: "Date", placeholder: "YYYYMMDD" }],
-  tool_get_strong_stocks: [{ key: "date", label: "Date", placeholder: "YYYYMMDD" }],
-  tool_get_previous_zt: [{ key: "date", label: "Date", placeholder: "YYYYMMDD" }],
-  tool_get_zbgc_pool: [{ key: "date", label: "Date", placeholder: "YYYYMMDD" }],
+  tool_get_zt_pool: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
+  tool_get_strong_stocks: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
+  tool_get_previous_zt: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
+  tool_get_zbgc_pool: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
   tool_get_north_stock_hold: [
-    { key: "market", label: "Market", placeholder: "沪股通/深股通" },
-    { key: "indicator", label: "Indicator", placeholder: "5日排行/10日排行/..." },
+    { key: "market", label: "市场", placeholder: "沪股通/深股通" },
+    { key: "indicator", label: "排行指标", placeholder: "5日排行/10日排行/..." },
   ],
-  tool_get_margin: [{ key: "trade_date", label: "Trade Date", placeholder: "YYYYMMDD" }],
-  tool_get_margin_detail: [{ key: "trade_date", label: "Trade Date", placeholder: "YYYYMMDD" }],
+  tool_get_margin: [{ key: "trade_date", label: "交易日期", placeholder: "YYYYMMDD" }],
+  tool_get_margin_detail: [{ key: "trade_date", label: "交易日期", placeholder: "YYYYMMDD" }],
   tool_get_market_stats_realtime: [],
   tool_get_market_north_capital: [],
   tool_get_sector_capital_flow: [
-    { key: "indicator", label: "Indicator", placeholder: "今日/5日/10日" },
-    { key: "sector_type", label: "Sector Type", placeholder: "行业资金流/概念资金流/地域资金流" },
+    { key: "indicator", label: "时间范围", placeholder: "今日/5日/10日" },
+    { key: "sector_type", label: "板块类型", placeholder: "行业资金流/概念资金流/地域资金流" },
   ],
 }
 
@@ -85,7 +103,6 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
   const [params, setParams] = useState<Record<string, string>>({})
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set())
   const [invoking, setInvoking] = useState(false)
-  // Map of provider -> result for comparison view
   const [results, setResults] = useState<Map<string, InvokeResponse>>(new Map())
 
   const filteredTools = search
@@ -96,6 +113,14 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
           t.domain.toLowerCase().includes(search.toLowerCase()),
       )
     : tools
+
+  // Group by domain
+  const domainGroups = new Map<string, ToolInfo[]>()
+  for (const tool of filteredTools) {
+    const group = domainGroups.get(tool.domain) ?? []
+    group.push(tool)
+    domainGroups.set(tool.domain, group)
+  }
 
   const selectedToolInfo = tools.find((t) => t.name === selectedTool)
   const paramDefs = TOOL_PARAMS[selectedTool] ?? []
@@ -126,10 +151,8 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
       if (v.trim()) cleanParams[k] = v.trim()
     }
 
-    // Determine which calls to make
     const calls: { key: string; provider?: string }[] = []
     if (selectedProviders.size === 0) {
-      // No provider selected = auto dispatcher
       calls.push({ key: "auto" })
     } else {
       for (const p of selectedProviders) {
@@ -137,7 +160,6 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
       }
     }
 
-    // Fire all calls in parallel
     const promises = calls.map(async ({ key, provider }) => {
       try {
         const res = await invokeTool(selectedTool, cleanParams, provider)
@@ -169,34 +191,41 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
   const isCompareMode = selectedProviders.size > 1
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       {/* Tool selector */}
       <div className="space-y-3">
         <Input
-          placeholder="Search tools..."
+          placeholder="搜索工具名称、描述或领域..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <ScrollArea className="h-[600px] rounded-md border">
-          <div className="p-2 space-y-1">
-            {filteredTools.map((tool) => (
-              <button
-                key={tool.name}
-                onClick={() => handleSelectTool(tool.name)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  selectedTool === tool.name
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                }`}
-              >
-                <div className="font-mono text-xs">{tool.name}</div>
-                <div className="text-xs opacity-70 mt-0.5 truncate">
-                  {tool.description}
+          <div className="p-2 space-y-3">
+            {Array.from(domainGroups.entries()).map(([domain, domainTools]) => (
+              <div key={domain}>
+                <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {DOMAIN_LABELS[domain] ?? domain}
+                  <span className="ml-1 font-normal normal-case">({domainTools.length})</span>
                 </div>
-                <Badge variant="secondary" className="mt-1 text-[10px]">
-                  {tool.domain}
-                </Badge>
-              </button>
+                <div className="space-y-0.5">
+                  {domainTools.map((tool) => (
+                    <button
+                      key={tool.name}
+                      onClick={() => handleSelectTool(tool.name)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                        selectedTool === tool.name
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <div className="font-mono text-xs">{tool.name.replace("tool_get_", "")}</div>
+                      <div className="text-xs opacity-70 mt-0.5 truncate">
+                        {tool.description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </ScrollArea>
@@ -208,15 +237,20 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
           <>
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-mono">
-                  {selectedToolInfo.name}
-                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-base font-mono">
+                    {selectedToolInfo.name}
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {DOMAIN_LABELS[selectedToolInfo.domain] ?? selectedToolInfo.domain}
+                  </Badge>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {selectedToolInfo.description}
                 </p>
                 {/* Provider multi-select */}
                 <div className="flex flex-wrap items-center gap-2 pt-2">
-                  <span className="text-xs text-muted-foreground">Provider:</span>
+                  <span className="text-xs text-muted-foreground">数据源:</span>
                   {selectedToolInfo.providers.map((p) => (
                     <button
                       key={p}
@@ -235,18 +269,17 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                       onClick={() => setSelectedProviders(new Set())}
                       className="text-xs text-muted-foreground hover:text-foreground underline"
                     >
-                      Clear
+                      清除
                     </button>
                   )}
                   <span className="text-xs text-muted-foreground ml-1">
                     {selectedProviders.size === 0
-                      ? "(auto dispatcher)"
+                      ? "(自动选择最优数据源)"
                       : selectedProviders.size > 1
-                        ? `(${selectedProviders.size} selected — compare mode)`
+                        ? `(已选 ${selectedProviders.size} 个，对比模式)`
                         : ""}
                   </span>
                 </div>
-                {/* Select all providers shortcut */}
                 {selectedToolInfo.providers.length > 1 && (
                   <button
                     onClick={() =>
@@ -254,13 +287,13 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                     }
                     className="text-xs text-muted-foreground hover:text-foreground underline w-fit"
                   >
-                    Select all for comparison
+                    全选对比
                   </button>
                 )}
               </CardHeader>
               <CardContent>
                 {paramDefs.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {paramDefs.map((p) => (
                       <div key={p.key} className="space-y-1">
                         <label className="text-sm font-medium">{p.label}</label>
@@ -279,7 +312,7 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    No parameters required
+                    无需参数，直接调用
                   </p>
                 )}
                 <Button
@@ -288,10 +321,10 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                   disabled={invoking}
                 >
                   {invoking
-                    ? "Invoking..."
+                    ? "调用中..."
                     : isCompareMode
-                      ? `Compare ${selectedProviders.size} Providers`
-                      : "Invoke"}
+                      ? `对比 ${selectedProviders.size} 个数据源`
+                      : "调用"}
                 </Button>
               </CardContent>
             </Card>
@@ -315,7 +348,8 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
         ) : (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              Select a tool from the list to get started
+              <p className="text-lg mb-1">从左侧选择一个工具开始</p>
+              <p className="text-sm">支持多数据源对比调用</p>
             </CardContent>
           </Card>
         )}
@@ -346,11 +380,11 @@ function CompareView({ results }: { results: Map<string, InvokeResponse> }) {
                   {r.provider}
                 </Badge>
                 <span className="text-sm font-mono">
-                  {r.status === "ok" ? `${r.response_time_ms}ms` : "Error"}
+                  {r.status === "ok" ? `${r.response_time_ms}ms` : "异常"}
                 </span>
                 {r.status === "ok" && r.data != null && (
                   <span className="text-xs text-muted-foreground">
-                    {(r.data as { data?: unknown[] })?.data?.length ?? 0} rows
+                    {(r.data as { data?: unknown[] })?.data?.length ?? 0} 行
                   </span>
                 )}
               </div>
@@ -388,11 +422,11 @@ function ResultDisplay({ result }: { result: InvokeResponse }) {
                 : "bg-red-600 text-white hover:bg-red-600"
             }
           >
-            {result.status}
+            {result.status === "ok" ? "正常" : "异常"}
           </Badge>
           <span className="text-sm text-muted-foreground">
             {result.response_time_ms}ms
-            {data?.data && Array.isArray(data.data) && ` | ${data.data.length} rows`}
+            {data?.data && Array.isArray(data.data) && ` | ${data.data.length} 行`}
           </span>
         </div>
       </CardHeader>
@@ -445,7 +479,7 @@ function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
       </Table>
       {rows.length > 100 && (
         <p className="text-xs text-muted-foreground p-2 text-center">
-          Showing 100 of {rows.length} rows
+          显示前 100 行，共 {rows.length} 行
         </p>
       )}
     </ScrollArea>

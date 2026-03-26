@@ -15,10 +15,15 @@ function providerBadge(p: ProviderStatus) {
       className={
         p.available
           ? "border-green-600 text-green-600"
-          : "border-red-600 text-red-600"
+          : "border-red-400 text-red-400"
       }
       title={p.reason}
     >
+      <span
+        className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${
+          p.available ? "bg-green-500" : "bg-red-400"
+        }`}
+      />
       {p.name}
     </Badge>
   )
@@ -58,29 +63,32 @@ function App() {
     <TooltipProvider>
       <div className="min-h-screen bg-background text-foreground">
         {/* Header */}
-        <header className="border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold">FinanceData Dashboard</h1>
+        <header className="border-b bg-card px-6 py-4">
+          <div className="flex items-center justify-between max-w-screen-xl mx-auto">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">FinanceData 数据看板</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {tools.length} 个工具 · {providers.filter((p) => p.available).length}/{providers.length} 数据源可用
+              </p>
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground mr-2">
-                Providers:
-              </span>
+              <span className="text-xs text-muted-foreground mr-1">数据源</span>
               {providers.map(providerBadge)}
             </div>
           </div>
         </header>
 
         {/* Main */}
-        <main className="p-6">
+        <main className="p-6 max-w-screen-xl mx-auto">
           <Tabs defaultValue="health">
-            <TabsList>
-              <TabsTrigger value="health">Health Check</TabsTrigger>
-              <TabsTrigger value="invoke">Tool Invoke</TabsTrigger>
+            <TabsList className="mb-4">
+              <TabsTrigger value="health">健康监控</TabsTrigger>
+              <TabsTrigger value="invoke">工具调用</TabsTrigger>
             </TabsList>
-            <TabsContent value="health" className="mt-4">
+            <TabsContent value="health" className="mt-0">
               <HealthCheck tools={tools} />
             </TabsContent>
-            <TabsContent value="invoke" className="mt-4">
+            <TabsContent value="invoke" className="mt-0">
               <ToolInvoke tools={tools} />
             </TabsContent>
           </Tabs>

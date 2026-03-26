@@ -1,12 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import {
   Select,
   SelectContent,
@@ -23,6 +18,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   type HealthResult,
   type ToolInfo,
@@ -34,37 +35,51 @@ import {
 type StatusFilter = "all" | "ok" | "error"
 type TimeRange = "1" | "6" | "24" | "168"
 
-function statusBadge(status: string | null) {
-  if (!status) return <Badge variant="secondary">--</Badge>
-  if (status === "ok")
-    return (
-      <Badge className="bg-green-600 text-white hover:bg-green-600">OK</Badge>
-    )
-  if (status === "timeout")
-    return (
-      <Badge className="bg-yellow-500 text-white hover:bg-yellow-500">
-        Timeout
-      </Badge>
-    )
-  return (
-    <Badge className="bg-red-600 text-white hover:bg-red-600">Error</Badge>
-  )
+const DOMAIN_LABELS: Record<string, string> = {
+  stock: "个股信息",
+  kline: "K线数据",
+  realtime: "实时行情",
+  index: "指数数据",
+  sector: "板块排名",
+  chip: "筹码分布",
+  fundamental: "基本面",
+  cashflow: "资金流向",
+  calendar: "交易日历",
+  lhb: "龙虎榜",
+  pool: "题材股池",
+  north_flow: "北向资金",
+  margin: "融资融券",
+  market: "大盘统计",
+  sector_fund_flow: "板块资金流",
 }
 
 interface HealthCheckProps {
   tools: ToolInfo[]
 }
 
+/** Per-provider aggregate stats */
+interface ProviderSummary {
+  name: string
+  toolCount: number
+  okCount: number
+  errorCount: number
+  unknownCount: number
+  avgMs: number
+  totalCalls: number
+  successRate: string
+}
+
 export default function HealthCheck({ tools }: HealthCheckProps) {
   const [stats, setStats] = useState<ToolStats[]>([])
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [total, setTotal] = useState(0)
   const [liveResults, setLiveResults] = useState<Map<string, HealthResult>>(
     new Map(),
   )
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [timeRange, setTimeRange] = useState<TimeRange>("24")
-  const [openDomains, setOpenDomains] = useState<Set<string>>(new Set())
 
   const loadStats = useCallback(async () => {
     setLoading(true)
@@ -82,9 +97,15 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
     loadStats()
   }, [loadStats])
 
+  useEffect(() => {
+    const count = tools.reduce((sum, t) => sum + t.providers.length, 0)
+    setTotal(count)
+  }, [tools])
+
   const handleRunAll = async () => {
     setRunning(true)
     setLiveResults(new Map())
+    setProgress(0)
     try {
       await runHealthCheck(
         (result) => {
@@ -93,6 +114,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
             next.set(`${result.tool}:${result.provider}`, result)
             return next
           })
+          setProgress((p) => p + 1)
         },
         () => {
           setRunning(false)
@@ -105,268 +127,468 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
     }
   }
 
-  // Build domain -> tool groups
-  const domainGroups = new Map<string, ToolInfo[]>()
-  for (const tool of tools) {
-    const group = domainGroups.get(tool.domain) ?? []
-    group.push(tool)
-    domainGroups.set(tool.domain, group)
-  }
+  // All unique providers across all tools, sorted
+  const allProviders = useMemo(() => {
+    const set = new Set<string>()
+    for (const t of tools) {
+      for (const p of t.providers) set.add(p)
+    }
+    return Array.from(set).sort((a, b) => {
+      const order = ["akshare", "tushare", "xueqiu"]
+      return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) -
+        (order.indexOf(b) === -1 ? 99 : order.indexOf(b))
+    })
+  }, [tools])
 
-  // Build stats lookup
-  const statsLookup = new Map<string, ToolStats>()
-  for (const s of stats) {
-    statsLookup.set(`${s.tool}:${s.provider}`, s)
-  }
+  // Stats lookup
+  const statsLookup = useMemo(() => {
+    const map = new Map<string, ToolStats>()
+    for (const s of stats) {
+      map.set(`${s.tool}:${s.provider}`, s)
+    }
+    return map
+  }, [stats])
 
-  // Summary calculations
-  const totalTools = tools.length
-  const totalProbes = stats.reduce((sum, s) => sum + s.total_calls, 0)
-  const totalSuccess = stats.reduce((sum, s) => sum + s.success_count, 0)
-  const successRate =
-    totalProbes > 0 ? ((totalSuccess / totalProbes) * 100).toFixed(1) : "--"
-  const avgTime =
-    stats.length > 0
-      ? (
-          stats.reduce((sum, s) => sum + s.avg_response_ms, 0) / stats.length
-        ).toFixed(0)
-      : "--"
-  const errorCount = stats.filter((s) => s.last_status === "error").length
-
-  // Filter logic
-  const shouldShowTool = (tool: ToolInfo) => {
-    if (statusFilter === "all") return true
-    for (const provider of tool.providers) {
-      const key = `${tool.name}:${provider}`
+  // Get effective status for a tool:provider pair
+  const getStatus = useCallback(
+    (toolName: string, provider: string) => {
+      const key = `${toolName}:${provider}`
       const live = liveResults.get(key)
       const stat = statsLookup.get(key)
-      const status = live?.status ?? stat?.last_status
-      if (statusFilter === "ok" && status === "ok") return true
-      if (statusFilter === "error" && status !== "ok" && status != null)
-        return true
-    }
-    return false
-  }
+      return {
+        status: live?.status ?? stat?.last_status ?? null,
+        timeMs: live?.response_time_ms ?? stat?.avg_response_ms ?? null,
+        stat,
+        live,
+        isLive: !!live,
+      }
+    },
+    [liveResults, statsLookup],
+  )
 
-  const toggleDomain = (domain: string) => {
-    setOpenDomains((prev) => {
-      const next = new Set(prev)
-      if (next.has(domain)) next.delete(domain)
-      else next.add(domain)
-      return next
+  // Provider summaries
+  const providerSummaries = useMemo<ProviderSummary[]>(() => {
+    return allProviders.map((name) => {
+      const providerTools = tools.filter((t) => t.providers.includes(name))
+      let ok = 0, error = 0, unknown = 0, totalMs = 0, msCount = 0, totalCalls = 0, successCount = 0
+      for (const t of providerTools) {
+        const { status, timeMs, stat } = getStatus(t.name, name)
+        if (status === "ok") ok++
+        else if (status === "error" || status === "timeout") error++
+        else unknown++
+        if (timeMs != null) { totalMs += timeMs; msCount++ }
+        if (stat) { totalCalls += stat.total_calls; successCount += stat.success_count }
+      }
+      return {
+        name,
+        toolCount: providerTools.length,
+        okCount: ok,
+        errorCount: error,
+        unknownCount: unknown,
+        avgMs: msCount > 0 ? Math.round(totalMs / msCount) : 0,
+        totalCalls,
+        successRate: totalCalls > 0 ? ((successCount / totalCalls) * 100).toFixed(1) : "--",
+      }
     })
-  }
+  }, [allProviders, tools, getStatus])
+
+  // Domain groups
+  const domainGroups = useMemo(() => {
+    const groups = new Map<string, ToolInfo[]>()
+    for (const tool of tools) {
+      const group = groups.get(tool.domain) ?? []
+      group.push(tool)
+      groups.set(tool.domain, group)
+    }
+    return groups
+  }, [tools])
+
+  // Filter
+  const shouldShowTool = useCallback(
+    (tool: ToolInfo) => {
+      if (statusFilter === "all") return true
+      for (const provider of tool.providers) {
+        const { status } = getStatus(tool.name, provider)
+        if (statusFilter === "ok" && status === "ok") return true
+        if (statusFilter === "error" && status !== "ok" && status != null) return true
+      }
+      return false
+    },
+    [statusFilter, getStatus],
+  )
+
+  // Recent errors
+  const recentErrors = useMemo(() => {
+    const errors: { tool: string; provider: string; error: string; time: string | null }[] = []
+    for (const [key, live] of liveResults) {
+      if (live.status !== "ok" && live.error) {
+        const [tool, provider] = key.split(":")
+        errors.push({ tool, provider, error: live.error, time: "刚刚" })
+      }
+    }
+    for (const s of stats) {
+      if (s.last_status !== "ok" && s.last_error) {
+        const key = `${s.tool}:${s.provider}`
+        if (!liveResults.has(key)) {
+          errors.push({
+            tool: s.tool,
+            provider: s.provider,
+            error: s.last_error,
+            time: s.last_check_time ? timeAgo(s.last_check_time) : null,
+          })
+        }
+      }
+    }
+    return errors.slice(0, 10)
+  }, [stats, liveResults])
+
+  const hasAnyData = stats.length > 0 || liveResults.size > 0
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Tools
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalTools}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Probes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalProbes}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Success Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{successRate}%</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Avg Time
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{avgTime}ms</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Errors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{errorCount}</div>
-          </CardContent>
-        </Card>
+      {/* Provider Overview Cards */}
+      <div className={`grid gap-4 ${allProviders.length <= 3 ? "grid-cols-3" : `grid-cols-${allProviders.length}`}`}>
+        {providerSummaries.map((p) => (
+          <Card key={p.name} className="relative overflow-hidden">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold">{p.name}</CardTitle>
+                <Badge variant="secondary" className="text-xs">
+                  {p.toolCount} 个接口
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div className="grid grid-cols-2 gap-y-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">状态</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {p.okCount > 0 && (
+                      <span className="flex items-center gap-0.5 text-green-600 text-xs font-medium">
+                        <span className="w-2 h-2 rounded-full bg-green-500" />
+                        {p.okCount}
+                      </span>
+                    )}
+                    {p.errorCount > 0 && (
+                      <span className="flex items-center gap-0.5 text-red-600 text-xs font-medium">
+                        <span className="w-2 h-2 rounded-full bg-red-500" />
+                        {p.errorCount}
+                      </span>
+                    )}
+                    {p.unknownCount > 0 && (
+                      <span className="flex items-center gap-0.5 text-gray-400 text-xs font-medium">
+                        <span className="w-2 h-2 rounded-full bg-gray-300" />
+                        {p.unknownCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">成功率</span>
+                  <div className={`font-semibold mt-0.5 ${
+                    p.successRate !== "--" && Number(p.successRate) >= 95
+                      ? "text-green-600"
+                      : p.successRate !== "--" && Number(p.successRate) >= 80
+                        ? "text-yellow-600"
+                        : p.successRate !== "--"
+                          ? "text-red-600"
+                          : ""
+                  }`}>
+                    {p.successRate === "--" ? "--" : `${p.successRate}%`}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">平均耗时</span>
+                  <div className="font-mono text-xs mt-0.5">
+                    {p.avgMs > 0 ? `${p.avgMs}ms` : "--"}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">总调用</span>
+                  <div className="font-mono text-xs mt-0.5">
+                    {p.totalCalls > 0 ? `${p.totalCalls}次` : "--"}
+                  </div>
+                </div>
+              </div>
+              {/* Mini status bar */}
+              {(p.okCount > 0 || p.errorCount > 0) && (
+                <div className="flex h-1.5 rounded-full overflow-hidden mt-3 bg-muted">
+                  {p.okCount > 0 && (
+                    <div
+                      className="bg-green-500 transition-all"
+                      style={{ width: `${(p.okCount / p.toolCount) * 100}%` }}
+                    />
+                  )}
+                  {p.errorCount > 0 && (
+                    <div
+                      className="bg-red-500 transition-all"
+                      style={{ width: `${(p.errorCount / p.toolCount) * 100}%` }}
+                    />
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={handleRunAll} disabled={running}>
-          {running ? "Running..." : "Run All"}
+          {running ? `探测中 (${progress}/${total})...` : "全部探测"}
         </Button>
         <Button variant="outline" onClick={loadStats} disabled={loading}>
-          Refresh Stats
+          刷新统计
         </Button>
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as StatusFilter)}
         >
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-[100px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="ok">OK</SelectItem>
-            <SelectItem value="error">Error</SelectItem>
+            <SelectItem value="all">全部</SelectItem>
+            <SelectItem value="ok">正常</SelectItem>
+            <SelectItem value="error">异常</SelectItem>
           </SelectContent>
         </Select>
         <Select
           value={timeRange}
           onValueChange={(v) => setTimeRange(v as TimeRange)}
         >
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-[100px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="1">1h</SelectItem>
-            <SelectItem value="6">6h</SelectItem>
-            <SelectItem value="24">24h</SelectItem>
-            <SelectItem value="168">7d</SelectItem>
+            <SelectItem value="1">1 小时</SelectItem>
+            <SelectItem value="6">6 小时</SelectItem>
+            <SelectItem value="24">24 小时</SelectItem>
+            <SelectItem value="168">7 天</SelectItem>
           </SelectContent>
         </Select>
         {running && (
-          <span className="text-sm text-muted-foreground">
-            {liveResults.size} results received...
-          </span>
+          <div className="flex-1 ml-2">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300 rounded-full"
+                style={{ width: total > 0 ? `${(progress / total) * 100}%` : "0%" }}
+              />
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Domain Groups */}
-      {loading && stats.length === 0 ? (
+      {/* Empty state */}
+      {!hasAnyData && !running && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              暂无探测数据，点击「全部探测」开始健康检查
+            </p>
+            <Button onClick={handleRunAll}>全部探测</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Errors */}
+      {recentErrors.length > 0 && (
+        <Card className="border-red-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-red-600">
+              异常记录 ({recentErrors.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-1.5">
+              {recentErrors.map((e, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs">
+                  <span className="w-2 h-2 rounded-full bg-red-500 mt-1 flex-shrink-0" />
+                  <span className="font-mono text-muted-foreground w-20 flex-shrink-0">
+                    {e.provider}
+                  </span>
+                  <span className="font-mono flex-shrink-0">
+                    {e.tool.replace("tool_get_", "")}
+                  </span>
+                  <span className="text-red-600 truncate flex-1" title={e.error}>
+                    {e.error}
+                  </span>
+                  <span className="text-muted-foreground flex-shrink-0">
+                    {e.time ?? "--"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Status Matrix */}
+      {(hasAnyData || running) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">接口状态矩阵</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ScrollArea className="w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[180px] text-xs sticky left-0 bg-background z-10">
+                      领域 / 接口
+                    </TableHead>
+                    {allProviders.map((p) => (
+                      <TableHead key={p} className="text-xs text-center w-[120px]">
+                        {p}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(domainGroups.entries()).map(([domain, domainTools]) => {
+                    const filtered = domainTools.filter(shouldShowTool)
+                    if (filtered.length === 0) return null
+                    const domainLabel = DOMAIN_LABELS[domain] ?? domain
+
+                    return [
+                      // Domain header row
+                      <TableRow key={`domain-${domain}`} className="bg-muted/30 hover:bg-muted/30">
+                        <TableCell
+                          colSpan={allProviders.length + 1}
+                          className="py-1.5 text-xs font-semibold text-muted-foreground sticky left-0"
+                        >
+                          {domainLabel}
+                          <span className="font-normal ml-1">({filtered.length})</span>
+                        </TableCell>
+                      </TableRow>,
+                      // Tool rows
+                      ...filtered.map((tool) => (
+                        <TableRow key={tool.name}>
+                          <TableCell className="py-1.5 sticky left-0 bg-background z-10">
+                            <Tooltip>
+                              <TooltipTrigger className="font-mono text-xs cursor-help text-left">
+                                  {tool.name.replace("tool_get_", "")}
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-xs">
+                                <p className="font-mono text-xs mb-1">{tool.name}</p>
+                                <p className="text-xs">{tool.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                          {allProviders.map((provider) => {
+                            const hasProvider = tool.providers.includes(provider)
+                            if (!hasProvider) {
+                              return (
+                                <TableCell key={provider} className="text-center py-1.5">
+                                  <span className="text-xs text-muted-foreground/30">--</span>
+                                </TableCell>
+                              )
+                            }
+                            const { status, timeMs, stat, isLive } = getStatus(tool.name, provider)
+                            return (
+                              <TableCell key={provider} className="text-center py-1.5">
+                                <StatusCell
+                                  status={status}
+                                  timeMs={timeMs}
+                                  stat={stat ?? undefined}
+                                  isLive={isLive}
+                                />
+                              </TableCell>
+                            )
+                          })}
+                        </TableRow>
+                      )),
+                    ]
+                  })}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
+      {loading && stats.length === 0 && !running && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
-      ) : (
-        Array.from(domainGroups.entries()).map(([domain, domainTools]) => {
-          const filteredTools = domainTools.filter(shouldShowTool)
-          if (filteredTools.length === 0) return null
-
-          return (
-            <Collapsible
-              key={domain}
-              open={openDomains.has(domain)}
-              onOpenChange={() => toggleDomain(domain)}
-            >
-              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-4 py-3 text-left hover:bg-muted">
-                  <span className="font-semibold capitalize">
-                    {domain}{" "}
-                    <span className="text-muted-foreground font-normal">
-                      ({filteredTools.length} tools)
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">
-                    {openDomains.has(domain) ? "\u25B2" : "\u25BC"}
-                  </span>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="space-y-3 pb-2">
-                  {filteredTools.map((tool) => (
-                    <ToolRow
-                      key={tool.name}
-                      tool={tool}
-                      statsLookup={statsLookup}
-                      liveResults={liveResults}
-                    />
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )
-        })
       )}
     </div>
   )
 }
 
-function ToolRow({
-  tool,
-  statsLookup,
-  liveResults,
+/** A single cell in the status matrix */
+function StatusCell({
+  status,
+  timeMs,
+  stat,
+  isLive,
 }: {
-  tool: ToolInfo
-  statsLookup: Map<string, ToolStats>
-  liveResults: Map<string, HealthResult>
+  status: string | null
+  timeMs: number | null
+  stat?: ToolStats
+  isLive: boolean
 }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-mono">{tool.name}</CardTitle>
-        <p className="text-xs text-muted-foreground">{tool.description}</p>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">Provider</TableHead>
-              <TableHead className="w-[80px]">Status</TableHead>
-              <TableHead className="w-[100px]">Time (ms)</TableHead>
-              <TableHead className="w-[100px]">Success Rate</TableHead>
-              <TableHead className="w-[80px]">Calls</TableHead>
-              <TableHead>Last Check</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tool.providers.map((provider) => {
-              const key = `${tool.name}:${provider}`
-              const stat = statsLookup.get(key)
-              const live = liveResults.get(key)
-              const status = live?.status ?? stat?.last_status
-              const timeMs = live?.response_time_ms ?? stat?.avg_response_ms
-              const lastCheck = stat?.last_check_time
-                ? new Date(stat.last_check_time).toLocaleTimeString()
-                : "--"
+  if (!status) {
+    return <span className="text-xs text-muted-foreground/50">未检测</span>
+  }
 
-              return (
-                <TableRow
-                  key={provider}
-                  className={
-                    live ? "animate-in fade-in duration-300" : undefined
-                  }
-                >
-                  <TableCell className="font-medium">{provider}</TableCell>
-                  <TableCell>{statusBadge(status ?? null)}</TableCell>
-                  <TableCell>
-                    {timeMs != null ? `${timeMs.toFixed(0)}` : "--"}
-                  </TableCell>
-                  <TableCell>
-                    {stat ? `${stat.success_rate}%` : "--"}
-                  </TableCell>
-                  <TableCell>{stat?.total_calls ?? 0}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {live ? "just now" : lastCheck}
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+  const dotColor =
+    status === "ok" ? "bg-green-500" : status === "timeout" ? "bg-yellow-500" : "bg-red-500"
+  const bgColor =
+    status === "ok"
+      ? "bg-green-50 dark:bg-green-950/20"
+      : status === "timeout"
+        ? "bg-yellow-50 dark:bg-yellow-950/20"
+        : "bg-red-50 dark:bg-red-950/20"
+
+  const content = (
+    <div
+      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 ${bgColor} ${
+        isLive ? "ring-1 ring-primary/30 animate-in fade-in duration-300" : ""
+      }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      <span className="text-xs font-mono">
+        {timeMs != null ? `${timeMs.toFixed(0)}ms` : status === "ok" ? "OK" : "ERR"}
+      </span>
+    </div>
   )
+
+  if (stat) {
+    return (
+      <Tooltip>
+        <TooltipTrigger>{content}</TooltipTrigger>
+        <TooltipContent>
+          <div className="text-xs space-y-0.5">
+            <div>成功率: {stat.success_rate}%</div>
+            <div>调用次数: {stat.total_calls}</div>
+            <div>平均耗时: {stat.avg_response_ms.toFixed(0)}ms</div>
+            {stat.last_check_time && (
+              <div>最后检测: {timeAgo(stat.last_check_time)}</div>
+            )}
+            {stat.last_error && <div className="text-red-400 truncate max-w-[200px]">{stat.last_error}</div>}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return content
+}
+
+function timeAgo(ts: string): string {
+  const date = new Date(ts)
+  const now = Date.now()
+  const diff = now - date.getTime()
+  if (diff < 0) return "刚刚"
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return `${seconds}秒前`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}小时前`
+  const days = Math.floor(hours / 24)
+  return `${days}天前`
 }
