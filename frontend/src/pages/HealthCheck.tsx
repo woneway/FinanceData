@@ -80,6 +80,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
   )
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [timeRange, setTimeRange] = useState<TimeRange>("24")
+  const [probingTool, setProbingTool] = useState<string | null>(null)
 
   const loadStats = useCallback(async () => {
     setLoading(true)
@@ -124,6 +125,30 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
     } catch (e) {
       console.error("Health check failed:", e)
       setRunning(false)
+    }
+  }
+
+  const handleProbeTool = async (toolName: string) => {
+    if (running || probingTool) return
+    setProbingTool(toolName)
+    try {
+      await runHealthCheck(
+        (result) => {
+          setLiveResults((prev) => {
+            const next = new Map(prev)
+            next.set(`${result.tool}:${result.provider}`, result)
+            return next
+          })
+        },
+        () => {
+          setProbingTool(null)
+          loadStats()
+        },
+        toolName,
+      )
+    } catch (e) {
+      console.error("Single probe failed:", e)
+      setProbingTool(null)
     }
   }
 
@@ -259,7 +284,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
             </div>
           </CardHeader>
           <CardContent className="pb-3">
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
+            <div className="grid grid-cols-2 gap-y-2 text-sm select-text">
               <div>
                 <span className="text-muted-foreground">领域</span>
                 <div className="font-semibold mt-0.5">{domainGroups.size} 个</div>
@@ -294,7 +319,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
               </div>
             </CardHeader>
             <CardContent className="pb-3">
-              <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <div className="grid grid-cols-2 gap-y-2 text-sm select-text">
                 <div>
                   <span className="text-muted-foreground">状态</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -437,7 +462,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
           <CardContent className="pt-0">
             <div className="space-y-1.5">
               {recentErrors.map((e, i) => (
-                <div key={i} className="flex items-start gap-2 text-xs">
+                <div key={i} className="flex items-start gap-2 text-xs select-text">
                   <span className="w-2 h-2 rounded-full bg-red-500 mt-1 flex-shrink-0" />
                   <span className="font-mono text-muted-foreground w-20 flex-shrink-0">
                     {e.provider}
@@ -445,7 +470,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
                   <span className="font-mono flex-shrink-0">
                     {e.tool.replace("tool_get_", "")}
                   </span>
-                  <span className="text-red-600 truncate flex-1" title={e.error}>
+                  <span className="text-red-600 flex-1 select-text break-all" title={e.error}>
                     {e.error}
                   </span>
                   <span className="text-muted-foreground flex-shrink-0">
@@ -499,16 +524,33 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
                       // Tool rows
                       ...filtered.map((tool) => (
                         <TableRow key={tool.name}>
-                          <TableCell className="py-1.5 sticky left-0 bg-background z-10">
-                            <Tooltip>
-                              <TooltipTrigger className="font-mono text-xs cursor-help text-left">
-                                  {tool.name.replace("tool_get_", "")}
-                              </TooltipTrigger>
-                              <TooltipContent side="right" className="max-w-xs">
-                                <p className="font-mono text-xs mb-1">{tool.name}</p>
-                                <p className="text-xs">{tool.description}</p>
-                              </TooltipContent>
-                            </Tooltip>
+                          <TableCell className="py-1.5 sticky left-0 bg-background z-10 select-text">
+                            <div className="flex items-center gap-1.5 group">
+                              <button
+                                onClick={() => handleProbeTool(tool.name)}
+                                disabled={running || probingTool !== null}
+                                className="w-5 h-5 flex-shrink-0 inline-flex items-center justify-center rounded text-muted-foreground/40 hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-0 disabled:cursor-not-allowed"
+                                title="探测此接口"
+                              >
+                                {probingTool === tool.name ? (
+                                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" /></svg>
+                                ) : (
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                                )}
+                              </button>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  className="font-mono text-xs cursor-help text-left select-text"
+                                  render={<span />}
+                                >
+                                    {tool.name.replace("tool_get_", "")}
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs">
+                                  <p className="font-mono text-xs mb-1 select-text">{tool.name}</p>
+                                  <p className="text-xs select-text">{tool.description}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
                           </TableCell>
                           {allProviders.map((provider) => {
                             const hasProvider = tool.providers.includes(provider)
@@ -599,16 +641,16 @@ function StatusCell({
   if (stat) {
     return (
       <Tooltip>
-        <TooltipTrigger>{content}</TooltipTrigger>
+        <TooltipTrigger render={<span />} className="select-text">{content}</TooltipTrigger>
         <TooltipContent>
-          <div className="text-xs space-y-0.5">
+          <div className="text-xs space-y-0.5 select-text">
             <div>成功率: {stat.success_rate}%</div>
             <div>调用次数: {stat.total_calls}</div>
             <div>平均耗时: {stat.avg_response_ms.toFixed(0)}ms</div>
             {stat.last_check_time && (
               <div>最后检测: {timeAgo(stat.last_check_time)}</div>
             )}
-            {stat.last_error && <div className="text-red-400 truncate max-w-[200px]">{stat.last_error}</div>}
+            {stat.last_error && <div className="text-red-400 break-all max-w-[300px]">{stat.last_error}</div>}
           </div>
         </TooltipContent>
       </Tooltip>

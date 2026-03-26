@@ -212,7 +212,7 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                     <button
                       key={tool.name}
                       onClick={() => handleSelectTool(tool.name)}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors select-text ${
                         selectedTool === tool.name
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted"
@@ -432,13 +432,13 @@ function ResultDisplay({ result }: { result: InvokeResponse }) {
       </CardHeader>
       <CardContent>
         {result.error && (
-          <p className="text-sm text-red-600 mb-3">{result.error}</p>
+          <p className="text-sm text-red-600 mb-3 select-text break-all">{result.error}</p>
         )}
         {data?.data && Array.isArray(data.data) && data.data.length > 0 ? (
           <DataTable rows={data.data as Record<string, unknown>[]} />
         ) : (
           <ScrollArea className="h-[300px]">
-            <pre className="text-xs bg-muted p-3 rounded-md overflow-auto">
+            <pre className="text-xs bg-muted p-3 rounded-md overflow-auto select-text">
               {JSON.stringify(result.data, null, 2)}
             </pre>
           </ScrollArea>
@@ -455,7 +455,7 @@ function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
 
   return (
     <ScrollArea className="h-[400px]">
-      <Table>
+      <Table className="select-text">
         <TableHeader>
           <TableRow>
             {columns.map((col) => (

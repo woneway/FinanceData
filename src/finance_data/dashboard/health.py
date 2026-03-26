@@ -152,6 +152,46 @@ def _last_trading_day() -> str:
     return d.strftime("%Y%m%d")
 
 
+def _find_recent_lhb_stock() -> dict:
+    """Find a stock that was recently on the LHB for use as test params.
+
+    Queries the LHB detail list for the past week and picks the first stock.
+    Falls back to a hardcoded example if the query fails.
+    """
+    try:
+        import contextlib
+        import requests
+        import akshare as ak
+
+        @contextlib.contextmanager
+        def _no_proxy():
+            orig = requests.Session.__init__
+            def _init(self, *a, **kw):
+                orig(self, *a, **kw)
+                self.trust_env = False
+            requests.Session.__init__ = _init
+            try:
+                yield
+            finally:
+                requests.Session.__init__ = orig
+
+        yesterday = _last_trading_day()
+        week_ago = (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d")
+        with _no_proxy():
+            df = ak.stock_lhb_detail_em(start_date=week_ago, end_date=yesterday)
+        if df is not None and not df.empty:
+            row = df.iloc[0]
+            symbol = str(row.get("代码", ""))
+            date_raw = str(row.get("上榜日", ""))
+            date = date_raw.replace("-", "")[:8]
+            if symbol and date:
+                return {"symbol": symbol, "date": date, "flag": "买入"}
+    except Exception as e:
+        logger.debug("_find_recent_lhb_stock failed: %s", e)
+    # fallback: use a well-known stock with a known LHB date
+    return {"symbol": "000001", "date": _last_trading_day(), "flag": "买入"}
+
+
 def _get_test_params(tool_name: str) -> dict:
     """Return test parameters for a given tool"""
     today = datetime.date.today().strftime("%Y%m%d")
@@ -181,9 +221,7 @@ def _get_test_params(tool_name: str) -> dict:
         "tool_get_lhb_stock_stat": {"period": "近一月"},
         "tool_get_lhb_active_traders": {"start_date": week_ago, "end_date": yesterday},
         "tool_get_lhb_trader_stat": {"period": "近一月"},
-        "tool_get_lhb_stock_detail": {
-            "symbol": "600077", "date": yesterday, "flag": "买入",
-        },
+        "tool_get_lhb_stock_detail": _find_recent_lhb_stock(),
         "tool_get_zt_pool": {"date": yesterday},
         "tool_get_strong_stocks": {"date": yesterday},
         "tool_get_previous_zt": {"date": yesterday},
