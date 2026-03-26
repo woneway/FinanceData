@@ -108,14 +108,16 @@ async def get_providers() -> list[ProviderStatus]:
 
 def _sse_stream(tool_name: Optional[str] = None):
     for result in run_probes(tool_name=tool_name):
-        _metrics.record(
-            tool=result.tool,
-            provider=result.provider,
-            status=result.status,
-            response_time_ms=result.response_time_ms,
-            error=result.error,
-            source="probe",
-        )
+        # Only record metrics for probe results, not consistency checks
+        if isinstance(result, HealthResult):
+            _metrics.record(
+                tool=result.tool,
+                provider=result.provider,
+                status=result.status,
+                response_time_ms=result.response_time_ms,
+                error=result.error,
+                source="probe",
+            )
         data = result.model_dump_json()
         yield f"data: {data}\n\n"
     yield "data: [DONE]\n\n"

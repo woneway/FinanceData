@@ -56,6 +56,9 @@ def _build_margin_detail() -> _MarginDetailDispatcher:
         from finance_data.provider.tushare.margin.history import TushareMarginDetail
         providers.append(TushareMarginDetail())
     providers.append(AkshareMarginDetail())
+    # 雪球作为最后 fallback（仅支持个股查询）
+    from finance_data.provider.xueqiu.margin.history import XueqiuMarginDetail
+    providers.append(XueqiuMarginDetail())
     return _MarginDetailDispatcher(providers=providers)
 
 

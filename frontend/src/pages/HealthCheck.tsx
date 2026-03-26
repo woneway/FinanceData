@@ -25,6 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
+  type ConsistencyResult,
   type HealthResult,
   type ToolInfo,
   type ToolStats,
@@ -81,6 +82,9 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [timeRange, setTimeRange] = useState<TimeRange>("24")
   const [probingTool, setProbingTool] = useState<string | null>(null)
+  const [consistencyResults, setConsistencyResults] = useState<Map<string, ConsistencyResult>>(
+    new Map(),
+  )
 
   const loadStats = useCallback(async () => {
     setLoading(true)
@@ -103,9 +107,18 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
     setTotal(count)
   }, [tools])
 
+  const onConsistencyResult = useCallback((cr: ConsistencyResult) => {
+    setConsistencyResults((prev) => {
+      const next = new Map(prev)
+      next.set(cr.tool, cr)
+      return next
+    })
+  }, [])
+
   const handleRunAll = async () => {
     setRunning(true)
     setLiveResults(new Map())
+    setConsistencyResults(new Map())
     setProgress(0)
     try {
       await runHealthCheck(
@@ -121,6 +134,8 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
           setRunning(false)
           loadStats()
         },
+        undefined,
+        onConsistencyResult,
       )
     } catch (e) {
       console.error("Health check failed:", e)
@@ -145,6 +160,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
           loadStats()
         },
         toolName,
+        onConsistencyResult,
       )
     } catch (e) {
       console.error("Single probe failed:", e)
@@ -392,6 +408,42 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
         ))}
       </div>
 
+      {/* Consistency Summary Card */}
+      {consistencyResults.size > 0 && (
+        <Card className="relative overflow-hidden border-blue-200/50 bg-blue-50/5">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">数据一致性</CardTitle>
+              <Badge className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
+                {consistencyResults.size} 个接口已校验
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="grid grid-cols-3 gap-y-2 text-sm select-text">
+              <div>
+                <span className="text-muted-foreground">一致</span>
+                <div className="font-semibold text-green-600 mt-0.5">
+                  {Array.from(consistencyResults.values()).filter((c) => c.status === "consistent").length}
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">字段缺失</span>
+                <div className="font-semibold text-yellow-600 mt-0.5">
+                  {Array.from(consistencyResults.values()).filter((c) => c.status === "warn").length}
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">值差异</span>
+                <div className="font-semibold text-red-600 mt-0.5">
+                  {Array.from(consistencyResults.values()).filter((c) => c.status === "error").length}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={handleRunAll} disabled={running}>
@@ -483,6 +535,55 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
         </Card>
       )}
 
+      {/* Consistency Issues */}
+      {(() => {
+        const issues = Array.from(consistencyResults.values()).filter(
+          (c) => c.status !== "consistent",
+        )
+        if (issues.length === 0) return null
+        return (
+          <Card className="border-yellow-200 dark:border-yellow-800/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                数据一致性问题 ({issues.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {issues.map((c) => (
+                  <div key={c.tool} className="space-y-1">
+                    <div className="font-mono text-xs font-semibold select-text">
+                      {c.tool.replace("tool_get_", "")}
+                      <span className="text-muted-foreground font-normal ml-2">
+                        ({c.providers_compared.join(" vs ")})
+                      </span>
+                    </div>
+                    {c.diffs.map((d, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs ml-4 select-text">
+                        <span
+                          className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
+                            d.level === "error" ? "bg-red-500" : "bg-yellow-500"
+                          }`}
+                        />
+                        <span className="font-mono flex-shrink-0">{d.field}</span>
+                        <span className="text-muted-foreground">{d.detail}</span>
+                        {d.level === "error" && (
+                          <span className="text-red-500 font-mono break-all">
+                            {Object.entries(d.values)
+                              .map(([p, v]) => `${p}=${JSON.stringify(v)}`)
+                              .join(", ")}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })()}
+
       {/* Status Matrix */}
       {(hasAnyData || running) && (
         <Card>
@@ -502,6 +603,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
                         {p}
                       </TableHead>
                     ))}
+                    <TableHead className="text-xs text-center w-[80px]">一致性</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -514,7 +616,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
                       // Domain header row
                       <TableRow key={`domain-${domain}`} className="bg-muted/30 hover:bg-muted/30">
                         <TableCell
-                          colSpan={allProviders.length + 1}
+                          colSpan={allProviders.length + 2}
                           className="py-1.5 text-xs font-semibold text-muted-foreground sticky left-0"
                         >
                           {domainLabel}
@@ -573,6 +675,9 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
                               </TableCell>
                             )
                           })}
+                          <TableCell className="text-center py-1.5">
+                            <ConsistencyBadge result={consistencyResults.get(tool.name)} />
+                          </TableCell>
                         </TableRow>
                       )),
                     ]
@@ -592,6 +697,79 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
         </div>
       )}
     </div>
+  )
+}
+
+/** Consistency badge for a tool row */
+function ConsistencyBadge({ result }: { result?: ConsistencyResult }) {
+  if (!result) {
+    return <span className="text-xs text-muted-foreground/30">--</span>
+  }
+
+  if (result.status === "consistent") {
+    return (
+      <Tooltip>
+        <TooltipTrigger render={<span />} className="select-text">
+          <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-green-50 dark:bg-green-950/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span className="text-xs">一致</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="text-xs select-text">
+            比较: {result.providers_compared.join(", ")}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  const warnCount = result.diffs.filter((d) => d.level === "warn").length
+  const errorCount = result.diffs.filter((d) => d.level === "error").length
+  const isError = result.status === "error"
+
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span />} className="select-text">
+        <span
+          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 ${
+            isError
+              ? "bg-red-50 dark:bg-red-950/20"
+              : "bg-yellow-50 dark:bg-yellow-950/20"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              isError ? "bg-red-500" : "bg-yellow-500"
+            }`}
+          />
+          <span className="text-xs">
+            {errorCount > 0 ? `${errorCount}差异` : `${warnCount}缺失`}
+          </span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="max-w-md">
+        <div className="text-xs space-y-1 select-text">
+          <div>比较: {result.providers_compared.join(", ")}</div>
+          {result.diffs.slice(0, 8).map((d, i) => (
+            <div key={i} className="flex gap-2">
+              <span
+                className={
+                  d.level === "error" ? "text-red-400" : "text-yellow-400"
+                }
+              >
+                {d.level === "error" ? "差异" : "缺失"}
+              </span>
+              <span className="font-mono">{d.field}</span>
+              <span className="text-muted-foreground">{d.detail}</span>
+            </div>
+          ))}
+          {result.diffs.length > 8 && (
+            <div className="text-muted-foreground">...+{result.diffs.length - 8} 项</div>
+          )}
+        </div>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

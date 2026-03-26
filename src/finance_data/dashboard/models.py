@@ -49,12 +49,31 @@ class ProviderStatus(BaseModel):
 
 class HealthResult(BaseModel):
     """SSE probe result for a single tool x provider"""
+    type: Literal["probe"] = "probe"
     tool: str
     provider: str
     status: Literal["ok", "error", "timeout", "warn"]
     response_time_ms: float = 0.0
     error: Optional[str] = None
     record_count: int = 0
+
+
+class FieldDiff(BaseModel):
+    """Single field-level discrepancy between providers"""
+    field: str
+    level: Literal["warn", "error"]  # warn=缺失, error=值不一致
+    detail: str
+    values: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ConsistencyResult(BaseModel):
+    """Cross-provider consistency check for a single tool"""
+    type: Literal["consistency"] = "consistency"
+    tool: str
+    providers_compared: List[str]
+    status: Literal["consistent", "warn", "error"]
+    record_counts: Dict[str, int] = Field(default_factory=dict)
+    diffs: List[FieldDiff] = Field(default_factory=list)
 
 
 class InvokeRequest(BaseModel):

@@ -5,7 +5,8 @@ import os
 import time
 from typing import Dict, Generator, List, Optional, Tuple
 
-from finance_data.dashboard.models import HealthResult
+from finance_data.dashboard.consistency import compare_provider_data
+from finance_data.dashboard.models import ConsistencyResult, HealthResult
 from finance_data.provider.metadata.registry import TOOL_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_margin_detail": {
         "tushare": ("finance_data.provider.tushare.margin.history:TushareMarginDetail", "get_margin_detail_history"),
         "akshare": ("finance_data.provider.akshare.margin.history:AkshareMarginDetail", "get_margin_detail_history"),
+        "xueqiu": ("finance_data.provider.xueqiu.margin.history:XueqiuMarginDetail", "get_margin_detail_history"),
     },
     "tool_get_market_stats_realtime": {
         "akshare": ("finance_data.provider.akshare.market.realtime:AkshareMarketRealtime", "get_market_stats_realtime"),
@@ -234,7 +236,7 @@ def _get_test_params(tool_name: str) -> dict:
             "market": "沪股通", "indicator": "5日排行",
         },
         "tool_get_margin": {"trade_date": yesterday},
-        "tool_get_margin_detail": {"trade_date": yesterday},
+        "tool_get_margin_detail": {"trade_date": "", "start_date": week_ago, "end_date": yesterday, "ts_code": "000001"},
         "tool_get_market_stats_realtime": {},
         "tool_get_market_north_capital": {},
         "tool_get_sector_capital_flow": {
@@ -266,8 +268,8 @@ def _run_single_probe(
     provider_name: str,
     class_path: str,
     method_name: str,
-) -> HealthResult:
-    """Execute a single probe"""
+) -> tuple[HealthResult, Optional[list[dict]]]:
+    """Execute a single probe, returning health result + raw data for comparison."""
     params = _get_test_params(tool_name)
 
     try:
@@ -277,13 +279,17 @@ def _run_single_probe(
         start = time.monotonic()
         result = method(**params)
         elapsed = (time.monotonic() - start) * 1000
-        record_count = len(result.data) if hasattr(result, "data") else 0
-        return HealthResult(
-            tool=tool_name,
-            provider=provider_name,
-            status="ok",
-            response_time_ms=round(elapsed, 1),
-            record_count=record_count,
+        data = result.data if hasattr(result, "data") else []
+        record_count = len(data)
+        return (
+            HealthResult(
+                tool=tool_name,
+                provider=provider_name,
+                status="ok",
+                response_time_ms=round(elapsed, 1),
+                record_count=record_count,
+            ),
+            data,
         )
     except Exception as e:
         elapsed = 0.0
@@ -295,38 +301,60 @@ def _run_single_probe(
             status = "warn"
         else:
             status = "error"
-        return HealthResult(
-            tool=tool_name,
-            provider=provider_name,
-            status=status,
-            response_time_ms=round(elapsed, 1),
-            error=err_msg,
+        return (
+            HealthResult(
+                tool=tool_name,
+                provider=provider_name,
+                status=status,
+                response_time_ms=round(elapsed, 1),
+                error=err_msg,
+            ),
+            None,
         )
 
 
 def run_probes(
     tool_name: Optional[str] = None,
-) -> Generator[HealthResult, None, None]:
+) -> Generator[HealthResult | ConsistencyResult, None, None]:
     """Run health probes and yield results as they complete.
+
+    After all providers for a tool finish, yields a ConsistencyResult
+    if 2+ providers returned data successfully.
 
     Args:
         tool_name: If given, only probe this specific tool. Otherwise probe all.
     """
-    tasks: List[Tuple[str, str, str, str]] = []
+    from collections import OrderedDict
 
     if tool_name:
         tools = {tool_name: TOOL_REGISTRY[tool_name]} if tool_name in TOOL_REGISTRY else {}
     else:
         tools = TOOL_REGISTRY
 
+    # Group tasks by tool (preserve registry order)
+    tool_tasks: OrderedDict[str, List[Tuple[str, str, str, str]]] = OrderedDict()
     for tname in tools:
         for provider_name, class_path, method_name in get_providers_for_tool(tname):
-            tasks.append((tname, provider_name, class_path, method_name))
+            tool_tasks.setdefault(tname, []).append(
+                (tname, provider_name, class_path, method_name)
+            )
 
-    if not tasks:
+    if not tool_tasks:
         return
 
     # Run probes sequentially — akshare uses py_mini_racer (V8 engine)
     # which crashes under concurrent thread access.
-    for t, p, c, m in tasks:
-        yield _run_single_probe(t, p, c, m)
+    for tname, tasks in tool_tasks.items():
+        provider_data: Dict[str, list[dict]] = {}
+
+        for t, p, c, m in tasks:
+            health_result, data = _run_single_probe(t, p, c, m)
+            yield health_result
+            if data is not None and health_result.status == "ok":
+                provider_data[p] = data
+
+        # After all providers for this tool, run consistency check
+        if len(provider_data) >= 2:
+            consistency = compare_provider_data(tname, provider_data)
+            if consistency is not None:
+                yield consistency

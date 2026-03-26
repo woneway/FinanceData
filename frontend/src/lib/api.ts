@@ -39,12 +39,29 @@ export interface ProviderStatus {
 }
 
 export interface HealthResult {
+  type?: "probe"
   tool: string
   provider: string
   status: "ok" | "error" | "timeout" | "warn"
   response_time_ms: number
   error: string | null
   record_count: number
+}
+
+export interface FieldDiff {
+  field: string
+  level: "warn" | "error"
+  detail: string
+  values: Record<string, unknown>
+}
+
+export interface ConsistencyResult {
+  type: "consistency"
+  tool: string
+  providers_compared: string[]
+  status: "consistent" | "warn" | "error"
+  record_counts: Record<string, number>
+  diffs: FieldDiff[]
 }
 
 export interface InvokeResponse {
@@ -121,6 +138,7 @@ export async function runHealthCheck(
   onResult: (result: HealthResult) => void,
   onDone: () => void,
   toolName?: string,
+  onConsistency?: (result: ConsistencyResult) => void,
 ): Promise<void> {
   const url = toolName ? `/api/health/${toolName}` : "/api/health"
   const res = await fetch(url, { method: "POST" })
@@ -149,8 +167,12 @@ export async function runHealthCheck(
         return
       }
       try {
-        const result: HealthResult = JSON.parse(payload)
-        onResult(result)
+        const parsed = JSON.parse(payload)
+        if (parsed.type === "consistency") {
+          onConsistency?.(parsed as ConsistencyResult)
+        } else {
+          onResult(parsed as HealthResult)
+        }
       } catch {
         // skip malformed lines
       }
