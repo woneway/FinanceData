@@ -38,6 +38,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_stock_info_history": {
         "akshare": ("finance_data.provider.akshare.stock.history:AkshareStockHistory", "get_stock_info_history"),
         "tushare": ("finance_data.provider.tushare.stock.history:TushareStockHistory", "get_stock_info_history"),
+        "xueqiu": ("finance_data.provider.xueqiu.stock.history:XueqiuStockHistory", "get_stock_info_history"),
     },
     "tool_get_kline_history": {
         "akshare": ("finance_data.provider.akshare.kline.history:AkshareKlineHistory", "get_kline_history"),
@@ -69,16 +70,19 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_financial_summary_history": {
         "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareFinancialSummary", "get_financial_summary_history"),
         "tushare": ("finance_data.provider.tushare.fundamental.history:TushareFinancialSummary", "get_financial_summary_history"),
+        "xueqiu": ("finance_data.provider.xueqiu.fundamental.history:XueqiuFinancialSummary", "get_financial_summary_history"),
     },
     "tool_get_dividend_history": {
         "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareDividend", "get_dividend_history"),
         "tushare": ("finance_data.provider.tushare.fundamental.history:TushareDividend", "get_dividend_history"),
+        "xueqiu": ("finance_data.provider.xueqiu.fundamental.history:XueqiuDividend", "get_dividend_history"),
     },
     "tool_get_earnings_forecast_history": {
         "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareEarningsForecast", "get_earnings_forecast_history"),
     },
     "tool_get_stock_capital_flow_realtime": {
         "akshare": ("finance_data.provider.akshare.cashflow.realtime:AkshareStockCapitalFlow", "get_stock_capital_flow_realtime"),
+        "xueqiu": ("finance_data.provider.xueqiu.cashflow.realtime:XueqiuStockCapitalFlow", "get_stock_capital_flow_realtime"),
     },
     "tool_get_trade_calendar_history": {
         "tushare": ("finance_data.provider.tushare.calendar.history:TushareTradeCalendar", "get_trade_calendar_history"),

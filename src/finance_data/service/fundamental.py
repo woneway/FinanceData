@@ -57,6 +57,9 @@ def _build_financial_summary() -> _FinancialSummaryDispatcher:
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.fundamental.history import TushareFinancialSummary
         providers.append(TushareFinancialSummary())
+    # 雪球作为最后 fallback（无需 token，海外可达）
+    from finance_data.provider.xueqiu.fundamental.history import XueqiuFinancialSummary
+    providers.append(XueqiuFinancialSummary())
     return _FinancialSummaryDispatcher(providers=providers)
 
 
@@ -65,6 +68,9 @@ def _build_dividend() -> _DividendDispatcher:
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.fundamental.history import TushareDividend
         providers.append(TushareDividend())
+    # 雪球作为最后 fallback（无需 token，海外可达）
+    from finance_data.provider.xueqiu.fundamental.history import XueqiuDividend
+    providers.append(XueqiuDividend())
     return _DividendDispatcher(providers=providers)
 
 

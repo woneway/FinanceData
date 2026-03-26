@@ -27,6 +27,9 @@ def _build_stock_history() -> _StockHistoryDispatcher:
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.stock.history import TushareStockHistory
         providers.append(TushareStockHistory())
+    # 雪球作为最后 fallback（无需 token，海外可达）
+    from finance_data.provider.xueqiu.stock.history import XueqiuStockHistory
+    providers.append(XueqiuStockHistory())
     return _StockHistoryDispatcher(providers=providers)
 
 

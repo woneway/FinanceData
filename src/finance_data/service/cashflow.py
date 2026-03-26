@@ -21,4 +21,12 @@ class _StockCapitalFlowDispatcher:
         raise DataFetchError("all", "get_stock_capital_flow_realtime", "所有数据源均失败", "data")
 
 
-stock_capital_flow = _StockCapitalFlowDispatcher(providers=[AkshareStockCapitalFlow()])
+def _build_stock_capital_flow() -> _StockCapitalFlowDispatcher:
+    providers: list[StockCapitalFlowProtocol] = [AkshareStockCapitalFlow()]
+    # 雪球作为最后 fallback（无需 token，海外可达）
+    from finance_data.provider.xueqiu.cashflow.realtime import XueqiuStockCapitalFlow
+    providers.append(XueqiuStockCapitalFlow())
+    return _StockCapitalFlowDispatcher(providers=providers)
+
+
+stock_capital_flow = _build_stock_capital_flow()
