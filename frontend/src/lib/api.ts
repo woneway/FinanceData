@@ -4,7 +4,7 @@ export interface CallRecord {
   tool: string
   provider: string
   timestamp: string
-  status: "ok" | "error" | "timeout"
+  status: "ok" | "error" | "timeout" | "warn"
   response_time_ms: number
   error: string | null
   source: "probe" | "invoke"
@@ -41,7 +41,7 @@ export interface ProviderStatus {
 export interface HealthResult {
   tool: string
   provider: string
-  status: "ok" | "error" | "timeout"
+  status: "ok" | "error" | "timeout" | "warn"
   response_time_ms: number
   error: string | null
   record_count: number

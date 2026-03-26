@@ -10,7 +10,7 @@ class CallRecord(BaseModel):
     tool: str
     provider: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    status: Literal["ok", "error", "timeout"] = "ok"
+    status: Literal["ok", "error", "timeout", "warn"] = "ok"
     response_time_ms: float = 0.0
     error: Optional[str] = None
     source: Literal["probe", "invoke"] = "probe"
@@ -51,7 +51,7 @@ class HealthResult(BaseModel):
     """SSE probe result for a single tool x provider"""
     tool: str
     provider: str
-    status: Literal["ok", "error", "timeout"]
+    status: Literal["ok", "error", "timeout", "warn"]
     response_time_ms: float = 0.0
     error: Optional[str] = None
     record_count: int = 0

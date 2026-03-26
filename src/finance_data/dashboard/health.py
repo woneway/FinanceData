@@ -3,7 +3,6 @@ import datetime
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Generator, List, Optional, Tuple
 
 from finance_data.dashboard.models import HealthResult
@@ -16,7 +15,11 @@ _PROBE_TIMEOUT = 30  # seconds
 
 def _get_available_providers() -> Dict[str, bool]:
     """Check which providers are available"""
-    has_tushare = bool(os.getenv("TUSHARE_TOKEN"))
+    try:
+        from finance_data.provider.tushare.client import is_token_valid
+        has_tushare = is_token_valid()
+    except Exception:
+        has_tushare = False
     try:
         from finance_data.provider.xueqiu.client import has_login_cookie
         has_xueqiu = has_login_cookie()
@@ -141,10 +144,18 @@ def _import_class(dotted_path: str):
     return getattr(module, class_name)
 
 
+def _last_trading_day() -> str:
+    """Return the most recent past trading day (skip weekends)."""
+    d = datetime.date.today() - datetime.timedelta(days=1)
+    while d.weekday() >= 5:  # 5=Sat, 6=Sun
+        d -= datetime.timedelta(days=1)
+    return d.strftime("%Y%m%d")
+
+
 def _get_test_params(tool_name: str) -> dict:
     """Return test parameters for a given tool"""
     today = datetime.date.today().strftime("%Y%m%d")
-    yesterday = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y%m%d")
+    yesterday = _last_trading_day()
     week_ago = (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d")
     month_ago = (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y%m%d")
 
@@ -163,7 +174,7 @@ def _get_test_params(tool_name: str) -> dict:
         "tool_get_chip_distribution_history": {"symbol": "000001"},
         "tool_get_financial_summary_history": {"symbol": "000001"},
         "tool_get_dividend_history": {"symbol": "000001"},
-        "tool_get_earnings_forecast_history": {"symbol": "000001"},
+        "tool_get_earnings_forecast_history": {"symbol": "002594"},  # 比亚迪, more likely to have forecasts
         "tool_get_stock_capital_flow_realtime": {"symbol": "000001"},
         "tool_get_trade_calendar_history": {"start": month_ago, "end": today},
         "tool_get_lhb_detail": {"start_date": week_ago, "end_date": yesterday},
@@ -234,13 +245,20 @@ def _run_single_probe(
         )
     except Exception as e:
         elapsed = 0.0
-        status = "timeout" if "timeout" in str(e).lower() else "error"
+        err_msg = str(e)[:200]
+        err_lower = err_msg.lower()
+        if "timeout" in err_lower:
+            status = "timeout"
+        elif "无数据" in err_msg or "近期无" in err_msg:
+            status = "warn"
+        else:
+            status = "error"
         return HealthResult(
             tool=tool_name,
             provider=provider_name,
             status=status,
             response_time_ms=round(elapsed, 1),
-            error=str(e)[:200],
+            error=err_msg,
         )
 
 
@@ -266,10 +284,7 @@ def run_probes(
     if not tasks:
         return
 
-    with ThreadPoolExecutor(max_workers=min(8, len(tasks))) as pool:
-        futures = {
-            pool.submit(_run_single_probe, t, p, c, m): (t, p)
-            for t, p, c, m in tasks
-        }
-        for future in as_completed(futures):
-            yield future.result()
+    # Run probes sequentially — akshare uses py_mini_racer (V8 engine)
+    # which crashes under concurrent thread access.
+    for t, p, c, m in tasks:
+        yield _run_single_probe(t, p, c, m)

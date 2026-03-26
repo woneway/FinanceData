@@ -173,7 +173,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
       let ok = 0, error = 0, unknown = 0, totalMs = 0, msCount = 0, totalCalls = 0, successCount = 0
       for (const t of providerTools) {
         const { status, timeMs, stat } = getStatus(t.name, name)
-        if (status === "ok") ok++
+        if (status === "ok" || status === "warn") ok++
         else if (status === "error" || status === "timeout") error++
         else unknown++
         if (timeMs != null) { totalMs += timeMs; msCount++ }
@@ -221,15 +221,15 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
   const recentErrors = useMemo(() => {
     const errors: { tool: string; provider: string; error: string; time: string | null }[] = []
     for (const [key, live] of liveResults) {
-      if (live.status !== "ok" && live.error) {
+      if (live.status === "error" || live.status === "timeout") {
         const [tool, provider] = key.split(":")
-        errors.push({ tool, provider, error: live.error, time: "刚刚" })
+        errors.push({ tool, provider, error: live.error ?? live.status, time: "刚刚" })
       }
     }
     for (const s of stats) {
-      if (s.last_status !== "ok" && s.last_error) {
+      if (s.last_status === "error" || s.last_status === "timeout") {
         const key = `${s.tool}:${s.provider}`
-        if (!liveResults.has(key)) {
+        if (!liveResults.has(key) && s.last_error) {
           errors.push({
             tool: s.tool,
             provider: s.provider,
@@ -570,13 +570,18 @@ function StatusCell({
   }
 
   const dotColor =
-    status === "ok" ? "bg-green-500" : status === "timeout" ? "bg-yellow-500" : "bg-red-500"
+    status === "ok" ? "bg-green-500"
+      : status === "warn" ? "bg-yellow-500"
+      : status === "timeout" ? "bg-orange-500"
+      : "bg-red-500"
   const bgColor =
     status === "ok"
       ? "bg-green-50 dark:bg-green-950/20"
-      : status === "timeout"
+      : status === "warn"
         ? "bg-yellow-50 dark:bg-yellow-950/20"
-        : "bg-red-50 dark:bg-red-950/20"
+        : status === "timeout"
+          ? "bg-orange-50 dark:bg-orange-950/20"
+          : "bg-red-50 dark:bg-red-950/20"
 
   const content = (
     <div

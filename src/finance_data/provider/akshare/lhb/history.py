@@ -199,6 +199,9 @@ class AkshareLhbStockDetail:
                 df = ak.stock_lhb_stock_detail_em(symbol=symbol, date=date, flag=flag)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("akshare", "stock_lhb_stock_detail_em", str(e), "network") from e
+        except TypeError:
+            # akshare returns None internally when stock not on LHB that day
+            df = None
         except Exception as e:
             raise DataFetchError("akshare", "stock_lhb_stock_detail_em", str(e), "data") from e
 

@@ -72,7 +72,19 @@ async def get_tools() -> list[ToolInfo]:
 
 @app.get("/api/providers")
 async def get_providers() -> list[ProviderStatus]:
-    has_tushare = bool(os.getenv("TUSHARE_TOKEN"))
+    try:
+        from finance_data.provider.tushare.client import is_token_valid
+        has_tushare = is_token_valid()
+    except Exception:
+        has_tushare = False
+    tushare_token_set = bool(os.getenv("TUSHARE_TOKEN"))
+    if has_tushare:
+        tushare_reason = "token valid"
+    elif tushare_token_set:
+        tushare_reason = "token set but invalid"
+    else:
+        tushare_reason = "TUSHARE_TOKEN not set"
+
     try:
         from finance_data.provider.xueqiu.client import has_login_cookie
         has_xueqiu = has_login_cookie()
@@ -81,11 +93,7 @@ async def get_providers() -> list[ProviderStatus]:
 
     return [
         ProviderStatus(name="akshare", available=True, reason="no token needed"),
-        ProviderStatus(
-            name="tushare",
-            available=has_tushare,
-            reason="TUSHARE_TOKEN set" if has_tushare else "TUSHARE_TOKEN not set",
-        ),
+        ProviderStatus(name="tushare", available=has_tushare, reason=tushare_reason),
         ProviderStatus(
             name="xueqiu",
             available=has_xueqiu,
