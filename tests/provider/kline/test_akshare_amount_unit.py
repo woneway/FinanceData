@@ -1,16 +1,20 @@
-"""验证 akshare kline (腾讯源) amount 转换为元"""
-from unittest.mock import patch, MagicMock
+"""验证 akshare kline (腾讯源) volume/amount 转换
+
+腾讯源 "amount" 列实际为成交量（手），非成交额（千元）。
+volume = raw * 100（手→股），amount 由 volume * 均价估算。
+"""
+from unittest.mock import patch
 import pandas as pd
 
 
-def test_akshare_kline_tencent_amount_in_yuan():
-    """腾讯源 amount 原始值为千元，KlineBar.amount 应转换为元"""
+def test_akshare_kline_tencent_volume_and_amount():
+    """腾讯源 amount 实为成交量(手)，volume=raw*100(股)，amount=volume*avg(估算)"""
     from finance_data.provider.akshare.kline.history import AkshareKlineHistory
 
     mock_df = pd.DataFrame([{
         "date": "2026-03-24",
         "open": 10.0, "high": 11.0, "low": 9.5, "close": 10.5,
-        "amount": 100.0,  # 千元
+        "amount": 100.0,  # 实为 100 手
     }])
 
     with patch("finance_data.provider.akshare.kline.history.ak") as mock_ak:
@@ -21,6 +25,7 @@ def test_akshare_kline_tencent_amount_in_yuan():
         )
 
     bar = result.data[0]
-    # amount 原始 100 千元，应转换为 100,000 元
-    assert bar["amount"] == 100_000, \
-        f"amount 应为 100000 元，got: {bar['amount']}"
+    # volume = 100 手 * 100 = 10000 股
+    assert bar["volume"] == 10000, f"volume 应为 10000 股，got: {bar['volume']}"
+    # amount = 10000 * (10+11+9.5+10.5)/4 = 10000 * 10.25 = 102500
+    assert bar["amount"] == 102500.0, f"amount 应为 102500 元，got: {bar['amount']}"

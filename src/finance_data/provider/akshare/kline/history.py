@@ -48,16 +48,9 @@ def _prev_days(date_str: str, days: int = 5) -> str:
     return (dt - datetime.timedelta(days=days)).strftime("%Y%m%d")
 
 
-def _calc_volume(amount: float, open_: float, high: float, low: float, close: float) -> float:
-    """从成交额估算成交量: volume = amount * 1000 / 均价（腾讯源 amount 单位为千元）"""
-    avg = (open_ + high + low + close) / 4
-    if avg <= 0:
-        return 0.0
-    return round(amount * 1000 / avg)
-
-
 def _build_bars_from_tx(df, symbol: str, period: str, adj: str, start: str) -> list:
-    """从腾讯源 DataFrame 构建 KlineBar 列表，计算 volume 和 pct_chg。
+    """从腾讯源 DataFrame 构建 KlineBar 列表。
+    腾讯源 "amount" 列实为成交量（手），需 *100 转股；成交额从 volume*均价 估算。
     多取的前几天仅用于计算首条 pct_chg，最终按 start 截断。"""
     all_bars = []
     prev_close = 0.0
@@ -66,8 +59,10 @@ def _build_bars_from_tx(df, symbol: str, period: str, adj: str, start: str) -> l
         high = float(row.get("high", 0))
         low = float(row.get("low", 0))
         close = float(row.get("close", 0))
-        amount = float(row.get("amount", 0))
-        volume = _calc_volume(amount, open_, high, low, close)
+        raw = float(row.get("amount", 0))
+        volume = round(raw * 100)  # 腾讯源 "amount" 实为成交量（手→股）
+        avg = (open_ + high + low + close) / 4
+        amount = round(volume * avg, 2) if avg > 0 else 0.0  # 估算成交额（元）
         pct_chg = round((close - prev_close) / prev_close * 100, 2) if prev_close > 0 else 0.0
         prev_close = close
         all_bars.append((
@@ -76,7 +71,7 @@ def _build_bars_from_tx(df, symbol: str, period: str, adj: str, start: str) -> l
                 symbol=symbol, date=_parse_date(row.get("date", "")),
                 period=period,
                 open=open_, high=high, low=low, close=close,
-                volume=volume, amount=amount * 1000,  # 千元→元
+                volume=volume, amount=amount,
                 pct_chg=pct_chg, adj=adj,
             ).to_dict(),
         ))

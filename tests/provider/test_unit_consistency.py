@@ -190,14 +190,14 @@ def test_index_history_tushare_units():
     assert bar["amount"] == 4000000.0, f"tushare index amount should be 4000000 元, got: {bar['amount']}"
 
 
-def test_kline_akshare_amount_unit():
-    """akshare kline 腾讯源: amount=元 (千元×1000)"""
+def test_kline_akshare_volume_and_amount_unit():
+    """akshare kline 腾讯源: 'amount'列实为成交量(手)，volume=手*100，amount=估算"""
     from finance_data.provider.akshare.kline.history import AkshareKlineHistory
 
     mock_df = pd.DataFrame([{
         "date": "2026-03-24",
         "open": 10.0, "high": 11.0, "low": 9.5, "close": 10.5,
-        "amount": 50.0,  # 千元
+        "amount": 50.0,  # 实为 50 手
     }])
 
     with patch("finance_data.provider.akshare.kline.history.ak") as mock_ak:
@@ -206,4 +206,7 @@ def test_kline_akshare_amount_unit():
             "000001", "daily", "20260324", "20260324")
 
     bar = result.data[0]
-    assert bar["amount"] == 50000.0, f"akshare amount should be 50000 元, got: {bar['amount']}"
+    # volume = 50 手 * 100 = 5000 股
+    assert bar["volume"] == 5000, f"volume should be 5000 股, got: {bar['volume']}"
+    # amount = 5000 * (10+11+9.5+10.5)/4 = 5000 * 10.25 = 51250
+    assert bar["amount"] == 51250.0, f"amount should be 51250 元, got: {bar['amount']}"
