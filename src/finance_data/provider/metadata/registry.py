@@ -270,10 +270,70 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         primary_key="symbol",
         return_fields=["symbol", "date", "trade_amount", "seat_type"],
     ),
-    # tool_get_zt_pool 已禁用（依赖东财 stock_zt_pool_em）
-    # tool_get_strong_stocks 已禁用（依赖东财 stock_strong_list_em）
-    # tool_get_previous_zt 已禁用（依赖东财 stock_zt_pool_previous_em）
-    # tool_get_zbgc_pool 已禁用（依赖东财 stock_zbgc_em）
+    # === Pool ===
+    "tool_get_zt_pool": ToolMeta(
+        name="tool_get_zt_pool",
+        description="获取涨停股池",
+        domain="pool",
+        entity="stock",
+        scope="daily",
+        data_freshness=DataFreshness.END_OF_DAY,
+        update_timing=UpdateTiming.T_PLUS_1_15_30,
+        supports_history=False,
+        source=DataSource.AKSHARE,
+        source_priority="akshare",
+        api_name="stock_zt_pool_em",
+        limitations=["tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"],
+        return_fields=["symbol", "name", "pct_chg", "continuous_days", "seal_amount"],
+    ),
+
+    "tool_get_strong_stocks": ToolMeta(
+        name="tool_get_strong_stocks",
+        description="获取强势股池",
+        domain="pool",
+        entity="stock",
+        scope="daily",
+        data_freshness=DataFreshness.END_OF_DAY,
+        update_timing=UpdateTiming.T_PLUS_1_15_30,
+        supports_history=False,
+        source=DataSource.AKSHARE,
+        source_priority="akshare",
+        api_name="stock_strong_list_em",
+        limitations=["tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"],
+        return_fields=["symbol", "name", "pct_chg", "is_new_high", "volume_ratio"],
+    ),
+
+    "tool_get_previous_zt": ToolMeta(
+        name="tool_get_previous_zt",
+        description="获取昨日涨停今日数据",
+        domain="pool",
+        entity="stock",
+        scope="daily",
+        data_freshness=DataFreshness.END_OF_DAY,
+        update_timing=UpdateTiming.T_PLUS_1_15_30,
+        supports_history=False,
+        source=DataSource.AKSHARE,
+        source_priority="akshare",
+        api_name="stock_zt_pool_previous_em",
+        limitations=["tushare 不支持此接口", "非实时；无历史查询"],
+        return_fields=["symbol", "name", "pct_chg", "prev_seal_time", "prev_continuous_days"],
+    ),
+
+    "tool_get_zbgc_pool": ToolMeta(
+        name="tool_get_zbgc_pool",
+        description="获取炸板股池",
+        domain="pool",
+        entity="stock",
+        scope="daily",
+        data_freshness=DataFreshness.END_OF_DAY,
+        update_timing=UpdateTiming.T_PLUS_1_15_30,
+        supports_history=False,
+        source=DataSource.AKSHARE,
+        source_priority="akshare",
+        api_name="stock_zbgc_em",
+        limitations=["tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"],
+        return_fields=["symbol", "name", "pct_chg", "open_times", "amplitude"],
+    ),
 
     # === North Flow ===
     "tool_get_north_stock_hold": ToolMeta(
@@ -347,8 +407,23 @@ TOOL_REGISTRY: Dict[str, ToolMeta] = {
         return_fields=["date", "up_count", "down_count", "flat_count", "total_count", "total_amount"],
     ),
 
-    # tool_get_market_north_capital 已禁用（依赖东财 stock_hsgt_fund_flow_summary_em）
-    # tool_get_sector_capital_flow 已禁用（依赖东财 stock_sector_fund_flow_rank）
+    "tool_get_market_north_capital": ToolMeta(
+        name="tool_get_market_north_capital",
+        description="获取北向资金日频资金流（沪股通+深股通）",
+        domain="north_flow",
+        entity="market",
+        scope="daily",
+        data_freshness=DataFreshness.END_OF_DAY,
+        update_timing=UpdateTiming.T_PLUS_1_15_30,
+        supports_history=False,
+        source=DataSource.AKSHARE,
+        source_priority="akshare",
+        api_name="stock_hsgt_fund_flow_summary_em",
+        limitations=["tushare 无等效接口"],
+        return_fields=["date", "market", "direction", "net_buy", "net_inflow", "balance"],
+    ),
+
+    # tool_get_sector_capital_flow 已禁用（push2.eastmoney.com 域名不可达）
 }
 
 

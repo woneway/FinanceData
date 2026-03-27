@@ -103,10 +103,18 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_lhb_stock_detail": {
         "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbStockDetail", "get_lhb_stock_detail_history"),
     },
-    # tool_get_zt_pool 已禁用
-    # tool_get_strong_stocks 已禁用
-    # tool_get_previous_zt 已禁用
-    # tool_get_zbgc_pool 已禁用
+    "tool_get_zt_pool": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZtPool", "get_zt_pool_history"),
+    },
+    "tool_get_strong_stocks": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AkshareStrongStocks", "get_strong_stocks_history"),
+    },
+    "tool_get_previous_zt": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AksharePreviousZt", "get_previous_zt_history"),
+    },
+    "tool_get_zbgc_pool": {
+        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZbgcPool", "get_zbgc_pool_history"),
+    },
     "tool_get_north_stock_hold": {
         # akshare 已禁用（依赖东财 stock_hsgt_hold_stock_em）
         "tushare": ("finance_data.provider.tushare.north_flow.history:TushareNorthStockHold", "get_north_stock_hold_history"),
@@ -123,8 +131,10 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_market_stats_realtime": {
         "akshare": ("finance_data.provider.akshare.market.realtime:AkshareMarketRealtime", "get_market_stats_realtime"),
     },
-    # tool_get_market_north_capital 已禁用（依赖东财 stock_hsgt_fund_flow_summary_em）
-    # tool_get_sector_capital_flow 已禁用（依赖东财 stock_sector_fund_flow_rank）
+    "tool_get_market_north_capital": {
+        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthFlow", "get_north_flow_history"),
+    },
+    # tool_get_sector_capital_flow 已禁用（push2.eastmoney.com 域名不可达）
 }
 
 
@@ -184,6 +194,11 @@ def _get_test_params(tool_name: str) -> dict:
         "tool_get_margin": {"trade_date": yesterday},
         "tool_get_margin_detail": {"trade_date": "", "start_date": week_ago, "end_date": yesterday, "ts_code": "000001"},
         "tool_get_market_stats_realtime": {},
+        "tool_get_zt_pool": {"date": yesterday},
+        "tool_get_strong_stocks": {"date": yesterday},
+        "tool_get_previous_zt": {"date": yesterday},
+        "tool_get_zbgc_pool": {"date": yesterday},
+        "tool_get_market_north_capital": {},
     }
     return params_map.get(tool_name, {})
 

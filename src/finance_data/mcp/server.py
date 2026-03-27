@@ -20,7 +20,8 @@ from finance_data.service.market import market_realtime
 from finance_data.service.lhb import (
     lhb_detail, lhb_stock_stat, lhb_active_traders, lhb_trader_stat, lhb_stock_detail,
 )
-from finance_data.service.north_flow import north_stock_hold
+from finance_data.service.pool import zt_pool, strong_stocks, previous_zt, zbgc_pool
+from finance_data.service.north_flow import north_flow, north_stock_hold
 from finance_data.service.margin import margin, margin_detail
 from finance_data.interface.types import DataFetchError
 
@@ -571,5 +572,121 @@ async def tool_get_market_stats_realtime() -> str:
 
 
 
-# tool_get_market_north_capital 已禁用（依赖东财 stock_hsgt_fund_flow_summary_em）
-# tool_get_sector_capital_flow 已禁用（依赖东财 stock_sector_fund_flow_rank）
+@mcp.tool()
+async def tool_get_zt_pool(date: str) -> str:
+    """
+    获取涨停股池（首板/连板检测）。
+
+    数据源: 仅 akshare（东财）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        date: 交易日期 YYYYMMDD，如 "20260320"
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_chg(涨跌幅%)、price(最新价)、
+        amount(成交额元)、float_mv/total_mv(流通/总市值元)、turnover(换手率%)、
+        seal_amount(封板资金元)、first_seal_time/last_seal_time(首末封板时间HHMMSS)、
+        open_times(炸板次数)、continuous_days(连板数)、industry(行业)
+    """
+    try:
+        return _to_json(zt_pool.get_zt_pool_history(date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_strong_stocks(date: str) -> str:
+    """
+    获取强势股池（60日新高/量比放大的龙头股）。
+
+    数据源: 仅 akshare（东财）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        date: 交易日期 YYYYMMDD，如 "20260320"
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_chg(涨跌幅%)、price、
+        limit_price(涨停价)、amount(成交额元)、float_mv/total_mv(流通/总市值元)、
+        turnover(换手率%)、volume_ratio(量比)、is_new_high(是否创新高)、
+        reason(入选理由)、industry(行业)
+    """
+    try:
+        return _to_json(strong_stocks.get_strong_stocks_history(date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_previous_zt(date: str) -> str:
+    """
+    获取昨日涨停今日数据（低吸检测：昨日涨停股的今日表现）。
+
+    数据源: 仅 akshare（东财）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        date: 今日交易日期 YYYYMMDD，接口自动返回昨日涨停股今日数据
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_chg(今日涨跌幅%)、price(今日最新价)、
+        limit_price(昨日涨停价)、amount(今日成交额元)、float_mv/total_mv、turnover、
+        prev_seal_time(昨日封板时间HHMMSS)、prev_continuous_days(昨日连板数)、industry
+    """
+    try:
+        return _to_json(previous_zt.get_previous_zt_history(date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_zbgc_pool(date: str) -> str:
+    """
+    获取炸板股池（今日冲板后开板，补充低吸候选）。
+
+    数据源: 仅 akshare（东财）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        date: 交易日期 YYYYMMDD，如 "20260320"
+
+    Returns:
+        JSON 列表，每条包含：symbol、name、pct_chg(涨跌幅%)、price、
+        limit_price(涨停价)、amount(成交额元)、float_mv/total_mv、turnover、
+        first_seal_time(首次封板时间)、open_times(炸板次数)、amplitude(振幅%)、industry
+    """
+    try:
+        return _to_json(zbgc_pool.get_zbgc_pool_history(date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_market_north_capital() -> str:
+    """
+    获取北向资金日频资金流（沪股通+深股通）。
+
+    数据源: 仅 akshare（东财）
+    实时性: 非实时，收盘后约 15:30 更新
+    历史查询: 不支持
+
+    Args:
+        无参数
+
+    Returns:
+        JSON 列表，每条包含 date(YYYYMMDD)、market(沪股通/深股通)、
+        direction(北向/南向)、net_buy(成交净买额元)、net_inflow(资金净流入元)、
+        balance(当日资金余额元)、up_count、flat_count、down_count
+    """
+    try:
+        return _to_json(north_flow.get_north_flow_history())
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+# tool_get_sector_capital_flow 已禁用（push2.eastmoney.com 域名不可达）

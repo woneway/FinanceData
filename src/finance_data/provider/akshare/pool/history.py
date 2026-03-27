@@ -1,7 +1,11 @@
-"""股票池 - akshare 实现"""
+"""股票池 - akshare 实现（东财源，需绕过代理）"""
 import contextlib
 import requests
 import akshare as ak
+
+from finance_data.provider.akshare._proxy import ensure_eastmoney_no_proxy
+
+ensure_eastmoney_no_proxy()
 
 from finance_data.interface.pool.history import (
     ZtPoolEntry, StrongStockEntry, PreviousZtEntry, ZbgcEntry,

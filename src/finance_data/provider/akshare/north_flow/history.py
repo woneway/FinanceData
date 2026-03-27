@@ -1,8 +1,12 @@
-"""北向资金 - akshare 实现"""
+"""北向资金 - akshare 实现（东财源，需绕过代理）"""
 import contextlib
 import requests
 import akshare as ak
 from typing import Optional
+
+from finance_data.provider.akshare._proxy import ensure_eastmoney_no_proxy
+
+ensure_eastmoney_no_proxy()
 
 from finance_data.interface.north_flow.history import NorthFlow, NorthStockHold
 from finance_data.interface.types import DataResult, DataFetchError

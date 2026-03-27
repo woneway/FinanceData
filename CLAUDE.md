@@ -83,9 +83,24 @@ def _build_kline_history():
     return _KlineHistoryDispatcher(providers=providers)
 ```
 
-### 东财接口状态
+### 东财接口与代理绕过
 
-akshare 中所有东财源（`_em` 后缀函数）在当前网络环境下不可用（`ConnectionResetError`），已全部替换为新浪/同花顺/腾讯源或禁用。**新增代码严禁使用 `_em` 后缀的 akshare 函数。**
+部分东财源（`_em` 后缀函数）可用，但**必须绕过本地代理**直连。
+
+**问题根因**：本地 Clash/V2Ray 代理（`127.0.0.1:7890`）对东财 HTTPS 连接处理异常，导致 `ConnectionResetError` / SSL 错误。akshare 内部使用 `requests`，会自动拾取 `http_proxy`/`https_proxy` 环境变量，流量被路由到代理后失败。直连则正常（`curl --noproxy '*' https://push2ex.eastmoney.com/...` 返回 200）。
+
+**解决方案**：`provider/akshare/_proxy.py` 提供 `ensure_eastmoney_no_proxy()`，将 `eastmoney.com` 加入 `no_proxy` 环境变量，使 `requests` 对东财域名走直连。
+
+**使用规则**：
+- 新增使用东财源（`_em` 后缀）的 provider，必须在模块顶部调用：
+  ```python
+  from finance_data.provider.akshare._proxy import ensure_eastmoney_no_proxy
+  ensure_eastmoney_no_proxy()
+  ```
+- **已恢复**：`push2ex.eastmoney.com` 端点（涨停池 4 个 + 北向资金 1 个）
+- **仍不可达**：`push2.eastmoney.com` 端点（板块资金流 `stock_sector_fund_flow_rank`，该域名直连也不通）
+
+**排查新的东财接口不可用时**：先用 `curl --noproxy '*'` 测试直连，再用 `curl -x http://127.0.0.1:7890` 测试代理，区分是域名封禁还是代理问题。
 
 ## 编码规范
 
@@ -223,7 +238,7 @@ def test_empty_raises():
 8. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 9. **更新本文件**：更新下方接口列表
 
-## 当前接口（20 个）
+## 当前接口（25 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -244,21 +259,21 @@ def test_empty_raises():
 | `tool_get_lhb_active_traders` | lhb | 活跃游资营业部统计，akshare(新浪) |
 | `tool_get_lhb_trader_stat` | lhb | 营业部龙虎榜战绩排行，akshare(新浪) |
 | `tool_get_lhb_stock_detail` | lhb | 个股某日龙虎榜席位明细，akshare(新浪) |
+| `tool_get_zt_pool` | pool | 涨停股池（连板数/封板资金），akshare(东财) |
+| `tool_get_strong_stocks` | pool | 强势股池（新高/量比），akshare(东财) |
+| `tool_get_previous_zt` | pool | 昨日涨停今日表现，akshare(东财) |
+| `tool_get_zbgc_pool` | pool | 炸板股池（冲板后开板），akshare(东财) |
+| `tool_get_market_north_capital` | north_flow | 北向资金日频资金流（沪深股通），akshare(东财) |
 | `tool_get_north_stock_hold` | north_flow | 北向资金持股明细，仅 tushare |
 | `tool_get_margin` | margin | 融资融券汇总（按交易所），tushare+akshare(交易所) |
 | `tool_get_margin_detail` | margin | 融资融券个股明细，tushare+akshare(上交所)+xueqiu |
 
-### 已禁用接口（7 个，依赖东财源，无替代）
+### 已禁用接口（2 个）
 
 | Tool | 原因 |
 |------|------|
-| `tool_get_earnings_forecast_history` | 依赖 stock_yjyg_em |
-| `tool_get_zt_pool` | 依赖 stock_zt_pool_em |
-| `tool_get_strong_stocks` | 依赖 stock_strong_list_em |
-| `tool_get_previous_zt` | 依赖 stock_zt_pool_previous_em |
-| `tool_get_zbgc_pool` | 依赖 stock_zbgc_em |
-| `tool_get_market_north_capital` | 依赖 stock_hsgt_fund_flow_summary_em |
-| `tool_get_sector_capital_flow` | 依赖 stock_sector_fund_flow_rank（实际也是东财） |
+| `tool_get_earnings_forecast_history` | 依赖东财 stock_yjyg_em，无 provider 实现 |
+| `tool_get_sector_capital_flow` | push2.eastmoney.com 域名不可达 |
 
 ## MCP 配置
 
