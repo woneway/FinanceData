@@ -33,74 +33,78 @@ def lhb_detail_df():
 
 
 @pytest.fixture
-def lhb_stock_stat_df():
+def lhb_stock_stat_sina_df():
+    """新浪源 stock_lhb_ggtj_sina 返回格式"""
     return pd.DataFrame([{
-        "序号": 1, "代码": "000001", "名称": "平安银行",
-        "最近上榜日": "2024-03-20", "收盘价": 10.5, "涨跌幅": 5.2,
+        "股票代码": "000001",
+        "股票名称": "平安银行",
         "上榜次数": 3,
-        "龙虎榜净买额": 2e6, "龙虎榜买入额": 8e6,
-        "龙虎榜卖出额": 6e6, "龙虎榜总成交额": 1.4e7,
-        "买方机构次数": 2, "卖方机构次数": 1, "机构买入净额": 1e6,
-        "机构买入总额": 3e6, "机构卖出总额": 2e6,
-        "近1个月涨跌幅": 5.0, "近3个月涨跌幅": 10.0,
-        "近6个月涨跌幅": 15.0, "近1年涨跌幅": 20.0,
+        "累积购买额": 8e6,
+        "累积卖出额": 6e6,
+        "净额": 2e6,
+        "买入席位数": 2,
+        "卖出席位数": 1,
     }])
 
 
 @pytest.fixture
-def lhb_active_trader_df():
+def lhb_active_trader_sina_df():
+    """新浪源 stock_lhb_yytj_sina 返回格式"""
     return pd.DataFrame([{
-        "序号": 1, "营业部名称": "华宝证券上海东大名路营业部",
-        "上榜日": "2024-03-20",
-        "买入个股数": 5.0, "卖出个股数": 3.0,
-        "买入总金额": 1e7, "卖出总金额": 6e6, "总买卖净额": 4e6,
-        "买入股票": "平安银行 招商银行 贵州茅台",
+        "营业部名称": "华宝证券上海东大名路营业部",
+        "上榜次数": 5,
+        "累积购买额": 1e7,
+        "买入席位数": 5,
+        "累积卖出额": 6e6,
+        "卖出席位数": 3,
+        "买入前三股票": "平安银行,招商银行,贵州茅台,",
     }])
 
 
 @pytest.fixture
 def lhb_active_trader_nan_stocks_df():
-    """买入股票字段为 NaN（纯卖出方营业部）"""
+    """买入前三股票字段为 NaN"""
     return pd.DataFrame([{
-        "序号": 1, "营业部名称": "某卖出营业部",
-        "上榜日": "2024-03-20",
-        "买入个股数": 0.0, "卖出个股数": 2.0,
-        "买入总金额": 0.0, "卖出总金额": 3e6, "总买卖净额": -3e6,
-        "买入股票": float("nan"),
+        "营业部名称": "某卖出营业部",
+        "上榜次数": 0,
+        "累积购买额": 0.0,
+        "买入席位数": 0,
+        "累积卖出额": 3e6,
+        "卖出席位数": 2,
+        "买入前三股票": float("nan"),
     }])
 
 
 @pytest.fixture
-def lhb_trader_stat_df():
+def lhb_trader_stat_sina_df():
+    """新浪源 stock_lhb_yytj_sina 返回格式（同 active_traders）"""
     return pd.DataFrame([{
-        "序号": 1, "营业部名称": "华宝证券上海东大名路营业部",
-        "龙虎榜成交金额": 2e8, "上榜次数": 46,
-        "买入额": 1.2e8, "买入次数": 46,
-        "卖出额": 8e7, "卖出次数": 42,
+        "营业部名称": "华宝证券上海东大名路营业部",
+        "上榜次数": 46,
+        "累积购买额": 1.2e8,
+        "买入席位数": 46,
+        "累积卖出额": 8e7,
+        "卖出席位数": 42,
+        "买入前三股票": "",
     }])
 
 
 @pytest.fixture
-def lhb_stock_detail_buy_df():
+def lhb_stock_detail_sina_df():
+    """新浪源 stock_lhb_detail_daily_sina 返回格式"""
     return pd.DataFrame([{
-        "序号": 1, "交易营业部名称": "华宝证券上海东大名路营业部",
-        "买入金额": 5e6, "买入金额-占总成交比例": 5.0,
-        "卖出金额-占总成交比例": 0.0, "净额": 5e6,
-        "类型": "日涨幅偏离值达到7%的前5只证券",
+        "序号": 1,
+        "股票代码": "000001",
+        "股票名称": "平安银行",
+        "收盘价": 10.5,
+        "对应值": 7.2,
+        "成交量": 13890.0,
+        "成交额": 5e6,
+        "指标": "日涨幅偏离值达7%的证券",
     }])
 
 
-@pytest.fixture
-def lhb_stock_detail_sell_df():
-    return pd.DataFrame([{
-        "序号": 1, "交易营业部名称": "华宝证券上海东大名路营业部",
-        "卖出金额": 3e6, "买入金额-占总成交比例": 0.0,
-        "卖出金额-占总成交比例": 3.0, "净额": -3e6,
-        "类型": "日跌幅偏离值达到7%的前5只证券",
-    }])
-
-
-# ── get_lhb_detail ────────────────────────────────────────────────────────────
+# ── get_lhb_detail (仍使用东财 mock，AkshareLhbDetail 未改) ─────────────────
 
 def test_get_lhb_detail_returns_data_result(lhb_detail_df):
     with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_detail_em",
@@ -131,117 +135,109 @@ def test_get_lhb_detail_network_error():
     assert exc.value.kind == "network"
 
 
-# ── get_lhb_stock_stat ────────────────────────────────────────────────────────
+# ── get_lhb_stock_stat (新浪源) ──────────────────────────────────────────────
 
-def test_get_lhb_stock_stat_returns_data_result(lhb_stock_stat_df):
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_statistic_em",
-               return_value=lhb_stock_stat_df):
+def test_get_lhb_stock_stat_returns_data_result(lhb_stock_stat_sina_df):
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_ggtj_sina",
+               return_value=lhb_stock_stat_sina_df):
         result = AkshareLhbStockStat().get_lhb_stock_stat_history("近一月")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["symbol"] == "000001"
     assert row["times"] == 3
+    assert row["lhb_buy"] == 8e6
+    assert row["lhb_sell"] == 6e6
+    assert row["lhb_net_buy"] == 2e6
     assert row["inst_buy_times"] == 2
+    assert row["inst_sell_times"] == 1
 
 
 def test_get_lhb_stock_stat_empty_raises():
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_statistic_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_ggtj_sina",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
             AkshareLhbStockStat().get_lhb_stock_stat_history("近一月")
 
 
-def test_get_lhb_stock_stat_invalid_period():
-    with pytest.raises(DataFetchError) as exc:
-        AkshareLhbStockStat().get_lhb_stock_stat_history("近两月")
-    assert exc.value.kind == "data"
-    assert "period" in exc.value.reason
+def test_get_lhb_stock_stat_network_error():
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_ggtj_sina",
+               side_effect=ConnectionError("timeout")):
+        with pytest.raises(DataFetchError) as exc:
+            AkshareLhbStockStat().get_lhb_stock_stat_history("近一月")
+    assert exc.value.kind == "network"
 
 
-# ── get_lhb_active_traders ────────────────────────────────────────────────────
+# ── get_lhb_active_traders (新浪源) ──────────────────────────────────────────
 
-def test_get_lhb_active_traders_returns_data_result(lhb_active_trader_df):
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_hyyyb_em",
-               return_value=lhb_active_trader_df):
+def test_get_lhb_active_traders_returns_data_result(lhb_active_trader_sina_df):
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_yytj_sina",
+               return_value=lhb_active_trader_sina_df):
         result = AkshareLhbActiveTraders().get_lhb_active_traders_history("20240320", "20240320")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["branch_name"] == "华宝证券上海东大名路营业部"
     assert row["buy_count"] == 5
-    assert row["net_amount"] == 4e6
-    assert row["stocks"] == "平安银行 招商银行 贵州茅台"
+    assert row["buy_amount"] == 1e7
+    assert row["sell_amount"] == 6e6
+    assert row["net_amount"] == 1e7 - 6e6
+    assert "平安银行" in row["stocks"]
 
 
 def test_get_lhb_active_traders_nan_stocks(lhb_active_trader_nan_stocks_df):
-    """NaN 买入股票字段应返回空字符串，而不是 'nan'。"""
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_hyyyb_em",
+    """NaN 买入前三股票字段应返回空字符串，而不是 'nan'。"""
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_yytj_sina",
                return_value=lhb_active_trader_nan_stocks_df):
         result = AkshareLhbActiveTraders().get_lhb_active_traders_history("20240320", "20240320")
     assert result.data[0]["stocks"] == ""
 
 
 def test_get_lhb_active_traders_empty_raises():
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_hyyyb_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_yytj_sina",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
             AkshareLhbActiveTraders().get_lhb_active_traders_history("20240320", "20240320")
 
 
-# ── get_lhb_trader_stat ───────────────────────────────────────────────────────
+# ── get_lhb_trader_stat (新浪源) ─────────────────────────────────────────────
 
-def test_get_lhb_trader_stat_returns_data_result(lhb_trader_stat_df):
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_traderstatistic_em",
-               return_value=lhb_trader_stat_df):
+def test_get_lhb_trader_stat_returns_data_result(lhb_trader_stat_sina_df):
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_yytj_sina",
+               return_value=lhb_trader_stat_sina_df):
         result = AkshareLhbTraderStat().get_lhb_trader_stat_history("近一月")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["branch_name"] == "华宝证券上海东大名路营业部"
     assert row["times"] == 46
+    assert row["buy_amount"] == 1.2e8
     assert row["buy_times"] == 46
+    assert row["sell_amount"] == 8e7
+    assert row["sell_times"] == 42
 
 
 def test_get_lhb_trader_stat_empty_raises():
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_traderstatistic_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_yytj_sina",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
             AkshareLhbTraderStat().get_lhb_trader_stat_history("近一月")
 
 
-def test_get_lhb_trader_stat_invalid_period():
-    with pytest.raises(DataFetchError) as exc:
-        AkshareLhbTraderStat().get_lhb_trader_stat_history("近两年")
-    assert exc.value.kind == "data"
+# ── get_lhb_stock_detail (新浪源) ────────────────────────────────────────────
 
-
-# ── get_lhb_stock_detail ──────────────────────────────────────────────────────
-
-def test_get_lhb_stock_detail_buy_flag(lhb_stock_detail_buy_df):
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_detail_em",
-               return_value=lhb_stock_detail_buy_df):
+def test_get_lhb_stock_detail_returns_data(lhb_stock_detail_sina_df):
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_detail_daily_sina",
+               return_value=lhb_stock_detail_sina_df):
         result = AkshareLhbStockDetail().get_lhb_stock_detail_history("000001", "20240320", "买入")
     assert isinstance(result, DataResult)
     row = result.data[0]
     assert row["symbol"] == "000001"
-    assert row["flag"] == "买入"
-    assert row["branch_name"] == "华宝证券上海东大名路营业部"
+    assert row["date"] == "20240320"
     assert row["trade_amount"] == 5e6
-    assert row["buy_rate"] == 5.0
-    assert row["sell_rate"] == 0.0
-
-
-def test_get_lhb_stock_detail_sell_flag(lhb_stock_detail_sell_df):
-    """flag='卖出' 时，trade_amount 应读取'卖出金额'列而非'买入金额'列。"""
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_detail_em",
-               return_value=lhb_stock_detail_sell_df):
-        result = AkshareLhbStockDetail().get_lhb_stock_detail_history("000001", "20240320", "卖出")
-    row = result.data[0]
-    assert row["flag"] == "卖出"
-    assert row["trade_amount"] == 3e6
-    assert row["net_amount"] == pytest.approx(-3e6)
+    assert row["seat_type"] == "日涨幅偏离值达7%的证券"
+    assert row["flag"] == "全部"  # 新浪源不区分买入/卖出
 
 
 def test_get_lhb_stock_detail_empty_raises():
-    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_stock_detail_em",
+    with patch("finance_data.provider.akshare.lhb.history.ak.stock_lhb_detail_daily_sina",
                return_value=pd.DataFrame()):
         with pytest.raises(DataFetchError):
             AkshareLhbStockDetail().get_lhb_stock_detail_history("000001", "20240320", "买入")

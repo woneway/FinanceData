@@ -45,7 +45,7 @@ def test_kline_tushare_vs_xueqiu_units():
     xq_resp = {
         "data": {
             "column": ["timestamp", "volume", "open", "high", "low", "close", "chg", "percent", "turnoverrate", "amount"],
-            "item": [[1711238400000, 10000, 10.0, 10.5, 9.8, 10.2, 0.05, 0.5, 1.0, 100000.0]],
+            "item": [[1774335600000, 10000, 10.0, 10.5, 9.8, 10.2, 0.05, 0.5, 1.0, 100000.0]],
         }
     }
 

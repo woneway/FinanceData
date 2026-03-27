@@ -37,7 +37,7 @@ def _get_available_providers() -> Dict[str, bool]:
 # Generated from actual service dispatcher introspection.
 _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_stock_info_history": {
-        "akshare": ("finance_data.provider.akshare.stock.history:AkshareStockHistory", "get_stock_info_history"),
+        # akshare 已禁用（东财源不可用）
         "tushare": ("finance_data.provider.tushare.stock.history:TushareStockHistory", "get_stock_info_history"),
         "xueqiu": ("finance_data.provider.xueqiu.stock.history:XueqiuStockHistory", "get_stock_info_history"),
     },
@@ -47,7 +47,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "xueqiu": ("finance_data.provider.xueqiu.kline.history:XueqiuKlineHistory", "get_kline_history"),
     },
     "tool_get_realtime_quote": {
-        "akshare": ("finance_data.provider.akshare.realtime.realtime:AkshareRealtimeQuote", "get_realtime_quote"),
+        # akshare 已禁用（东财源不可用，新浪源太慢）
         "tushare": ("finance_data.provider.tushare.realtime.realtime:TushareRealtimeQuote", "get_realtime_quote"),
         "xueqiu": ("finance_data.provider.xueqiu.realtime.realtime:XueqiuRealtimeQuote", "get_realtime_quote"),
     },
@@ -65,7 +65,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "akshare": ("finance_data.provider.akshare.sector.realtime:AkshareSectorRank", "get_sector_rank_realtime"),
     },
     "tool_get_chip_distribution_history": {
-        "akshare": ("finance_data.provider.akshare.chip.history:AkshareChipHistory", "get_chip_distribution_history"),
+        # akshare 已禁用（依赖东财 stock_cyq_em）
         "tushare": ("finance_data.provider.tushare.chip.history:TushareChipHistory", "get_chip_distribution_history"),
     },
     "tool_get_financial_summary_history": {
@@ -78,11 +78,9 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "tushare": ("finance_data.provider.tushare.fundamental.history:TushareDividend", "get_dividend_history"),
         "xueqiu": ("finance_data.provider.xueqiu.fundamental.history:XueqiuDividend", "get_dividend_history"),
     },
-    "tool_get_earnings_forecast_history": {
-        "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareEarningsForecast", "get_earnings_forecast_history"),
-    },
+    # tool_get_earnings_forecast_history 已禁用（依赖东财 stock_yjyg_em）
     "tool_get_stock_capital_flow_realtime": {
-        "akshare": ("finance_data.provider.akshare.cashflow.realtime:AkshareStockCapitalFlow", "get_stock_capital_flow_realtime"),
+        # akshare 已禁用（依赖东财 stock_individual_fund_flow）
         "xueqiu": ("finance_data.provider.xueqiu.cashflow.realtime:XueqiuStockCapitalFlow", "get_stock_capital_flow_realtime"),
     },
     "tool_get_trade_calendar_history": {
@@ -90,7 +88,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "akshare": ("finance_data.provider.akshare.calendar.history:AkshareTradeCalendar", "get_trade_calendar_history"),
     },
     "tool_get_lhb_detail": {
-        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbDetail", "get_lhb_detail_history"),
+        # akshare 已禁用（依赖东财 stock_lhb_detail_em）
         "tushare": ("finance_data.provider.tushare.lhb.history:TushareLhbDetail", "get_lhb_detail_history"),
     },
     "tool_get_lhb_stock_stat": {
@@ -105,20 +103,12 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_lhb_stock_detail": {
         "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbStockDetail", "get_lhb_stock_detail_history"),
     },
-    "tool_get_zt_pool": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZtPool", "get_zt_pool_history"),
-    },
-    "tool_get_strong_stocks": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AkshareStrongStocks", "get_strong_stocks_history"),
-    },
-    "tool_get_previous_zt": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AksharePreviousZt", "get_previous_zt_history"),
-    },
-    "tool_get_zbgc_pool": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZbgcPool", "get_zbgc_pool_history"),
-    },
+    # tool_get_zt_pool 已禁用
+    # tool_get_strong_stocks 已禁用
+    # tool_get_previous_zt 已禁用
+    # tool_get_zbgc_pool 已禁用
     "tool_get_north_stock_hold": {
-        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthStockHold", "get_north_stock_hold_history"),
+        # akshare 已禁用（依赖东财 stock_hsgt_hold_stock_em）
         "tushare": ("finance_data.provider.tushare.north_flow.history:TushareNorthStockHold", "get_north_stock_hold_history"),
     },
     "tool_get_margin": {
@@ -133,12 +123,8 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_market_stats_realtime": {
         "akshare": ("finance_data.provider.akshare.market.realtime:AkshareMarketRealtime", "get_market_stats_realtime"),
     },
-    "tool_get_market_north_capital": {
-        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthFlow", "get_north_flow_history"),
-    },
-    "tool_get_sector_capital_flow": {
-        "akshare": ("finance_data.provider.akshare.sector_fund_flow.history:AkshareSectorCapitalFlow", "get_sector_capital_flow_history"),
-    },
+    # tool_get_market_north_capital 已禁用（依赖东财 stock_hsgt_fund_flow_summary_em）
+    # tool_get_sector_capital_flow 已禁用（依赖东财 stock_sector_fund_flow_rank）
 }
 
 
@@ -159,42 +145,7 @@ def _last_trading_day() -> str:
 
 
 def _find_recent_lhb_stock() -> dict:
-    """Find a stock that was recently on the LHB for use as test params.
-
-    Queries the LHB detail list for the past week and picks the first stock.
-    Falls back to a hardcoded example if the query fails.
-    """
-    try:
-        import contextlib
-        import requests
-        import akshare as ak
-
-        @contextlib.contextmanager
-        def _no_proxy():
-            orig = requests.Session.__init__
-            def _init(self, *a, **kw):
-                orig(self, *a, **kw)
-                self.trust_env = False
-            requests.Session.__init__ = _init
-            try:
-                yield
-            finally:
-                requests.Session.__init__ = orig
-
-        yesterday = _last_trading_day()
-        week_ago = (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d")
-        with _no_proxy():
-            df = ak.stock_lhb_detail_em(start_date=week_ago, end_date=yesterday)
-        if df is not None and not df.empty:
-            row = df.iloc[0]
-            symbol = str(row.get("代码", ""))
-            date_raw = str(row.get("上榜日", ""))
-            date = date_raw.replace("-", "")[:8]
-            if symbol and date:
-                return {"symbol": symbol, "date": date, "flag": "买入"}
-    except Exception as e:
-        logger.debug("_find_recent_lhb_stock failed: %s", e)
-    # fallback: use a well-known stock with a known LHB date
+    """Return hardcoded LHB test params (东财 stock_lhb_detail_em 已禁用)."""
     return {"symbol": "000001", "date": _last_trading_day(), "flag": "买入"}
 
 
@@ -220,28 +171,19 @@ def _get_test_params(tool_name: str) -> dict:
         "tool_get_chip_distribution_history": {"symbol": "000001"},
         "tool_get_financial_summary_history": {"symbol": "000001"},
         "tool_get_dividend_history": {"symbol": "000001"},
-        "tool_get_earnings_forecast_history": {"symbol": "002594"},  # 比亚迪, more likely to have forecasts
         "tool_get_stock_capital_flow_realtime": {"symbol": "000001"},
         "tool_get_trade_calendar_history": {"start": month_ago, "end": today},
         "tool_get_lhb_detail": {"start_date": week_ago, "end_date": yesterday},
         "tool_get_lhb_stock_stat": {"period": "近一月"},
         "tool_get_lhb_active_traders": {"start_date": week_ago, "end_date": yesterday},
         "tool_get_lhb_trader_stat": {"period": "近一月"},
-        "tool_get_lhb_stock_detail": _find_recent_lhb_stock(),
-        "tool_get_zt_pool": {"date": yesterday},
-        "tool_get_strong_stocks": {"date": yesterday},
-        "tool_get_previous_zt": {"date": yesterday},
-        "tool_get_zbgc_pool": {"date": yesterday},
+        "tool_get_lhb_stock_detail": {"symbol": "", "date": yesterday, "flag": "买入"},
         "tool_get_north_stock_hold": {
             "market": "沪股通", "indicator": "5日排行",
         },
         "tool_get_margin": {"trade_date": yesterday},
         "tool_get_margin_detail": {"trade_date": "", "start_date": week_ago, "end_date": yesterday, "ts_code": "000001"},
         "tool_get_market_stats_realtime": {},
-        "tool_get_market_north_capital": {},
-        "tool_get_sector_capital_flow": {
-            "indicator": "今日", "sector_type": "行业资金流",
-        },
     }
     return params_map.get(tool_name, {})
 

@@ -4,7 +4,6 @@ import os
 
 from finance_data.interface.chip.history import ChipHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
-from finance_data.provider.akshare.chip.history import AkshareChipHistory
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,8 @@ class _ChipHistoryDispatcher:
 
 
 def _build_chip_history() -> _ChipHistoryDispatcher:
-    providers: list[ChipHistoryProtocol] = [AkshareChipHistory()]
+    # akshare 筹码分布已禁用（依赖东财 stock_cyq_em）
+    providers: list[ChipHistoryProtocol] = []
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.chip.history import TushareChipHistory
         providers.append(TushareChipHistory())

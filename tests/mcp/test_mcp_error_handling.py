@@ -81,13 +81,7 @@ def test_dividend_mcp_returns_error_json():
     assert "error" in parsed
 
 
-def test_earnings_forecast_mcp_returns_error_json():
-    from finance_data.mcp.server import tool_get_earnings_forecast_history
-    with patch("finance_data.mcp.server.earnings_forecast") as mock:
-        mock.get_earnings_forecast_history.side_effect = DataFetchError("test", "fn", "boom", "data")
-        result = _run(tool_get_earnings_forecast_history("000001"))
-    parsed = json.loads(result)
-    assert "error" in parsed
+# test_earnings_forecast_mcp_returns_error_json 已移除（tool 已禁用）
 
 
 def test_cashflow_mcp_returns_error_json():

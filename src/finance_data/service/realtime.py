@@ -6,8 +6,6 @@ from cachetools import TTLCache
 
 from finance_data.interface.realtime.realtime import RealtimeQuoteProtocol
 from finance_data.interface.types import DataFetchError, DataResult
-from finance_data.provider.akshare.realtime.realtime import AkshareRealtimeQuote
-
 logger = logging.getLogger(__name__)
 
 # 实时行情缓存：最多 512 支股票，20 分钟 TTL
@@ -35,11 +33,12 @@ class _RealtimeQuoteDispatcher:
 
 
 def _build_realtime_quote() -> _RealtimeQuoteDispatcher:
-    providers: list[RealtimeQuoteProtocol] = [AkshareRealtimeQuote()]
+    # akshare 实时行情已禁用（东财源不可用，新浪源太慢）
+    providers: list[RealtimeQuoteProtocol] = []
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.realtime.realtime import TushareRealtimeQuote
         providers.append(TushareRealtimeQuote())
-    # 雪球作为最后 fallback（无需 token，海外可达）
+    # 雪球作为主要数据源（无需 token，海外可达，~180ms）
     from finance_data.provider.xueqiu.realtime.realtime import XueqiuRealtimeQuote
     providers.append(XueqiuRealtimeQuote())
     return _RealtimeQuoteDispatcher(providers=providers)

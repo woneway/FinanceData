@@ -4,7 +4,7 @@ import requests
 import akshare as ak
 
 from finance_data.interface.fundamental.history import (
-    FinancialSummary, DividendRecord, EarningsForecast
+    FinancialSummary, DividendRecord,
 )
 from finance_data.interface.types import DataResult, DataFetchError
 
@@ -90,56 +90,40 @@ class AkshareFinancialSummary:
         return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "symbol": symbol})
 
 
+def _parse_per_share_dividend(desc: str) -> float:
+    """从分红方案说明中提取每股分红金额，如 '10派5元' → 0.5"""
+    import re
+    m = re.search(r"(\d+)派(\d+(?:\.\d+)?)元?", str(desc))
+    if m:
+        base = float(m.group(1))
+        amount = float(m.group(2))
+        return round(amount / base, 4) if base > 0 else 0.0
+    return 0.0
+
+
 class AkshareDividend:
     def get_dividend_history(self, symbol: str) -> DataResult:
         try:
             with _no_proxy():
-                df = ak.stock_fhps_detail_em(symbol=symbol)
+                df = ak.stock_fhps_detail_ths(symbol=symbol)
         except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "stock_fhps_detail_em", str(e), "network") from e
+            raise DataFetchError("akshare", "stock_fhps_detail_ths", str(e), "network") from e
         except Exception as e:
-            raise DataFetchError("akshare", "stock_fhps_detail_em", str(e), "data") from e
+            raise DataFetchError("akshare", "stock_fhps_detail_ths", str(e), "data") from e
 
         if df is None or df.empty:
-            raise DataFetchError("akshare", "stock_fhps_detail_em", f"无数据: {symbol}", "data")
+            raise DataFetchError("akshare", "stock_fhps_detail_ths", f"无数据: {symbol}", "data")
 
         rows = [DividendRecord(
             symbol=symbol,
-            ex_date=str(r.get("除权除息日", "")).replace("-", ""),
-            per_share=float(r.get("每股分红", 0)),
-            record_date=str(r.get("股权登记日", "")).replace("-", ""),
+            ex_date=str(r.get("A股除权除息日", "")).replace("-", ""),
+            per_share=_parse_per_share_dividend(r.get("分红方案说明", "")),
+            record_date=str(r.get("A股股权登记日", "")).replace("-", ""),
         ).to_dict() for _, r in df.iterrows()]
 
-        return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "symbol": symbol})
+        return DataResult(data=rows, source="akshare",
+                          meta={"rows": len(rows), "symbol": symbol, "upstream": "ths"})
 
 
-class AkshareEarningsForecast:
-    def get_earnings_forecast_history(self, symbol: str) -> DataResult:
-        quarters = _recent_quarters(5)
-        for quarter in quarters:
-            try:
-                with _no_proxy():
-                    df = ak.stock_yjyg_em(date=quarter)
-            except _NETWORK_ERRORS as e:
-                raise DataFetchError("akshare", "stock_yjyg_em", str(e), "network") from e
-            except Exception as e:
-                raise DataFetchError("akshare", "stock_yjyg_em", str(e), "data") from e
-
-            if df is None or df.empty:
-                continue
-
-            filtered = df[df["股票代码"] == symbol]
-            if not filtered.empty:
-                rows = [EarningsForecast(
-                    symbol=symbol, period=quarter,
-                    forecast_type=str(r.get("预告类型", "")),
-                    net_profit_min=_opt(r.get("预计净利润-下限")),
-                    net_profit_max=_opt(r.get("预计净利润-上限")),
-                    change_low=_opt(r.get("预计净利润变动幅度-下限") or r.get("业绩变动幅度")),
-                    change_high=_opt(r.get("预计净利润变动幅度-上限") or r.get("业绩变动幅度")),
-                    summary=str(r.get("业绩变动原因", "")),
-                ).to_dict() for _, r in filtered.iterrows()]
-                return DataResult(data=rows, source="akshare",
-                                  meta={"rows": len(rows), "symbol": symbol})
-
-        raise DataFetchError("akshare", "stock_yjyg_em", f"近期无业绩预告: {symbol}", "data")
+# AkshareEarningsForecast 已禁用：依赖东财 stock_yjyg_em，无替代源。
+# 如需恢复，请参考 git history。

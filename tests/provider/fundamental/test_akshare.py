@@ -40,17 +40,22 @@ def test_get_financial_summary_fields(mock_financial_df):
 
 @pytest.fixture
 def mock_dividend_df():
+    """同花顺 stock_fhps_detail_ths 返回格式"""
     return pd.DataFrame([{
-        "除权除息日": "20231215", "每股分红": 0.248, "股权登记日": "20231214",
+        "A股除权除息日": "2023-12-15",
+        "分红方案说明": "10派2.48元",
+        "A股股权登记日": "2023-12-14",
     }])
 
 
 def test_get_dividend_fields(mock_dividend_df):
-    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_fhps_detail_em",
+    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_fhps_detail_ths",
                return_value=mock_dividend_df):
         result = AkshareDividend().get_dividend_history("000001")
     row = result.data[0]
     assert row["per_share"] == 0.248
+    assert row["ex_date"] == "20231215"
+    assert row["record_date"] == "20231214"
 
 
 def test_get_financial_summary_network_error():

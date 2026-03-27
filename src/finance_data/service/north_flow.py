@@ -1,25 +1,16 @@
-"""北向资金 service - 统一对外入口"""
+"""北向资金 service - 统一对外入口
+
+已禁用东财源的工具：
+- north_flow (日频资金流): 禁用（仅东财 stock_hsgt_fund_flow_summary_em）
+- north_stock_hold (持股明细): 保留（tushare fallback）
+"""
 import logging
 import os
 
-from finance_data.interface.north_flow.history import NorthFlowProtocol, NorthStockHoldProtocol
+from finance_data.interface.north_flow.history import NorthStockHoldProtocol
 from finance_data.interface.types import DataFetchError, DataResult
-from finance_data.provider.akshare.north_flow.history import AkshareNorthFlow, AkshareNorthStockHold
 
 logger = logging.getLogger(__name__)
-
-
-class _NorthFlowDispatcher:
-    def __init__(self, providers: list[NorthFlowProtocol]):
-        self._providers = providers
-
-    def get_north_flow_history(self) -> DataResult:
-        for p in self._providers:
-            try:
-                return p.get_north_flow_history()
-            except DataFetchError as e:
-                logger.warning(f"{type(p).__name__} 失败: {e}")
-        raise DataFetchError("all", "get_north_flow_history", "所有数据源均失败", "data")
 
 
 class _NorthStockHoldDispatcher:
@@ -38,12 +29,13 @@ class _NorthStockHoldDispatcher:
 
 
 def _build_north_stock_hold() -> _NorthStockHoldDispatcher:
-    providers: list[NorthStockHoldProtocol] = [AkshareNorthStockHold()]
+    # akshare 北向持股已禁用（依赖东财 stock_hsgt_hold_stock_em）
+    providers: list[NorthStockHoldProtocol] = []
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.north_flow.history import TushareNorthStockHold
         providers.append(TushareNorthStockHold())
     return _NorthStockHoldDispatcher(providers=providers)
 
 
-north_flow = _NorthFlowDispatcher(providers=[AkshareNorthFlow()])
 north_stock_hold = _build_north_stock_hold()
+# north_flow (日频资金流) 已禁用

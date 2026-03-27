@@ -1,4 +1,4 @@
-"""K线历史数据 - akshare 实现（腾讯源优先）"""
+"""K线历史数据 - akshare 实现（腾讯源日线 + 新浪源分钟线）"""
 import contextlib
 import datetime
 import logging
@@ -122,12 +122,13 @@ class AkshareKlineHistory:
 
     def _get_minute(self, symbol: str, period: str, start: str, end: str,
                     adj: str, adj_ak: str) -> DataResult:
-        # 分钟线仍使用 eastmoney（无替代），失败后由 service 层 fallback 到 tushare
+        # 新浪源分钟线（替代原东财 stock_zh_a_hist_min_em）
+        sina_symbol = _symbol_to_tx(symbol)  # sh600519 格式
         try:
             with _no_proxy():
-                df = ak.stock_zh_a_hist_min_em(
-                    symbol=symbol, period=_MIN_MAP[period],
-                    start_date=start, end_date=end, adjust=adj_ak,
+                df = ak.stock_zh_a_minute(
+                    symbol=sina_symbol, period=_MIN_MAP[period],
+                    adjust=adj_ak,
                 )
         except _NETWORK_ERRORS as e:
             raise DataFetchError("akshare", "get_kline_history", str(e), "network") from e
@@ -139,16 +140,21 @@ class AkshareKlineHistory:
                                  f"无数据: {symbol} {period} {start}-{end}", "data")
 
         bars = []
+        prev_close = 0.0
         for _, row in df.iterrows():
+            date_str = _parse_date(row.get("day", ""))
+            close = float(row.get("close", 0))
+            pct_chg = round((close - prev_close) / prev_close * 100, 2) if prev_close > 0 else 0.0
+            prev_close = close
             bars.append(KlineBar(
-                symbol=symbol, date=_parse_date(row.get("时间", "")),
+                symbol=symbol, date=date_str,
                 period=period,
-                open=float(row.get("开盘", 0)), high=float(row.get("最高", 0)),
-                low=float(row.get("最低", 0)), close=float(row.get("收盘", 0)),
-                volume=float(row.get("成交量", 0)), amount=float(row.get("成交额", 0)),
-                pct_chg=float(row.get("涨跌幅", 0)), adj=adj,
+                open=float(row.get("open", 0)), high=float(row.get("high", 0)),
+                low=float(row.get("low", 0)), close=close,
+                volume=float(row.get("volume", 0)), amount=float(row.get("amount", 0)),
+                pct_chg=pct_chg, adj=adj,
             ).to_dict())
 
         return DataResult(data=bars, source="akshare",
                           meta={"rows": len(bars), "symbol": symbol,
-                                "period": period, "upstream": "eastmoney"})
+                                "period": period, "upstream": "sina"})

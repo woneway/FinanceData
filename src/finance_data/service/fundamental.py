@@ -3,11 +3,11 @@ import logging
 import os
 
 from finance_data.interface.fundamental.history import (
-    FinancialSummaryProtocol, DividendProtocol, EarningsForecastProtocol
+    FinancialSummaryProtocol, DividendProtocol,
 )
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.akshare.fundamental.history import (
-    AkshareFinancialSummary, AkshareDividend, AkshareEarningsForecast
+    AkshareFinancialSummary, AkshareDividend,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,25 +39,11 @@ class _DividendDispatcher:
         raise DataFetchError("all", "get_dividend_history", "所有数据源均失败", "data")
 
 
-class _EarningsForecastDispatcher:
-    def __init__(self, providers: list[EarningsForecastProtocol]):
-        self._providers = providers
-
-    def get_earnings_forecast_history(self, symbol: str) -> DataResult:
-        for p in self._providers:
-            try:
-                return p.get_earnings_forecast_history(symbol)
-            except DataFetchError as e:
-                logger.warning(f"{type(p).__name__} 失败: {e}")
-        raise DataFetchError("all", "get_earnings_forecast_history", "所有数据源均失败", "data")
-
-
 def _build_financial_summary() -> _FinancialSummaryDispatcher:
     providers: list[FinancialSummaryProtocol] = [AkshareFinancialSummary()]
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.fundamental.history import TushareFinancialSummary
         providers.append(TushareFinancialSummary())
-    # 雪球作为最后 fallback（无需 token，海外可达）
     from finance_data.provider.xueqiu.fundamental.history import XueqiuFinancialSummary
     providers.append(XueqiuFinancialSummary())
     return _FinancialSummaryDispatcher(providers=providers)
@@ -68,7 +54,6 @@ def _build_dividend() -> _DividendDispatcher:
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.fundamental.history import TushareDividend
         providers.append(TushareDividend())
-    # 雪球作为最后 fallback（无需 token，海外可达）
     from finance_data.provider.xueqiu.fundamental.history import XueqiuDividend
     providers.append(XueqiuDividend())
     return _DividendDispatcher(providers=providers)
@@ -76,4 +61,4 @@ def _build_dividend() -> _DividendDispatcher:
 
 financial_summary = _build_financial_summary()
 dividend = _build_dividend()
-earnings_forecast = _EarningsForecastDispatcher(providers=[AkshareEarningsForecast()])
+# earnings_forecast 已禁用：仅有东财源 stock_yjyg_em，无替代

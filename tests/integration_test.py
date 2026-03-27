@@ -1,5 +1,6 @@
 """
-集成测试脚本：对所有 27 个 provider 接口进行真实 API 调用测试。
+集成测试脚本：对所有保留的 provider 接口进行真实 API 调用测试。
+（东财源已全部禁用，相关测试已移除）
 运行：python tests/integration_test.py
 
 网络说明：
@@ -104,10 +105,7 @@ print(f"使用交易日: {trade_date}  (上上周: {trade_date_prev})")
 
 section("1. stock — 个股基本信息")
 
-print("  [akshare] get_stock_info (000001)...")
-from finance_data.provider.akshare.stock.history import AkshareStockHistory
-run("tool_get_stock_info", "akshare", AkshareStockHistory().get_stock_info_history, "000001")
-
+# akshare stock_info 已禁用（东财源）
 print("  [tushare] get_stock_info (000001)...")
 from finance_data.provider.tushare.stock.history import TushareStockHistory
 run("tool_get_stock_info", "tushare", TushareStockHistory().get_stock_info_history, "000001")
@@ -130,11 +128,7 @@ run("tool_get_kline", "tushare",
 
 section("3. realtime — 实时行情")
 
-print("  [akshare] get_realtime_quote (000001)...")
-from finance_data.provider.akshare.realtime.realtime import AkshareRealtimeQuote
-run("tool_get_realtime_quote", "akshare",
-    AkshareRealtimeQuote().get_realtime_quote, "000001")
-
+# akshare realtime 已禁用（东财源不可用，新浪源太慢）
 print("  [tushare] get_realtime_quote (000001)...")
 from finance_data.provider.tushare.realtime.realtime import TushareRealtimeQuote
 run("tool_get_realtime_quote", "tushare",
@@ -177,11 +171,7 @@ run("tool_get_sector_rank", "akshare",
 
 section("7. chip — 个股筹码分布")
 
-print("  [akshare] get_chip_distribution (000001)...")
-from finance_data.provider.akshare.chip.history import AkshareChipHistory
-run("tool_get_chip_distribution", "akshare",
-    AkshareChipHistory().get_chip_distribution_history, "000001")
-
+# akshare chip 已禁用（依赖东财 stock_cyq_em）
 print("  [tushare] get_chip_distribution (000001)...")
 from finance_data.provider.tushare.chip.history import TushareChipHistory
 run("tool_get_chip_distribution", "tushare",
@@ -214,20 +204,8 @@ run("tool_get_dividend", "tushare",
     TushareDividend().get_dividend_history, "000001")
 
 
-section("10. fundamental — 业绩预告")
-
-print("  [akshare] get_earnings_forecast (000001)...")
-from finance_data.provider.akshare.fundamental.history import AkshareEarningsForecast
-run("tool_get_earnings_forecast", "akshare",
-    AkshareEarningsForecast().get_earnings_forecast_history, "000001")
-
-
-section("11. cashflow — 个股资金流向")
-
-print("  [akshare] get_fund_flow (000001)...")
-from finance_data.provider.akshare.cashflow.realtime import AkshareStockCapitalFlow
-run("tool_get_fund_flow", "akshare",
-    AkshareStockCapitalFlow().get_stock_capital_flow_realtime, "000001")
+# section 10 (业绩预告) 已禁用（依赖东财 stock_yjyg_em）
+# section 11 (个股资金流向 akshare) 已禁用（依赖东财 stock_individual_fund_flow）
 
 
 section("12. calendar — 交易日历")
@@ -250,115 +228,19 @@ section("14. lhb — 龙虎榜详情")
 
 lhb_start = trade_date_prev
 lhb_end = trade_date
-print(f"  [akshare] get_lhb_detail ({lhb_start}~{lhb_end})...")
-from finance_data.provider.akshare.lhb.history import AkshareLhbDetail
-run("tool_get_lhb_detail", "akshare",
-    AkshareLhbDetail().get_lhb_detail_history, lhb_start, lhb_end)
-
+# akshare lhb 已禁用（依赖东财 stock_lhb_detail_em）
 print(f"  [tushare] get_lhb_detail ({trade_date})...")
 from finance_data.provider.tushare.lhb.history import TushareLhbDetail
 run("tool_get_lhb_detail", "tushare",
     TushareLhbDetail().get_lhb_detail_history, trade_date, trade_date)
 
+# sections 15-18 (lhb_stock_stat, active_traders, trader_stat, stock_detail) 已禁用（东财源）
+# sections 19-22 (zt_pool, strong_stocks, previous_zt, zbgc_pool) 已禁用（东财源）
+# section 23 (north_flow 日频) 已禁用（东财源）
 
-section("15. lhb — 个股上榜统计")
+section("15. north_flow — 北向持股明细")
 
-print("  [akshare] get_lhb_stock_stat (近一月)...")
-from finance_data.provider.akshare.lhb.history import AkshareLhbStockStat
-run("tool_get_lhb_stock_stat", "akshare",
-    AkshareLhbStockStat().get_lhb_stock_stat_history, "近一月")
-
-
-section("16. lhb — 活跃游资营业部")
-
-print(f"  [akshare] get_lhb_active_traders ({lhb_start}~{lhb_end})...")
-from finance_data.provider.akshare.lhb.history import AkshareLhbActiveTraders
-run("tool_get_lhb_active_traders", "akshare",
-    AkshareLhbActiveTraders().get_lhb_active_traders_history, lhb_start, lhb_end)
-
-
-section("17. lhb — 营业部统计")
-
-print("  [akshare] get_lhb_trader_stat (近一月)...")
-from finance_data.provider.akshare.lhb.history import AkshareLhbTraderStat
-run("tool_get_lhb_trader_stat", "akshare",
-    AkshareLhbTraderStat().get_lhb_trader_stat_history, "近一月")
-
-
-section("18. lhb — 个股席位明细")
-
-# 先从 lhb_detail 里找一个真实上榜的 symbol + date
-print("  [akshare] get_lhb_stock_detail — 从龙虎榜详情中取第一条记录测试...")
-try:
-    lhb_result = AkshareLhbDetail().get_lhb_detail_history(lhb_start, lhb_end)
-    if lhb_result.data:
-        first = lhb_result.data[0]
-        lhb_symbol = first["symbol"]
-        lhb_date = first["date"]
-        print(f"    使用: symbol={lhb_symbol}, date={lhb_date}")
-        from finance_data.provider.akshare.lhb.history import AkshareLhbStockDetail
-        run("tool_get_lhb_stock_detail", "akshare",
-            AkshareLhbStockDetail().get_lhb_stock_detail_history,
-            lhb_symbol, lhb_date, "买入")
-    else:
-        print(f"  {YELLOW}SKIP{RESET} 龙虎榜无数据，跳过席位明细测试")
-        results.append({"tool": "tool_get_lhb_stock_detail", "provider": "akshare",
-                         "status": "SKIP", "rows": 0, "time": 0,
-                         "error": "龙虎榜无数据", "sample_keys": []})
-except Exception as e:
-    print(f"  {YELLOW}SKIP{RESET} 无法获取龙虎榜数据: {e}")
-    results.append({"tool": "tool_get_lhb_stock_detail", "provider": "akshare",
-                     "status": "SKIP", "rows": 0, "time": 0,
-                     "error": str(e), "sample_keys": []})
-
-
-section("19. pool — 涨停股池")
-
-print(f"  [akshare] get_zt_pool ({trade_date})...")
-from finance_data.provider.akshare.pool.history import AkshareZtPool
-run("tool_get_zt_pool", "akshare",
-    AkshareZtPool().get_zt_pool_history, trade_date)
-
-
-section("20. pool — 强势股池")
-
-print(f"  [akshare] get_strong_stocks ({trade_date})...")
-from finance_data.provider.akshare.pool.history import AkshareStrongStocks
-run("tool_get_strong_stocks", "akshare",
-    AkshareStrongStocks().get_strong_stocks_history, trade_date)
-
-
-section("21. pool — 昨日涨停今日数据")
-
-print(f"  [akshare] get_previous_zt ({trade_date})...")
-from finance_data.provider.akshare.pool.history import AksharePreviousZt
-run("tool_get_previous_zt", "akshare",
-    AksharePreviousZt().get_previous_zt_history, trade_date)
-
-
-section("22. pool — 炸板股池")
-
-print(f"  [akshare] get_zbgc_pool ({trade_date})...")
-from finance_data.provider.akshare.pool.history import AkshareZbgcPool
-run("tool_get_zbgc_pool", "akshare",
-    AkshareZbgcPool().get_zbgc_pool_history, trade_date)
-
-
-section("23. north_flow — 北向资金日频")
-
-print("  [akshare] get_north_flow...")
-from finance_data.provider.akshare.north_flow.history import AkshareNorthFlow
-run("tool_get_north_flow", "akshare",
-    AkshareNorthFlow().get_north_flow_history)
-
-
-section("24. north_flow — 北向持股明细")
-
-print("  [akshare] get_north_stock_hold (沪股通 5日排行)...")
-from finance_data.provider.akshare.north_flow.history import AkshareNorthStockHold
-run("tool_get_north_stock_hold", "akshare",
-    AkshareNorthStockHold().get_north_stock_hold_history, "沪股通", "5日排行")
-
+# akshare 北向持股已禁用（依赖东财 stock_hsgt_hold_stock_em）
 print("  [tushare] get_north_stock_hold (600519 20250320)...")
 from finance_data.provider.tushare.north_flow.history import TushareNorthStockHold
 run("tool_get_north_stock_hold", "tushare",
@@ -366,7 +248,7 @@ run("tool_get_north_stock_hold", "tushare",
     symbol="600519", trade_date="20250320")
 
 
-section("25. margin — 融资融券汇总")
+section("16. margin — 融资融券汇总")
 
 print(f"  [akshare] get_margin (trade_date={trade_date})...")
 from finance_data.provider.akshare.margin.history import AkshareMargin
@@ -379,7 +261,7 @@ run("tool_get_margin", "tushare",
     TushareMargin().get_margin_history, trade_date=trade_date)
 
 
-section("26. margin — 融资融券个股明细")
+section("17. margin — 融资融券个股明细")
 
 print(f"  [akshare] get_margin_detail (trade_date={trade_date})...")
 from finance_data.provider.akshare.margin.history import AkshareMarginDetail
@@ -392,12 +274,7 @@ run("tool_get_margin_detail", "tushare",
     TushareMarginDetail().get_margin_detail_history, trade_date=trade_date)
 
 
-section("27. sector_fund_flow — 板块资金流排名")
-
-print("  [akshare] get_sector_fund_flow (今日 行业资金流)...")
-from finance_data.provider.akshare.sector_fund_flow.history import AkshareSectorCapitalFlow
-run("tool_get_sector_fund_flow", "akshare",
-    AkshareSectorCapitalFlow().get_sector_capital_flow_history, "今日", "行业资金流")
+# section 27 (sector_fund_flow) 已禁用（依赖东财 stock_sector_fund_flow_rank）
 
 
 # ───────────────────────── 汇总 & 报告 ─────────────────────────────
@@ -437,24 +314,12 @@ tool_seq = [
     "tool_get_chip_distribution",
     "tool_get_financial_summary",
     "tool_get_dividend",
-    "tool_get_earnings_forecast",
-    "tool_get_fund_flow",
     "tool_get_trade_calendar",
     "tool_get_market_stats_realtime",
     "tool_get_lhb_detail",
-    "tool_get_lhb_stock_stat",
-    "tool_get_lhb_active_traders",
-    "tool_get_lhb_trader_stat",
-    "tool_get_lhb_stock_detail",
-    "tool_get_zt_pool",
-    "tool_get_strong_stocks",
-    "tool_get_previous_zt",
-    "tool_get_zbgc_pool",
-    "tool_get_north_flow",
     "tool_get_north_stock_hold",
     "tool_get_margin",
     "tool_get_margin_detail",
-    "tool_get_sector_fund_flow",
 ]
 
 STATUS_EMOJI = {"PASS": "✅", "FAIL": "❌", "SKIP": "⚠️"}

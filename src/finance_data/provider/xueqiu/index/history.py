@@ -59,7 +59,7 @@ class XueqiuIndexHistory:
                 f"无数据: {symbol} {start}-{end}", "data"
             )
 
-        bars = self._parse(symbol, items)
+        bars = self._parse(symbol, items, start=start, end=end)
         return DataResult(
             data=bars,
             source="xueqiu",
@@ -110,16 +110,22 @@ class XueqiuIndexHistory:
 
         return [dict(zip(columns, row)) for row in items]
 
-    def _parse(self, symbol: str, items: list[dict]) -> list[dict]:
+    def _parse(self, symbol: str, items: list[dict],
+               start: str = "", end: str = "") -> list[dict]:
         bars = []
         for d in items:
             ts_ms = d.get("timestamp")
             if ts_ms is None:
                 continue
+            date = _ts_to_date(ts_ms)
+            if start and date < start:
+                continue
+            if end and date > end:
+                continue
             bars.append(
                 IndexBar(
                     symbol=symbol,
-                    date=_ts_to_date(ts_ms),
+                    date=date,
                     open=float(d.get("open", 0) or 0),
                     high=float(d.get("high", 0) or 0),
                     low=float(d.get("low", 0) or 0),

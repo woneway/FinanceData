@@ -4,8 +4,6 @@ import os
 
 from finance_data.interface.stock.history import StockHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
-from finance_data.provider.akshare.stock.history import AkshareStockHistory
-
 logger = logging.getLogger(__name__)
 
 
@@ -23,11 +21,12 @@ class _StockHistoryDispatcher:
 
 
 def _build_stock_history() -> _StockHistoryDispatcher:
-    providers: list[StockHistoryProtocol] = [AkshareStockHistory()]
+    # akshare stock_info 已禁用（内部使用雪球 API 但 token 管理不可靠）
+    providers: list[StockHistoryProtocol] = []
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.stock.history import TushareStockHistory
         providers.append(TushareStockHistory())
-    # 雪球作为最后 fallback（无需 token，海外可达）
+    # 雪球作为主要数据源（无需 token，海外可达）
     from finance_data.provider.xueqiu.stock.history import XueqiuStockHistory
     providers.append(XueqiuStockHistory())
     return _StockHistoryDispatcher(providers=providers)

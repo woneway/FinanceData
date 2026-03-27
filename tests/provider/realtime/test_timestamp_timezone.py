@@ -38,20 +38,9 @@ def test_tushare_index_timestamp_has_timezone():
 
 
 def test_akshare_realtime_timestamp_has_timezone():
-    from finance_data.provider.akshare.realtime.realtime import AkshareRealtimeQuote
-
-    mock_df = pd.DataFrame([{
-        "代码": "sz000001", "名称": "平安银行",
-        "最新价": 10.5, "涨跌幅": 1.2,
-        "成交量": 50000, "成交额": 525000,
-    }])
-
-    with patch("finance_data.provider.akshare.realtime.realtime.ak") as mock_ak:
-        mock_ak.stock_zh_a_spot.return_value = mock_df
-        result = AkshareRealtimeQuote().get_realtime_quote("000001")
-
-    ts = result.data[0]["timestamp"]
-    assert "+08:00" in ts, f"akshare realtime timestamp 应含时区 +08:00，got: {ts}"
+    """akshare realtime 已禁用（东财源不可用，新浪源太慢），跳过"""
+    import pytest
+    pytest.skip("akshare realtime 已禁用")
 
 
 def test_akshare_index_realtime_timestamp_has_timezone():

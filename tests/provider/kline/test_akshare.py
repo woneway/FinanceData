@@ -60,15 +60,17 @@ def test_get_kline_empty_raises_data_error(provider):
 
 @pytest.fixture
 def mock_min_df():
+    """新浪源 stock_zh_a_minute 返回格式"""
     return pd.DataFrame([{
-        "时间": "2024-01-02 09:31:00", "开盘": 10.0, "最高": 10.2,
-        "最低": 9.9, "收盘": 10.1, "成交量": 5000, "成交额": 50500.0, "涨跌幅": 0.5,
+        "day": "2024-01-02 09:31:00", "open": 10.0, "high": 10.2,
+        "low": 9.9, "close": 10.1, "volume": 5000, "amount": 50500.0,
     }])
 
 
 def test_get_kline_1min(provider, mock_min_df):
-    with patch("finance_data.provider.akshare.kline.history.ak.stock_zh_a_hist_min_em",
+    with patch("finance_data.provider.akshare.kline.history.ak.stock_zh_a_minute",
                return_value=mock_min_df):
         result = provider.get_kline_history("000001", period="1min", start="20240102", end="20240102")
     assert result.data[0]["period"] == "1min"
     assert result.data[0]["date"] == "20240102"
+    assert result.meta["upstream"] == "sina"

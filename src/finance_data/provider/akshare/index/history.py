@@ -1,4 +1,4 @@
-"""大盘指数历史 K线 - akshare 实现（东方财富源）"""
+"""大盘指数历史 K线 - akshare 实现（新浪源）"""
 import contextlib
 import logging
 import requests
@@ -35,20 +35,18 @@ def _parse_date(val) -> str:
 class AkshareIndexHistory:
     def get_index_history(self, symbol: str, start: str, end: str) -> DataResult:
         from finance_data.provider.symbol import to_tencent
-        em_symbol = to_tencent(symbol)  # sh000001 格式，东财源也适用
+        sina_symbol = to_tencent(symbol)  # sh000001 格式，新浪源也适用
 
         try:
             with _no_proxy():
-                df = ak.stock_zh_index_daily_em(
-                    symbol=em_symbol, start_date=start, end_date=end,
-                )
+                df = ak.stock_zh_index_daily(symbol=sina_symbol)
         except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "stock_zh_index_daily_em", str(e), "network") from e
+            raise DataFetchError("akshare", "stock_zh_index_daily", str(e), "network") from e
         except Exception as e:
-            raise DataFetchError("akshare", "stock_zh_index_daily_em", str(e), "data") from e
+            raise DataFetchError("akshare", "stock_zh_index_daily", str(e), "data") from e
 
         if df is None or df.empty:
-            raise DataFetchError("akshare", "stock_zh_index_daily_em",
+            raise DataFetchError("akshare", "stock_zh_index_daily",
                                  f"无数据: {symbol}", "data")
 
         bars = []
@@ -70,14 +68,14 @@ class AkshareIndexHistory:
                 low=float(row.get("low", 0)),
                 close=close,
                 volume=float(row.get("volume", 0)),
-                amount=float(row.get("amount", 0)),
+                amount=0.0,  # 新浪源不提供成交额
                 pct_chg=pct_chg,
             ).to_dict())
             prev_close = close
 
         if not bars:
-            raise DataFetchError("akshare", "stock_zh_index_daily_em",
+            raise DataFetchError("akshare", "stock_zh_index_daily",
                                  f"无数据: {symbol} {start}-{end}", "data")
 
         return DataResult(data=bars, source="akshare",
-                          meta={"rows": len(bars), "symbol": symbol, "upstream": "eastmoney"})
+                          meta={"rows": len(bars), "symbol": symbol, "upstream": "sina"})

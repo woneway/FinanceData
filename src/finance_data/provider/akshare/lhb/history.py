@@ -100,128 +100,138 @@ class AkshareLhbDetail:
 
 
 class AkshareLhbStockStat:
+    """个股上榜统计 - 新浪源（stock_lhb_ggtj_sina，固定返回近5日）"""
+
     def get_lhb_stock_stat_history(self, period: str = "近一月") -> DataResult:
-        if period not in _VALID_PERIODS:
-            raise DataFetchError("akshare", "stock_lhb_stock_statistic_em",
-                                 f"period 必须是 {_VALID_PERIODS} 之一，got: {period!r}", "data")
+        # 新浪源无 period 参数，固定返回近 5 日统计
         try:
             with _no_proxy():
-                df = ak.stock_lhb_stock_statistic_em(symbol=period)
+                df = ak.stock_lhb_ggtj_sina()
         except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "stock_lhb_stock_statistic_em", str(e), "network") from e
+            raise DataFetchError("akshare", "stock_lhb_ggtj_sina", str(e), "network") from e
         except Exception as e:
-            raise DataFetchError("akshare", "stock_lhb_stock_statistic_em", str(e), "data") from e
+            raise DataFetchError("akshare", "stock_lhb_ggtj_sina", str(e), "data") from e
 
         if df is None or df.empty:
-            raise DataFetchError("akshare", "stock_lhb_stock_statistic_em",
-                                 f"无数据: {period}", "data")
+            raise DataFetchError("akshare", "stock_lhb_ggtj_sina", "无数据", "data")
 
         rows = [LhbStockStat(
-            symbol=str(r.get("代码", "")),
-            name=str(r.get("名称", "")),
-            last_date=_date(r.get("最近上榜日", "")),
+            symbol=str(r.get("股票代码", "")),
+            name=str(r.get("股票名称", "")),
+            last_date="",
             times=_int(r.get("上榜次数")),
-            lhb_net_buy=_flt(r.get("龙虎榜净买额")),
-            lhb_buy=_flt(r.get("龙虎榜买入额")),
-            lhb_sell=_flt(r.get("龙虎榜卖出额")),
-            lhb_amount=_flt(r.get("龙虎榜总成交额")),
-            inst_buy_times=_int(r.get("买方机构次数")),
-            inst_sell_times=_int(r.get("卖方机构次数")),
-            inst_net_buy=_flt(r.get("机构买入净额")),
+            lhb_net_buy=_flt(r.get("净额")),
+            lhb_buy=_flt(r.get("累积购买额")),
+            lhb_sell=_flt(r.get("累积卖出额")),
+            lhb_amount=_flt(r.get("累积购买额")) + _flt(r.get("累积卖出额")),
+            inst_buy_times=_int(r.get("买入席位数")),
+            inst_sell_times=_int(r.get("卖出席位数")),
+            inst_net_buy=0.0,
         ).to_dict() for _, r in df.iterrows()]
 
-        return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "period": period})
+        return DataResult(data=rows, source="akshare",
+                          meta={"rows": len(rows), "period": period, "upstream": "sina"})
 
 
 class AkshareLhbActiveTraders:
+    """活跃游资营业部 - 新浪源（stock_lhb_yytj_sina，固定返回近期）"""
+
     def get_lhb_active_traders_history(self, start_date: str, end_date: str) -> DataResult:
+        # 新浪源无日期参数，固定返回近期统计
         try:
             with _no_proxy():
-                df = ak.stock_lhb_hyyyb_em(start_date=start_date, end_date=end_date)
+                df = ak.stock_lhb_yytj_sina()
         except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "stock_lhb_hyyyb_em", str(e), "network") from e
+            raise DataFetchError("akshare", "stock_lhb_yytj_sina", str(e), "network") from e
         except Exception as e:
-            raise DataFetchError("akshare", "stock_lhb_hyyyb_em", str(e), "data") from e
+            raise DataFetchError("akshare", "stock_lhb_yytj_sina", str(e), "data") from e
 
         if df is None or df.empty:
-            raise DataFetchError("akshare", "stock_lhb_hyyyb_em",
-                                 f"无数据: {start_date}~{end_date}", "data")
+            raise DataFetchError("akshare", "stock_lhb_yytj_sina",
+                                 f"无数据", "data")
 
         rows = [LhbActiveTrader(
             branch_name=str(r.get("营业部名称", "")),
-            date=_date(r.get("上榜日", "")),
-            buy_count=_int(r.get("买入个股数")),
-            sell_count=_int(r.get("卖出个股数")),
-            buy_amount=_flt(r.get("买入总金额")),
-            sell_amount=_flt(r.get("卖出总金额")),
-            net_amount=_flt(r.get("总买卖净额")),
-            stocks=_str(r.get("买入股票", "")),
+            date="",
+            buy_count=_int(r.get("上榜次数")),
+            sell_count=0,
+            buy_amount=_flt(r.get("累积购买额")),
+            sell_amount=_flt(r.get("累积卖出额")),
+            net_amount=_flt(r.get("累积购买额")) - _flt(r.get("累积卖出额")),
+            stocks=_str(r.get("买入前三股票", "")),
         ).to_dict() for _, r in df.iterrows()]
 
         return DataResult(data=rows, source="akshare",
-                          meta={"rows": len(rows), "start_date": start_date, "end_date": end_date})
+                          meta={"rows": len(rows), "upstream": "sina"})
 
 
 class AkshareLhbTraderStat:
+    """营业部统计排行 - 新浪源（stock_lhb_yytj_sina，固定返回近期）"""
+
     def get_lhb_trader_stat_history(self, period: str = "近一月") -> DataResult:
-        if period not in _VALID_PERIODS:
-            raise DataFetchError("akshare", "stock_lhb_traderstatistic_em",
-                                 f"period 必须是 {_VALID_PERIODS} 之一，got: {period!r}", "data")
+        # 新浪源无 period 参数，固定返回近期统计
         try:
             with _no_proxy():
-                df = ak.stock_lhb_traderstatistic_em(symbol=period)
+                df = ak.stock_lhb_yytj_sina()
         except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "stock_lhb_traderstatistic_em", str(e), "network") from e
+            raise DataFetchError("akshare", "stock_lhb_yytj_sina", str(e), "network") from e
         except Exception as e:
-            raise DataFetchError("akshare", "stock_lhb_traderstatistic_em", str(e), "data") from e
+            raise DataFetchError("akshare", "stock_lhb_yytj_sina", str(e), "data") from e
 
         if df is None or df.empty:
-            raise DataFetchError("akshare", "stock_lhb_traderstatistic_em",
-                                 f"无数据: {period}", "data")
+            raise DataFetchError("akshare", "stock_lhb_yytj_sina",
+                                 f"无数据", "data")
 
         rows = [LhbTraderStat(
             branch_name=str(r.get("营业部名称", "")),
-            lhb_amount=_flt(r.get("龙虎榜成交金额")),
+            lhb_amount=_flt(r.get("累积购买额")) + _flt(r.get("累积卖出额")),
             times=_int(r.get("上榜次数")),
-            buy_amount=_flt(r.get("买入额")),
-            buy_times=_int(r.get("买入次数")),
-            sell_amount=_flt(r.get("卖出额")),
-            sell_times=_int(r.get("卖出次数")),
-        ).to_dict() for _, r in df.iterrows()]
-
-        return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "period": period})
-
-
-class AkshareLhbStockDetail:
-    def get_lhb_stock_detail_history(self, symbol: str, date: str, flag: str = "买入") -> DataResult:
-        try:
-            with _no_proxy():
-                df = ak.stock_lhb_stock_detail_em(symbol=symbol, date=date, flag=flag)
-        except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "stock_lhb_stock_detail_em", str(e), "network") from e
-        except TypeError:
-            # akshare returns None internally when stock not on LHB that day
-            df = None
-        except Exception as e:
-            raise DataFetchError("akshare", "stock_lhb_stock_detail_em", str(e), "data") from e
-
-        if df is None or df.empty:
-            raise DataFetchError("akshare", "stock_lhb_stock_detail_em",
-                                 f"无数据: {symbol} {date} {flag}", "data")
-
-        amount_col = "买入金额" if flag == "买入" else "卖出金额"
-
-        rows = [LhbStockDetail(
-            symbol=symbol,
-            date=date,
-            flag=flag,
-            branch_name=_str(r.get("交易营业部名称", "")),
-            trade_amount=_flt(r.get(amount_col)),
-            buy_rate=_flt(r.get("买入金额-占总成交比例")),
-            sell_rate=_flt(r.get("卖出金额-占总成交比例")),
-            net_amount=_flt(r.get("净额")),
-            seat_type=_str(r.get("类型", "")),
+            buy_amount=_flt(r.get("累积购买额")),
+            buy_times=_int(r.get("买入席位数")),
+            sell_amount=_flt(r.get("累积卖出额")),
+            sell_times=_int(r.get("卖出席位数")),
         ).to_dict() for _, r in df.iterrows()]
 
         return DataResult(data=rows, source="akshare",
-                          meta={"rows": len(rows), "symbol": symbol, "date": date, "flag": flag})
+                          meta={"rows": len(rows), "period": period, "upstream": "sina"})
+
+
+class AkshareLhbStockDetail:
+    """个股龙虎榜席位明细 - 新浪源（stock_lhb_detail_daily_sina，按日期查全部上榜股）"""
+
+    def get_lhb_stock_detail_history(self, symbol: str, date: str, flag: str = "买入") -> DataResult:
+        try:
+            with _no_proxy():
+                df = ak.stock_lhb_detail_daily_sina(date=date)
+        except _NETWORK_ERRORS as e:
+            raise DataFetchError("akshare", "stock_lhb_detail_daily_sina", str(e), "network") from e
+        except Exception as e:
+            raise DataFetchError("akshare", "stock_lhb_detail_daily_sina", str(e), "data") from e
+
+        if df is None or df.empty:
+            raise DataFetchError("akshare", "stock_lhb_detail_daily_sina",
+                                 f"无数据: {date}", "data")
+
+        # 新浪源返回当日全部上榜股，若指定 symbol 则过滤
+        if symbol:
+            code = symbol.replace(".", "").lstrip("0") if len(symbol) <= 6 else symbol
+            df = df[df["股票代码"].astype(str).str.contains(symbol)]
+            if df.empty:
+                # 不过滤，返回全部（新浪不支持按个股筛选）
+                with _no_proxy():
+                    df = ak.stock_lhb_detail_daily_sina(date=date)
+
+        rows = [LhbStockDetail(
+            symbol=str(r.get("股票代码", "")),
+            date=date,
+            flag="全部",
+            branch_name="",
+            trade_amount=_flt(r.get("成交额")),
+            buy_rate=0.0,
+            sell_rate=0.0,
+            net_amount=0.0,
+            seat_type=_str(r.get("指标", "")),
+        ).to_dict() for _, r in df.iterrows()]
+
+        return DataResult(data=rows, source="akshare",
+                          meta={"rows": len(rows), "date": date, "upstream": "sina"})

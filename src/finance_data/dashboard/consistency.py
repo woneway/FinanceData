@@ -5,7 +5,13 @@ from finance_data.dashboard.models import ConsistencyResult, FieldDiff
 from finance_data.provider.metadata.registry import TOOL_REGISTRY
 
 # 始终跳过的字段（不同 provider 天然不同）
-_ALWAYS_SKIP: Set[str] = {"source"}
+_ALWAYS_SKIP: Set[str] = {"source", "timestamp"}
+
+# Per-tool 跳过字段（已知跨源差异，非 bug）
+_TOOL_SKIP: Dict[str, Set[str]] = {
+    "tool_get_index_history": {"amount"},       # 新浪源不提供成交额，固定为 0
+    "tool_get_index_quote_realtime": {"name"},   # xueqiu API 对指数不返回 name
+}
 
 # 数值容差
 _RELATIVE_TOL = 0.01   # 1%
@@ -47,9 +53,10 @@ def compare_provider_data(
     primary_key = meta.primary_key if meta else "date"
 
     # 匹配行并比较
+    tool_skip = _TOOL_SKIP.get(tool_name, set())
     matched = _match_rows(provider_data, primary_key, max_compare=5)
     for row_key, provider_rows in matched.items():
-        row_diffs = _compare_single_row(providers, provider_rows, row_key)
+        row_diffs = _compare_single_row(providers, provider_rows, row_key, tool_skip)
         diffs.extend(row_diffs)
 
     # 确定最差等级
@@ -106,6 +113,7 @@ def _compare_single_row(
     providers: List[str],
     provider_rows: Dict[str, Dict[str, Any]],
     row_key: str,
+    tool_skip: Set[str] = frozenset(),
 ) -> List[FieldDiff]:
     """比较一组匹配行的所有字段。"""
     diffs: List[FieldDiff] = []
@@ -118,7 +126,7 @@ def _compare_single_row(
     suffix = "" if row_key == "row_0" else f" ({row_key})"
 
     for field in sorted(all_fields):
-        if field in _ALWAYS_SKIP:
+        if field in _ALWAYS_SKIP or field in tool_skip:
             continue
 
         values = {p: provider_rows[p].get(field) for p in providers}

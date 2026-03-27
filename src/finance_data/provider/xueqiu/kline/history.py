@@ -82,7 +82,7 @@ class XueqiuKlineHistory:
                 f"无数据: {symbol} {period} {start}-{end}", "data"
             )
 
-        bars = self._parse(symbol, period, adj, items)
+        bars = self._parse(symbol, period, adj, items, start=start, end=end)
         return DataResult(
             data=bars,
             source="xueqiu",
@@ -149,7 +149,8 @@ class XueqiuKlineHistory:
         return [dict(zip(columns, row)) for row in items]
 
     def _parse(
-        self, symbol: str, period: str, adj: str, items: list[dict]
+        self, symbol: str, period: str, adj: str, items: list[dict],
+        start: str = "", end: str = "",
     ) -> list[dict]:
         bars = []
         for d in items:
@@ -157,6 +158,10 @@ class XueqiuKlineHistory:
             if ts_ms is None:
                 continue
             date = _ts_to_date(ts_ms)
+            if start and date < start:
+                continue
+            if end and date > end:
+                continue
             bars.append(
                 KlineBar(
                     symbol=symbol,
