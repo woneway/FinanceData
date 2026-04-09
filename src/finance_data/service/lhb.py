@@ -1,6 +1,6 @@
 """龙虎榜 service - 统一对外入口
 
-- lhb_detail: tushare（akshare 东财源已禁用）
+- lhb_detail: akshare(东财) 优先，tushare fallback
 - lhb_stock_stat, lhb_active_traders, lhb_trader_stat, lhb_stock_detail: akshare 新浪源
 """
 import logging
@@ -9,6 +9,7 @@ import os
 from finance_data.interface.lhb.history import (
     LhbDetailProtocol, LhbStockStatProtocol,
     LhbActiveTradersProtocol, LhbTraderStatProtocol, LhbStockDetailProtocol,
+    LhbInstDetailProtocol,
 )
 from finance_data.interface.types import DataFetchError, DataResult
 
@@ -81,8 +82,8 @@ class _LhbStockDetailDispatcher:
 
 
 def _build_lhb_detail() -> _LhbDetailDispatcher:
-    # akshare 龙虎榜详情已禁用（依赖东财 stock_lhb_detail_em）
-    providers: list[LhbDetailProtocol] = []
+    from finance_data.provider.akshare.lhb.history import AkshareLhbDetail
+    providers: list[LhbDetailProtocol] = [AkshareLhbDetail()]
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.lhb.history import TushareLhbDetail
         providers.append(TushareLhbDetail())
@@ -109,8 +110,27 @@ def _build_lhb_stock_detail() -> _LhbStockDetailDispatcher:
     return _LhbStockDetailDispatcher(providers=[AkshareLhbStockDetail()])
 
 
+class _LhbInstDetailDispatcher:
+    def __init__(self, providers: list[LhbInstDetailProtocol]):
+        self._providers = providers
+
+    def get_lhb_inst_detail_history(self, start_date: str, end_date: str) -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_lhb_inst_detail_history(start_date, end_date)
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} 失败: {e}")
+        raise DataFetchError("all", "get_lhb_inst_detail_history", "所有数据源均失败", "data")
+
+
+def _build_lhb_inst_detail() -> _LhbInstDetailDispatcher:
+    from finance_data.provider.akshare.lhb.inst_detail import AkshareLhbInstDetail
+    return _LhbInstDetailDispatcher(providers=[AkshareLhbInstDetail()])
+
+
 lhb_detail = _build_lhb_detail()
 lhb_stock_stat = _build_lhb_stock_stat()
 lhb_active_traders = _build_lhb_active_traders()
 lhb_trader_stat = _build_lhb_trader_stat()
 lhb_stock_detail = _build_lhb_stock_detail()
+lhb_inst_detail = _build_lhb_inst_detail()

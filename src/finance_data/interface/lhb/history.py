@@ -26,6 +26,10 @@ class LhbStockDetailProtocol(Protocol):
     def get_lhb_stock_detail_history(self, symbol: str, date: str, flag: str) -> DataResult: ...
 
 
+class LhbInstDetailProtocol(Protocol):
+    def get_lhb_inst_detail_history(self, start_date: str, end_date: str) -> DataResult: ...
+
+
 @dataclass
 class LhbEntry:
     symbol: str
@@ -141,4 +145,34 @@ class LhbStockDetail:
             "trade_amount": self.trade_amount, "buy_rate": self.buy_rate,
             "sell_rate": self.sell_rate, "net_amount": self.net_amount,
             "seat_type": self.seat_type,
+        }
+
+
+@dataclass
+class LhbInstDetail:
+    symbol: str
+    name: str
+    close: float
+    pct_change: float
+    inst_buy_count: int
+    inst_sell_count: int
+    inst_buy_amount: float
+    inst_sell_amount: float
+    inst_net_buy: float
+    market_amount: float
+    inst_net_rate: float
+    turnover_rate: float
+    float_value: float
+    reason: str
+    date: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "symbol": self.symbol, "name": self.name,
+            "close": self.close, "pct_change": self.pct_change,
+            "inst_buy_count": self.inst_buy_count, "inst_sell_count": self.inst_sell_count,
+            "inst_buy_amount": self.inst_buy_amount, "inst_sell_amount": self.inst_sell_amount,
+            "inst_net_buy": self.inst_net_buy, "market_amount": self.market_amount,
+            "inst_net_rate": self.inst_net_rate, "turnover_rate": self.turnover_rate,
+            "float_value": self.float_value, "reason": self.reason, "date": self.date,
         }

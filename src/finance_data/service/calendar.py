@@ -29,6 +29,9 @@ def _build_trade_calendar() -> _TradeCalendarDispatcher:
         from finance_data.provider.tushare.calendar.history import TushareTradeCalendar
         providers.append(TushareTradeCalendar())
     providers.append(AkshareTradeCalendar())
+    # baostock 作为最终 fallback
+    from finance_data.provider.baostock.calendar.history import BaostockTradeCalendar
+    providers.append(BaostockTradeCalendar())
     return _TradeCalendarDispatcher(providers=providers)
 
 

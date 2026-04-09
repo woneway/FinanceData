@@ -22,8 +22,8 @@ class _ChipHistoryDispatcher:
 
 
 def _build_chip_history() -> _ChipHistoryDispatcher:
-    # akshare 筹码分布已禁用（依赖东财 stock_cyq_em）
-    providers: list[ChipHistoryProtocol] = []
+    from finance_data.provider.akshare.chip.history import AkshareChipHistory
+    providers: list[ChipHistoryProtocol] = [AkshareChipHistory()]
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.chip.history import TushareChipHistory
         providers.append(TushareChipHistory())

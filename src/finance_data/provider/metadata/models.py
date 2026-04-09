@@ -23,7 +23,9 @@ class UpdateTiming(str, Enum):
 class DataSource(str, Enum):
     AKSHARE = "akshare"
     TUSHARE = "tushare"
+    TENCENT = "tencent"
     BOTH = "both"
+    MULTI = "multi"
 
 
 @dataclass

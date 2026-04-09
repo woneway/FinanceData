@@ -33,6 +33,9 @@ def _build_kline_history() -> _KlineHistoryDispatcher:
     if has_login_cookie():
         from finance_data.provider.xueqiu.kline.history import XueqiuKlineHistory
         providers.append(XueqiuKlineHistory())
+    # baostock 作为最终 fallback（极稳定，免费）
+    from finance_data.provider.baostock.kline.history import BaostockKlineHistory
+    providers.append(BaostockKlineHistory())
     return _KlineHistoryDispatcher(providers=providers)
 
 

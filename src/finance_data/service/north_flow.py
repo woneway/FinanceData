@@ -38,8 +38,8 @@ class _NorthStockHoldDispatcher:
 
 
 def _build_north_stock_hold() -> _NorthStockHoldDispatcher:
-    # akshare 北向持股已禁用（依赖东财 stock_hsgt_hold_stock_em）
-    providers: list[NorthStockHoldProtocol] = []
+    from finance_data.provider.akshare.north_flow.history import AkshareNorthStockHold
+    providers: list[NorthStockHoldProtocol] = [AkshareNorthStockHold()]
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.north_flow.history import TushareNorthStockHold
         providers.append(TushareNorthStockHold())

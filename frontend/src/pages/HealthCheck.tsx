@@ -42,7 +42,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   kline: "K线数据",
   realtime: "实时行情",
   index: "指数数据",
-  sector: "板块排名",
+  sector: "板块数据",
   chip: "筹码分布",
   fundamental: "基本面",
   cashflow: "资金流向",
@@ -53,6 +53,47 @@ const DOMAIN_LABELS: Record<string, string> = {
   margin: "融资融券",
   market: "大盘统计",
   sector_fund_flow: "板块资金流",
+  daily_basic: "日频指标",
+  limit_price: "涨跌停价",
+  suspend: "停复牌",
+  hot_rank: "人气排行",
+}
+
+/** Tool 名称映射：英文 → 中文简称 */
+const TOOL_LABELS: Record<string, string> = {
+  tool_get_stock_info_history: "个股信息",
+  tool_get_kline_history: "K线历史",
+  tool_get_realtime_quote: "实时行情",
+  tool_get_index_quote_realtime: "指数实时",
+  tool_get_index_history: "指数历史",
+  tool_get_sector_rank_realtime: "板块排名",
+  tool_get_sector_list: "板块列表",
+  tool_get_sector_member: "板块成分",
+  tool_get_sector_history: "板块历史",
+  tool_get_chip_distribution_history: "筹码分布",
+  tool_get_financial_summary_history: "财务摘要",
+  tool_get_dividend_history: "分红记录",
+  tool_get_daily_basic: "日频指标",
+  tool_get_limit_price: "涨跌停价",
+  tool_get_suspend: "停牌信息",
+  tool_get_hot_rank: "热股排行",
+  tool_get_stock_capital_flow_realtime: "资金流向",
+  tool_get_trade_calendar_history: "交易日历",
+  tool_get_market_stats_realtime: "涨跌统计",
+  tool_get_lhb_detail: "龙虎榜详情",
+  tool_get_lhb_inst_detail: "机构明细",
+  tool_get_lhb_stock_stat: "个股统计",
+  tool_get_lhb_active_traders: "活跃游资",
+  tool_get_lhb_trader_stat: "营业部排行",
+  tool_get_lhb_stock_detail: "席位明细",
+  tool_get_zt_pool: "涨停股池",
+  tool_get_strong_stocks: "强势股池",
+  tool_get_previous_zt: "昨日涨停",
+  tool_get_zbgc_pool: "炸板股池",
+  tool_get_market_north_capital: "北向资金流",
+  tool_get_north_stock_hold: "北向持股",
+  tool_get_margin: "两融汇总",
+  tool_get_margin_detail: "两融明细",
 }
 
 interface HealthCheckProps {
@@ -188,7 +229,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
       for (const p of t.providers) set.add(p)
     }
     return Array.from(set).sort((a, b) => {
-      const order = ["akshare", "tushare", "xueqiu"]
+      const order = ["akshare", "tencent", "baostock", "tushare", "xueqiu"]
       return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) -
         (order.indexOf(b) === -1 ? 99 : order.indexOf(b))
     })
@@ -300,126 +341,78 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
 
   return (
     <div className="space-y-6">
-      {/* Provider Overview Cards */}
-      <div className={`grid gap-4 ${allProviders.length <= 3 ? "grid-cols-4" : `grid-cols-${allProviders.length + 1}`}`}>
-        {/* Total overview card */}
-        <Card className="relative overflow-hidden border-primary/20 bg-primary/[0.02]">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">总览</CardTitle>
-              <Badge className="text-xs bg-primary/10 text-primary hover:bg-primary/10">
-                {tools.length} 个接口
-              </Badge>
+      {/* Provider Overview - Compact */}
+      <Card>
+        <CardContent className="py-3">
+          <div className="flex items-center gap-6 flex-wrap">
+            {/* Total */}
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold">{tools.length}</span>
+              <span className="text-muted-foreground">接口</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="font-semibold">{domainGroups.size}</span>
+              <span className="text-muted-foreground">领域</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="font-semibold">{allProviders.length}</span>
+              <span className="text-muted-foreground">数据源</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="font-semibold">{total}</span>
+              <span className="text-muted-foreground">探测点</span>
             </div>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <div className="grid grid-cols-2 gap-y-2 text-sm select-text">
-              <div>
-                <span className="text-muted-foreground">领域</span>
-                <div className="font-semibold mt-0.5">{domainGroups.size} 个</div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">数据源</span>
-                <div className="font-semibold mt-0.5">{allProviders.length} 个</div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">探测点</span>
-                <div className="font-mono text-xs mt-0.5">{total} 个</div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">覆盖率</span>
-                <div className="font-mono text-xs mt-0.5">
-                  {tools.length > 0
-                    ? `${((total / (tools.length * allProviders.length)) * 100).toFixed(0)}%`
-                    : "--"}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        {providerSummaries.map((p) => (
-          <Card key={p.name} className="relative overflow-hidden">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold">{p.name}</CardTitle>
-                <Badge variant="secondary" className="text-xs">
-                  {p.toolCount} 个接口
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="grid grid-cols-2 gap-y-2 text-sm select-text">
-                <div>
-                  <span className="text-muted-foreground">状态</span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    {p.okCount > 0 && (
-                      <span className="flex items-center gap-0.5 text-green-600 text-xs font-medium">
-                        <span className="w-2 h-2 rounded-full bg-green-500" />
-                        {p.okCount}
-                      </span>
-                    )}
-                    {p.errorCount > 0 && (
-                      <span className="flex items-center gap-0.5 text-red-600 text-xs font-medium">
-                        <span className="w-2 h-2 rounded-full bg-red-500" />
-                        {p.errorCount}
-                      </span>
-                    )}
-                    {p.unknownCount > 0 && (
-                      <span className="flex items-center gap-0.5 text-gray-400 text-xs font-medium">
-                        <span className="w-2 h-2 rounded-full bg-gray-300" />
-                        {p.unknownCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">成功率</span>
-                  <div className={`font-semibold mt-0.5 ${
-                    p.successRate !== "--" && Number(p.successRate) >= 95
-                      ? "text-green-600"
-                      : p.successRate !== "--" && Number(p.successRate) >= 80
-                        ? "text-yellow-600"
-                        : p.successRate !== "--"
-                          ? "text-red-600"
-                          : ""
-                  }`}>
-                    {p.successRate === "--" ? "--" : `${p.successRate}%`}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">平均耗时</span>
-                  <div className="font-mono text-xs mt-0.5">
-                    {p.avgMs > 0 ? `${p.avgMs}ms` : "--"}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">总调用</span>
-                  <div className="font-mono text-xs mt-0.5">
-                    {p.totalCalls > 0 ? `${p.totalCalls}次` : "--"}
-                  </div>
-                </div>
-              </div>
-              {/* Mini status bar */}
-              {(p.okCount > 0 || p.errorCount > 0) && (
-                <div className="flex h-1.5 rounded-full overflow-hidden mt-3 bg-muted">
+            <div className="h-4 w-px bg-border" />
+            {/* Per-provider compact */}
+            {providerSummaries.map((p) => (
+              <div key={p.name} className="flex items-center gap-2 text-sm">
+                <span className="font-medium min-w-[60px]">{p.name}</span>
+                <span className="text-muted-foreground text-xs">{p.toolCount}个</span>
+                <div className="flex items-center gap-1">
                   {p.okCount > 0 && (
-                    <div
-                      className="bg-green-500 transition-all"
-                      style={{ width: `${(p.okCount / p.toolCount) * 100}%` }}
-                    />
+                    <span className="flex items-center gap-0.5 text-green-600 text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      {p.okCount}
+                    </span>
                   )}
                   {p.errorCount > 0 && (
-                    <div
-                      className="bg-red-500 transition-all"
-                      style={{ width: `${(p.errorCount / p.toolCount) * 100}%` }}
-                    />
+                    <span className="flex items-center gap-0.5 text-red-600 text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      {p.errorCount}
+                    </span>
+                  )}
+                  {p.unknownCount > 0 && (
+                    <span className="flex items-center gap-0.5 text-gray-400 text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                      {p.unknownCount}
+                    </span>
                   )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                {p.avgMs > 0 && (
+                  <span className="font-mono text-xs text-muted-foreground">{p.avgMs}ms</span>
+                )}
+                {p.successRate !== "--" && (
+                  <span className={`text-xs font-medium ${
+                    Number(p.successRate) >= 95 ? "text-green-600"
+                      : Number(p.successRate) >= 80 ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}>
+                    {p.successRate}%
+                  </span>
+                )}
+                {/* Mini bar */}
+                {(p.okCount > 0 || p.errorCount > 0) && (
+                  <div className="flex h-1 w-12 rounded-full overflow-hidden bg-muted">
+                    {p.okCount > 0 && (
+                      <div className="bg-green-500" style={{ width: `${(p.okCount / p.toolCount) * 100}%` }} />
+                    )}
+                    {p.errorCount > 0 && (
+                      <div className="bg-red-500" style={{ width: `${(p.errorCount / p.toolCount) * 100}%` }} />
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Consistency Summary Card */}
       {consistencyResults.size > 0 && (
@@ -608,7 +601,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[180px] text-xs sticky left-0 bg-background z-10">
+                    <TableHead className="w-[260px] text-xs sticky left-0 bg-background z-10">
                       领域 / 接口
                     </TableHead>
                     {allProviders.map((p) => (
@@ -655,14 +648,20 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
                               </button>
                               <Tooltip>
                                 <TooltipTrigger
-                                  className="font-mono text-xs cursor-help text-left select-text"
+                                  className="text-xs cursor-help text-left select-text"
                                   render={<span />}
                                 >
-                                    {tool.name.replace("tool_get_", "")}
+                                  <span className="font-medium">{TOOL_LABELS[tool.name] ?? tool.description}</span>
+                                  <span className="text-muted-foreground ml-1 font-mono text-[10px]">{tool.name.replace("tool_get_", "")}</span>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="max-w-xs">
                                   <p className="font-mono text-xs mb-1 select-text">{tool.name}</p>
                                   <p className="text-xs select-text">{tool.description}</p>
+                                  {tool.return_fields.length > 0 && (
+                                    <p className="text-xs text-muted-foreground mt-1 select-text">
+                                      字段: {tool.return_fields.join(", ")}
+                                    </p>
+                                  )}
                                 </TooltipContent>
                               </Tooltip>
                             </div>
