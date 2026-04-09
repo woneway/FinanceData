@@ -30,6 +30,13 @@ export interface ToolInfo {
   source_priority: string
   providers: string[]
   return_fields: string[]
+  params: ToolParam[]
+}
+
+export interface ToolParam {
+  name: string
+  required: boolean
+  default: unknown
 }
 
 export interface ProviderStatus {

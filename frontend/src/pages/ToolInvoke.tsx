@@ -33,64 +33,40 @@ const DOMAIN_LABELS: Record<string, string> = {
   sector_fund_flow: "板块资金流",
 }
 
-// Known parameters for each tool (matching backend _get_test_params)
-const TOOL_PARAMS: Record<string, { key: string; label: string; placeholder: string }[]> = {
-  tool_get_stock_info_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
-  tool_get_kline_history: [
-    { key: "symbol", label: "股票代码", placeholder: "如 000001" },
-    { key: "period", label: "周期", placeholder: "daily/weekly/monthly" },
-    { key: "start", label: "开始日期", placeholder: "YYYYMMDD" },
-    { key: "end", label: "结束日期", placeholder: "YYYYMMDD" },
-    { key: "adj", label: "复权方式", placeholder: "qfq(前复权)/hfq(后复权)/留空" },
-  ],
-  tool_get_realtime_quote: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
-  tool_get_index_quote_realtime: [{ key: "symbol", label: "指数代码", placeholder: "如 000001.SH" }],
-  tool_get_index_history: [
-    { key: "symbol", label: "指数代码", placeholder: "如 000001.SH" },
-    { key: "start", label: "开始日期", placeholder: "YYYYMMDD" },
-    { key: "end", label: "结束日期", placeholder: "YYYYMMDD" },
-  ],
-  tool_get_sector_rank_realtime: [],
-  tool_get_chip_distribution_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
-  tool_get_financial_summary_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
-  tool_get_dividend_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
-  tool_get_earnings_forecast_history: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
-  tool_get_stock_capital_flow_realtime: [{ key: "symbol", label: "股票代码", placeholder: "如 000001" }],
-  tool_get_trade_calendar_history: [
-    { key: "start", label: "开始日期", placeholder: "YYYYMMDD" },
-    { key: "end", label: "结束日期", placeholder: "YYYYMMDD" },
-  ],
-  tool_get_lhb_detail: [
-    { key: "start_date", label: "开始日期", placeholder: "YYYYMMDD" },
-    { key: "end_date", label: "结束日期", placeholder: "YYYYMMDD" },
-  ],
-  tool_get_lhb_stock_stat: [{ key: "period", label: "统计周期", placeholder: "近一月/近三月/近六月/近一年" }],
-  tool_get_lhb_active_traders: [
-    { key: "start_date", label: "开始日期", placeholder: "YYYYMMDD" },
-    { key: "end_date", label: "结束日期", placeholder: "YYYYMMDD" },
-  ],
-  tool_get_lhb_trader_stat: [{ key: "period", label: "统计周期", placeholder: "近一月/近三月/近六月/近一年" }],
-  tool_get_lhb_stock_detail: [
-    { key: "symbol", label: "股票代码", placeholder: "如 600077" },
-    { key: "date", label: "日期", placeholder: "YYYYMMDD" },
-    { key: "flag", label: "方向", placeholder: "买入/卖出" },
-  ],
-  tool_get_zt_pool: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
-  tool_get_strong_stocks: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
-  tool_get_previous_zt: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
-  tool_get_zbgc_pool: [{ key: "date", label: "日期", placeholder: "YYYYMMDD" }],
-  tool_get_north_stock_hold: [
-    { key: "market", label: "市场", placeholder: "沪股通/深股通" },
-    { key: "indicator", label: "排行指标", placeholder: "5日排行/10日排行/..." },
-  ],
-  tool_get_margin: [{ key: "trade_date", label: "交易日期", placeholder: "YYYYMMDD" }],
-  tool_get_margin_detail: [{ key: "trade_date", label: "交易日期", placeholder: "YYYYMMDD" }],
-  tool_get_market_stats_realtime: [],
-  tool_get_market_north_capital: [],
-  tool_get_sector_capital_flow: [
-    { key: "indicator", label: "时间范围", placeholder: "今日/5日/10日" },
-    { key: "sector_type", label: "板块类型", placeholder: "行业资金流/概念资金流/地域资金流" },
-  ],
+const PARAM_LABELS: Record<string, string> = {
+  symbol: "股票代码",
+  period: "周期",
+  start: "开始日期",
+  end: "结束日期",
+  adj: "复权方式",
+  start_date: "开始日期",
+  end_date: "结束日期",
+  trade_date: "交易日期",
+  exchange_id: "交易所",
+  market: "市场",
+  indicator: "指标",
+  ts_code: "TS 代码",
+  date: "日期",
+  flag: "方向",
+  sector_name: "板块名称",
+}
+
+const PARAM_PLACEHOLDERS: Record<string, string> = {
+  symbol: "如 000001",
+  period: "如 daily/weekly/monthly/日k",
+  start: "YYYYMMDD",
+  end: "YYYYMMDD",
+  adj: "qfq/hfq/none",
+  start_date: "YYYYMMDD",
+  end_date: "YYYYMMDD",
+  trade_date: "YYYYMMDD",
+  exchange_id: "SSE/SZSE/BSE",
+  market: "沪股通/深股通",
+  indicator: "5日排行/10日排行/近一月",
+  ts_code: "如 000001.SZ",
+  date: "YYYYMMDD",
+  flag: "买入/卖出",
+  sector_name: "如 银行/半导体",
 }
 
 interface ToolInvokeProps {
@@ -123,7 +99,7 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
   }
 
   const selectedToolInfo = tools.find((t) => t.name === selectedTool)
-  const paramDefs = TOOL_PARAMS[selectedTool] ?? []
+  const paramDefs = selectedToolInfo?.params ?? []
 
   const handleSelectTool = (name: string) => {
     setSelectedTool(name)
@@ -295,15 +271,18 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                 {paramDefs.length > 0 ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {paramDefs.map((p) => (
-                      <div key={p.key} className="space-y-1">
-                        <label className="text-sm font-medium">{p.label}</label>
+                      <div key={p.name} className="space-y-1">
+                        <label className="text-sm font-medium">
+                          {PARAM_LABELS[p.name] ?? p.name}
+                          {p.required ? "" : "（可选）"}
+                        </label>
                         <Input
-                          placeholder={p.placeholder}
-                          value={params[p.key] ?? ""}
+                          placeholder={PARAM_PLACEHOLDERS[p.name] ?? String(p.default ?? "")}
+                          value={params[p.name] ?? String(p.default ?? "")}
                           onChange={(e) =>
                             setParams((prev) => ({
                               ...prev,
-                              [p.key]: e.target.value,
+                              [p.name]: e.target.value,
                             }))
                           }
                         />

@@ -36,6 +36,16 @@ def _parse_date(val) -> str:
     return s if s.isdigit() else ""
 
 
+def _in_date_range(date_str: str, start: str, end: str) -> bool:
+    if not date_str:
+        return False
+    if start and date_str < start:
+        return False
+    if end and date_str > end:
+        return False
+    return True
+
+
 def _symbol_to_tx(symbol: str) -> str:
     """纯数字 symbol 转腾讯格式: 6开头 -> sh, 其余 -> sz"""
     from finance_data.provider.symbol import to_tencent
@@ -143,6 +153,8 @@ class AkshareKlineHistory:
         prev_close = 0.0
         for _, row in df.iterrows():
             date_str = _parse_date(row.get("day", ""))
+            if not _in_date_range(date_str, start, end):
+                continue
             close = float(row.get("close", 0))
             pct_chg = round((close - prev_close) / prev_close * 100, 2) if prev_close > 0 else 0.0
             prev_close = close

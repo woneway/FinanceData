@@ -28,6 +28,8 @@ def _get_available_providers() -> Dict[str, bool]:
         has_xueqiu = False
     return {
         "akshare": True,
+        "tencent": True,
+        "baostock": True,
         "tushare": has_tushare,
         "xueqiu": has_xueqiu,
     }
@@ -45,6 +47,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "akshare": ("finance_data.provider.akshare.kline.history:AkshareKlineHistory", "get_kline_history"),
         "tushare": ("finance_data.provider.tushare.kline.history:TushareKlineHistory", "get_kline_history"),
         "xueqiu": ("finance_data.provider.xueqiu.kline.history:XueqiuKlineHistory", "get_kline_history"),
+        "baostock": ("finance_data.provider.baostock.kline.history:BaostockKlineHistory", "get_kline_history"),
     },
     "tool_get_realtime_quote": {
         # akshare 已禁用（东财源不可用，新浪源太慢）
@@ -65,7 +68,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "akshare": ("finance_data.provider.akshare.sector.realtime:AkshareSectorRank", "get_sector_rank_realtime"),
     },
     "tool_get_chip_distribution_history": {
-        # akshare 已禁用（依赖东财 stock_cyq_em）
+        "akshare": ("finance_data.provider.akshare.chip.history:AkshareChipHistory", "get_chip_distribution_history"),
         "tushare": ("finance_data.provider.tushare.chip.history:TushareChipHistory", "get_chip_distribution_history"),
     },
     "tool_get_financial_summary_history": {
@@ -86,9 +89,10 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     "tool_get_trade_calendar_history": {
         "tushare": ("finance_data.provider.tushare.calendar.history:TushareTradeCalendar", "get_trade_calendar_history"),
         "akshare": ("finance_data.provider.akshare.calendar.history:AkshareTradeCalendar", "get_trade_calendar_history"),
+        "baostock": ("finance_data.provider.baostock.calendar.history:BaostockTradeCalendar", "get_trade_calendar_history"),
     },
     "tool_get_lhb_detail": {
-        # akshare 已禁用（依赖东财 stock_lhb_detail_em）
+        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbDetail", "get_lhb_detail_history"),
         "tushare": ("finance_data.provider.tushare.lhb.history:TushareLhbDetail", "get_lhb_detail_history"),
     },
     "tool_get_lhb_stock_stat": {
@@ -116,7 +120,7 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
         "akshare": ("finance_data.provider.akshare.pool.history:AkshareZbgcPool", "get_zbgc_pool_history"),
     },
     "tool_get_north_stock_hold": {
-        # akshare 已禁用（依赖东财 stock_hsgt_hold_stock_em）
+        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthStockHold", "get_north_stock_hold_history"),
         "tushare": ("finance_data.provider.tushare.north_flow.history:TushareNorthStockHold", "get_north_stock_hold_history"),
     },
     "tool_get_margin": {
@@ -133,6 +137,30 @@ _TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
     },
     "tool_get_market_north_capital": {
         "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthFlow", "get_north_flow_history"),
+    },
+    "tool_get_suspend": {
+        "akshare": ("finance_data.provider.akshare.suspend.history:AkshareSuspend", "get_suspend_history"),
+    },
+    "tool_get_sector_list": {
+        "akshare": ("finance_data.provider.akshare.sector.list:AkshareSectorList", "get_sector_list"),
+    },
+    "tool_get_sector_member": {
+        "akshare": ("finance_data.provider.akshare.sector.member:AkshareSectorMember", "get_sector_member"),
+    },
+    "tool_get_sector_history": {
+        "akshare": ("finance_data.provider.akshare.sector.history:AkshareSectorHistory", "get_sector_history"),
+    },
+    "tool_get_hot_rank": {
+        "akshare": ("finance_data.provider.akshare.hot_rank.realtime:AkshareHotRank", "get_hot_rank_realtime"),
+    },
+    "tool_get_lhb_inst_detail": {
+        "akshare": ("finance_data.provider.akshare.lhb.inst_detail:AkshareLhbInstDetail", "get_lhb_inst_detail_history"),
+    },
+    "tool_get_daily_basic": {
+        "tencent": ("finance_data.provider.tencent.daily_basic:TencentDailyBasic", "get_daily_basic"),
+    },
+    "tool_get_limit_price": {
+        "tencent": ("finance_data.provider.tencent.limit_price:TencentLimitPrice", "get_limit_price"),
     },
     # tool_get_sector_capital_flow 已禁用（push2.eastmoney.com 域名不可达）
 }
@@ -199,6 +227,14 @@ def _get_test_params(tool_name: str) -> dict:
         "tool_get_previous_zt": {"date": yesterday},
         "tool_get_zbgc_pool": {"date": yesterday},
         "tool_get_market_north_capital": {},
+        "tool_get_suspend": {"date": yesterday},
+        "tool_get_sector_list": {},
+        "tool_get_sector_member": {"symbol": "银行"},
+        "tool_get_sector_history": {"symbol": "银行", "start_date": month_ago, "end_date": today},
+        "tool_get_hot_rank": {},
+        "tool_get_lhb_inst_detail": {"start_date": week_ago, "end_date": yesterday},
+        "tool_get_daily_basic": {"symbol": "000001"},
+        "tool_get_limit_price": {"symbol": "000001"},
     }
     return params_map.get(tool_name, {})
 

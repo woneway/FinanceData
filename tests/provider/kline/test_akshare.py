@@ -74,3 +74,35 @@ def test_get_kline_1min(provider, mock_min_df):
     assert result.data[0]["period"] == "1min"
     assert result.data[0]["date"] == "20240102"
     assert result.meta["upstream"] == "sina"
+
+
+def test_get_kline_1min_respects_date_range(provider):
+    mock_df = pd.DataFrame([
+        {
+            "day": "2024-01-01 09:31:00",
+            "open": 9.8,
+            "high": 10.0,
+            "low": 9.7,
+            "close": 9.9,
+            "volume": 1000,
+            "amount": 9900.0,
+        },
+        {
+            "day": "2024-01-02 09:31:00",
+            "open": 10.0,
+            "high": 10.2,
+            "low": 9.9,
+            "close": 10.1,
+            "volume": 5000,
+            "amount": 50500.0,
+        },
+    ])
+
+    with patch("finance_data.provider.akshare.kline.history.ak.stock_zh_a_minute",
+               return_value=mock_df):
+        result = provider.get_kline_history(
+            "000001", period="1min", start="20240102", end="20240102"
+        )
+
+    assert len(result.data) == 1
+    assert result.data[0]["date"] == "20240102"

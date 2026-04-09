@@ -48,3 +48,31 @@ def test_returns_error_when_service_fails():
 
     parsed = json.loads(response)
     assert "error" in parsed
+
+
+def test_tool_get_suspend_uses_service_method():
+    from finance_data.mcp.server import tool_get_suspend
+
+    with patch(
+        "finance_data.mcp.server.suspend.get_suspend_history",
+        return_value=_AKSHARE_RESULT,
+    ) as mock_method:
+        response = asyncio.run(tool_get_suspend("20260408"))
+
+    parsed = json.loads(response)
+    assert parsed["source"] == "akshare"
+    mock_method.assert_called_once_with("20260408")
+
+
+def test_tool_get_hot_rank_uses_realtime_service_method():
+    from finance_data.mcp.server import tool_get_hot_rank
+
+    with patch(
+        "finance_data.mcp.server.hot_rank.get_hot_rank_realtime",
+        return_value=_AKSHARE_RESULT,
+    ) as mock_method:
+        response = asyncio.run(tool_get_hot_rank())
+
+    parsed = json.loads(response)
+    assert parsed["source"] == "akshare"
+    mock_method.assert_called_once_with()

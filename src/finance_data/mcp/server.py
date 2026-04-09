@@ -11,7 +11,7 @@ from finance_data.service.stock import stock_history
 from finance_data.service.kline import kline_history
 from finance_data.service.realtime import realtime_quote
 from finance_data.service.index import index_quote, index_history
-from finance_data.service.sector import sector_rank
+from finance_data.service.sector import sector_rank, sector_list, sector_member, sector_history
 from finance_data.service.chip import chip_history
 from finance_data.service.fundamental import financial_summary, dividend
 from finance_data.service.cashflow import stock_capital_flow
@@ -19,10 +19,15 @@ from finance_data.service.calendar import trade_calendar
 from finance_data.service.market import market_realtime
 from finance_data.service.lhb import (
     lhb_detail, lhb_stock_stat, lhb_active_traders, lhb_trader_stat, lhb_stock_detail,
+    lhb_inst_detail,
 )
 from finance_data.service.pool import zt_pool, strong_stocks, previous_zt, zbgc_pool
 from finance_data.service.north_flow import north_flow, north_stock_hold
 from finance_data.service.margin import margin, margin_detail
+from finance_data.service.daily_basic import daily_basic
+from finance_data.service.limit_price import limit_price
+from finance_data.service.suspend import suspend
+from finance_data.service.hot_rank import hot_rank
 from finance_data.interface.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -685,6 +690,202 @@ async def tool_get_market_north_capital() -> str:
     """
     try:
         return _to_json(north_flow.get_north_flow_history())
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_suspend(date: str) -> str:
+    """
+    获取停牌股票信息。
+
+    数据源: akshare(东财)
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 不支持
+
+    Args:
+        date: 交易日期 YYYYMMDD，如 "20260408"
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、name(名称)、
+        suspend_date(停牌起始日)、resume_date(复牌日期)、reason(停牌原因)
+    """
+    try:
+        return _to_json(suspend.get_suspend_history(date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_sector_list() -> str:
+    """
+    获取行业板块列表（含实时行情概览）。
+
+    数据源: akshare(东财)
+    实时性: 盘中实时（T+0）
+    历史查询: 不支持
+
+    Args:
+        无参数
+
+    Returns:
+        JSON 列表，每条包含：name(板块名称)、code(板块代码)、pct_chg(涨跌幅%)、
+        market_cap(总市值)、turnover(换手率)、up_count(上涨家数)、
+        down_count(下跌家数)、leader_stock(领涨股)
+    """
+    try:
+        return _to_json(sector_list.get_sector_list())
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_sector_member(sector_name: str) -> str:
+    """
+    获取行业板块成分股列表。
+
+    数据源: akshare(东财)
+    实时性: 盘中实时（T+0）
+    历史查询: 不支持
+
+    Args:
+        sector_name: 板块名称，如 "银行"、"半导体"
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、name(名称)、price(最新价)、
+        pct_chg(涨跌幅%)、volume(成交量)、amount(成交额)
+    """
+    try:
+        return _to_json(sector_member.get_sector_member(sector_name))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_sector_history(
+    sector_name: str,
+    start_date: str = "20240101",
+    end_date: str = "",
+    period: str = "日k",
+) -> str:
+    """
+    获取行业板块历史K线行情。
+
+    数据源: akshare(东财)
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 支持
+
+    Args:
+        sector_name: 板块名称，如 "银行"、"半导体"
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD（默认当天）
+        period: 日k/周k/月k
+
+    Returns:
+        JSON 列表，每条包含：date(YYYYMMDD)、open、close、high、low、
+        volume、amount、pct_chg(涨跌幅%)、amplitude(振幅%)、turnover(换手率%)
+    """
+    if not end_date:
+        end_date = datetime.date.today().strftime("%Y%m%d")
+    try:
+        return _to_json(sector_history.get_sector_history(
+            symbol=sector_name, start_date=start_date, end_date=end_date, period=period,
+        ))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_hot_rank() -> str:
+    """
+    获取热股排行（东财人气榜）。
+
+    数据源: akshare(东财)
+    实时性: 盘中实时（T+0）
+    历史查询: 不支持
+
+    Args:
+        无参数
+
+    Returns:
+        JSON 列表，每条包含：rank(排名)、symbol(代码)、name(名称)、
+        current(最新价)、pct_chg(涨跌幅%)、hot_rank_chg(排名变化)
+    """
+    try:
+        return _to_json(hot_rank.get_hot_rank_realtime())
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_lhb_inst_detail(
+    start_date: str,
+    end_date: str,
+) -> str:
+    """
+    获取龙虎榜机构买卖每日统计。
+
+    数据源: akshare(东财)
+    实时性: 收盘后更新（T+1_17:00）
+    历史查询: 支持
+
+    Args:
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、name(名称)、date(日期)、
+        close(收盘价)、pct_chg(涨跌幅%)、
+        inst_buy(机构买入额元)、inst_sell(机构卖出额元)、inst_net(机构净买额元)
+    """
+    try:
+        return _to_json(lhb_inst_detail.get_lhb_inst_detail_history(start_date, end_date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_daily_basic(symbol: str) -> str:
+    """
+    获取个股日频基本面指标（PE/PB/市值/换手率/量比）。
+
+    数据源: tencent（腾讯实时行情API，65ms延迟）
+    实时性: 盘中实时（T+0）
+    历史查询: 不支持
+
+    Args:
+        symbol: 股票代码，如 "000001"
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、name(名称)、date(YYYYMMDD)、
+        pe(市盈率)、pb(市净率)、market_cap(总市值元)、circ_market_cap(流通市值元)、
+        turnover_rate(换手率%)、volume_ratio(量比)
+    """
+    try:
+        return _to_json(daily_basic.get_daily_basic(symbol))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_limit_price(symbol: str) -> str:
+    """
+    获取个股涨跌停价格。
+
+    数据源: tencent（腾讯实时行情API）
+    实时性: 盘中实时（T+0）
+    历史查询: 不支持
+
+    Args:
+        symbol: 股票代码，如 "000001"
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、name(名称)、date(YYYYMMDD)、
+        limit_up(涨停价元)、limit_down(跌停价元)、prev_close(昨收价元)、
+        current(当前价元)
+    """
+    try:
+        return _to_json(limit_price.get_limit_price(symbol))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 

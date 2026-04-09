@@ -43,7 +43,21 @@ class TestGetTools:
         assert "description" in tool
         assert "domain" in tool
         assert "providers" in tool
+        assert "params" in tool
         assert isinstance(tool["providers"], list)
+
+    def test_tool_exposes_signature_params(self, client):
+        resp = client.get("/api/tools")
+        tools = {tool["name"]: tool for tool in resp.json()}
+        suspend = tools["tool_get_suspend"]
+        assert suspend["params"] == [
+            {"name": "date", "required": True, "default": None}
+        ]
+
+        sector_history = tools["tool_get_sector_history"]
+        assert [param["name"] for param in sector_history["params"]] == [
+            "sector_name", "start_date", "end_date", "period",
+        ]
 
 
 class TestGetProviders:
@@ -195,6 +209,39 @@ class TestInvokeTool:
             data = resp.json()
             assert data["status"] == "error"
             assert "network error" in data["error"]
+
+    def test_invoke_provider_aliases_sector_name_to_symbol(self, client):
+        mock_result = DataResult(
+            data=[{"symbol": "601398", "name": "工商银行"}],
+            source="akshare",
+            meta={},
+        )
+        mock_instance = MagicMock()
+        mock_instance.get_sector_member.return_value = mock_result
+        mock_cls = MagicMock(return_value=mock_instance)
+
+        with patch(
+                "finance_data.dashboard.health._import_class",
+                return_value=mock_cls,
+            ):
+            with patch(
+                "finance_data.dashboard.health.get_providers_for_tool",
+                return_value=[
+                    (
+                        "akshare",
+                        "finance_data.provider.akshare.sector.member:AkshareSectorMember",
+                        "get_sector_member",
+                    )
+                ],
+            ):
+                resp = client.post(
+                    "/api/tools/tool_get_sector_member",
+                    json={"params": {"sector_name": "银行"}, "provider": "akshare"},
+                )
+
+        data = resp.json()
+        assert data["status"] == "ok"
+        mock_instance.get_sector_member.assert_called_once_with(symbol="银行")
 
 
 class TestSPAFallback:

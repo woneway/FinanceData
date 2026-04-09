@@ -38,6 +38,7 @@ class ToolInfo(BaseModel):
     source_priority: str
     providers: List[str] = Field(default_factory=list)
     return_fields: List[str] = Field(default_factory=list)
+    params: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class ProviderStatus(BaseModel):

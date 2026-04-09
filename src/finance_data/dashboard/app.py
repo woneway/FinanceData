@@ -1,4 +1,5 @@
 """FastAPI dashboard application"""
+import inspect
 import json
 import logging
 import os
@@ -41,6 +42,31 @@ _metrics = MetricsStore()
 _STATIC_DIR = Path(__file__).parent / "static"
 
 
+def _get_tool_params(tool_name: str) -> list[dict]:
+    """Expose MCP tool signature for frontend forms."""
+    from finance_data.mcp import server as mcp_server
+
+    fn = getattr(mcp_server, tool_name, None)
+    if fn is None:
+        return []
+
+    params = []
+    for name, param in inspect.signature(fn).parameters.items():
+        if name in {"self", "cls"}:
+            continue
+
+        required = param.default is inspect._empty
+        default = None if required else param.default
+        params.append(
+            {
+                "name": name,
+                "required": required,
+                "default": default,
+            }
+        )
+    return params
+
+
 def _get_providers_for_tool_name(tool_name: str) -> list[str]:
     """Return actual provider names from _TOOL_PROVIDERS mapping"""
     from finance_data.dashboard.health import _TOOL_PROVIDERS
@@ -63,6 +89,7 @@ async def get_tools() -> list[ToolInfo]:
             source_priority=meta.source_priority,
             providers=_get_providers_for_tool_name(name),
             return_fields=meta.return_fields,
+            params=_get_tool_params(name),
         ))
     return results
 
@@ -94,6 +121,8 @@ async def get_providers() -> list[ProviderStatus]:
 
     return [
         ProviderStatus(name="akshare", available=True, reason="no token needed"),
+        ProviderStatus(name="tencent", available=True, reason="qt.gtimg.cn, no token needed"),
+        ProviderStatus(name="baostock", available=True, reason="no token needed, stable"),
         ProviderStatus(name="tushare", available=has_tushare, reason=tushare_reason),
         ProviderStatus(
             name="xueqiu",
@@ -213,6 +242,19 @@ _INVOKE_MAP = {
     "tool_get_market_stats_realtime": ("finance_data.service.market", "market_realtime", "get_market_stats_realtime"),
     "tool_get_market_north_capital": ("finance_data.service.north_flow", "north_flow", "get_north_flow_history"),
     "tool_get_sector_capital_flow": ("finance_data.service.sector_fund_flow", "sector_capital_flow", "get_sector_capital_flow_history"),
+    "tool_get_daily_basic": ("finance_data.service.daily_basic", "daily_basic", "get_daily_basic"),
+    "tool_get_limit_price": ("finance_data.service.limit_price", "limit_price", "get_limit_price"),
+    "tool_get_suspend": ("finance_data.service.suspend", "suspend", "get_suspend_history"),
+    "tool_get_sector_list": ("finance_data.service.sector", "sector_list", "get_sector_list"),
+    "tool_get_sector_member": ("finance_data.service.sector", "sector_member", "get_sector_member"),
+    "tool_get_sector_history": ("finance_data.service.sector", "sector_history", "get_sector_history"),
+    "tool_get_hot_rank": ("finance_data.service.hot_rank", "hot_rank", "get_hot_rank_realtime"),
+    "tool_get_lhb_inst_detail": ("finance_data.service.lhb", "lhb_inst_detail", "get_lhb_inst_detail_history"),
+}
+
+_PROVIDER_PARAM_ALIASES = {
+    "tool_get_sector_member": {"sector_name": "symbol"},
+    "tool_get_sector_history": {"sector_name": "symbol"},
 }
 
 
@@ -227,6 +269,7 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
     chosen_provider = req.provider
     try:
         start = time.monotonic()
+        provider_params = dict(req.params)
 
         if chosen_provider:
             # Direct provider call — bypass dispatcher
@@ -247,10 +290,13 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
                     tool=tool_name, provider=chosen_provider, status="error",
                     error=f"provider '{chosen_provider}' not available for {tool_name}",
                 )
+            for src_name, dest_name in _PROVIDER_PARAM_ALIASES.get(tool_name, {}).items():
+                if src_name in provider_params and dest_name not in provider_params:
+                    provider_params[dest_name] = provider_params.pop(src_name)
             cls = _import_class(class_path)
             instance = cls()
             method = getattr(instance, method_name)
-            result = method(**req.params)
+            result = method(**provider_params)
         else:
             # Dispatcher fallback chain
             import importlib
