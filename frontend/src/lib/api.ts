@@ -53,6 +53,9 @@ export interface HealthResult {
   response_time_ms: number
   error: string | null
   record_count: number
+  layer?: "provider" | "service"
+  error_kind?: "network" | "data" | "auth" | "quota" | "timeout" | "schema" | null
+  schema_ok?: boolean | null
 }
 
 export interface FieldDiff {

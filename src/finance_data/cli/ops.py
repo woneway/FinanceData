@@ -34,9 +34,11 @@ def health_cmd(tool: str | None, as_json: bool) -> None:
     probe_table = Table(title="Health Probes")
     probe_table.add_column("Tool", style="cyan", no_wrap=True)
     probe_table.add_column("Provider")
+    probe_table.add_column("Layer")
     probe_table.add_column("Status")
     probe_table.add_column("Time (ms)", justify="right")
     probe_table.add_column("Records", justify="right")
+    probe_table.add_column("Error Kind")
     probe_table.add_column("Error")
 
     consistency_results: list[dict] = []
@@ -55,9 +57,11 @@ def health_cmd(tool: str | None, as_json: bool) -> None:
                 probe_table.add_row(
                     result.tool,
                     result.provider,
+                    result.layer,
                     status_map.get(result.status, result.status),
                     str(result.response_time_ms),
                     str(result.record_count),
+                    result.error_kind or "",
                     result.error or "",
                 )
         elif isinstance(result, ConsistencyResult):

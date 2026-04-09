@@ -60,6 +60,9 @@ class HealthResult(BaseModel):
     response_time_ms: float = 0.0
     error: Optional[str] = None
     record_count: int = 0
+    layer: Literal["provider", "service"] = "provider"
+    error_kind: Optional[Literal["network", "data", "auth", "quota", "timeout", "schema"]] = None
+    schema_ok: Optional[bool] = None
 
 
 class FieldDiff(BaseModel):

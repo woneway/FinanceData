@@ -10,6 +10,7 @@ from typing import Any, Dict, Generator, List, Optional, Tuple
 
 from finance_data.dashboard.consistency import compare_provider_data
 from finance_data.dashboard.models import ConsistencyResult, HealthResult
+from finance_data.interface.types import DataFetchError
 from finance_data.tool_specs import get_tool_probe, get_tool_spec, list_tool_specs
 
 logger = logging.getLogger(__name__)
@@ -97,17 +98,29 @@ def get_providers_for_tool(tool_name: str) -> List[Tuple[str, str, str]]:
     return results
 
 
+def _check_schema(tool_name: str, data: list[dict]) -> bool | None:
+    """Check if first row contains all return_fields from ToolSpec.
+
+    Returns None if data is empty or tool has no return_fields.
+    """
+    if not data:
+        return None
+    spec = get_tool_spec(tool_name)
+    if spec is None or not spec.return_fields:
+        return None
+    return all(f in data[0] for f in spec.return_fields)
+
+
 def _run_single_probe(
     tool_name: str,
     provider_name: str,
     class_path: str,
     method_name: str,
 ) -> tuple[HealthResult, Optional[list[dict]]]:
-    """Execute a single probe, returning health result + raw data for comparison."""
+    """Execute a single provider probe, returning health result + raw data."""
     probe = get_tool_probe(tool_name)
     raw_params = dict(probe.default_params) if probe else {}
     params = resolve_probe_params(raw_params)
-
     timeout = probe.timeout_sec if probe else 30
 
     try:
@@ -115,7 +128,6 @@ def _run_single_probe(
         instance = cls()
         method = getattr(instance, method_name)
 
-        # Execute with timeout to prevent a slow provider from blocking indefinitely
         start = time.monotonic()
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(method, **params)
@@ -125,11 +137,10 @@ def _run_single_probe(
                 elapsed = (time.monotonic() - start) * 1000
                 return (
                     HealthResult(
-                        tool=tool_name,
-                        provider=provider_name,
-                        status="timeout",
-                        response_time_ms=round(elapsed, 1),
+                        tool=tool_name, provider=provider_name,
+                        status="timeout", response_time_ms=round(elapsed, 1),
                         error=f"probe exceeded {timeout}s timeout",
+                        error_kind="timeout", layer="provider",
                     ),
                     None,
                 )
@@ -139,67 +150,146 @@ def _run_single_probe(
 
         # --- Enforce ProbeSpec invariants ---
         if probe:
-            # min_records check
             if probe.min_records and record_count < probe.min_records:
                 return (
                     HealthResult(
-                        tool=tool_name,
-                        provider=provider_name,
-                        status="warn",
-                        response_time_ms=round(elapsed, 1),
+                        tool=tool_name, provider=provider_name,
+                        status="warn", response_time_ms=round(elapsed, 1),
                         record_count=record_count,
                         error=f"record_count {record_count} < min_records {probe.min_records}",
+                        error_kind="data", layer="provider",
                     ),
                     data,
                 )
 
-            # required_fields check
             if probe.required_fields and data:
-                missing = [
-                    f for f in probe.required_fields if f not in data[0]
-                ]
+                missing = [f for f in probe.required_fields if f not in data[0]]
                 if missing:
                     return (
                         HealthResult(
-                            tool=tool_name,
-                            provider=provider_name,
-                            status="warn",
-                            response_time_ms=round(elapsed, 1),
+                            tool=tool_name, provider=provider_name,
+                            status="warn", response_time_ms=round(elapsed, 1),
                             record_count=record_count,
                             error=f"missing required fields: {missing}",
+                            error_kind="data", layer="provider",
                         ),
                         data,
                     )
 
+        # Schema check against ToolSpec.return_fields
+        schema_ok = _check_schema(tool_name, data)
+        if schema_ok is False:
+            spec = get_tool_spec(tool_name)
+            schema_missing = [f for f in spec.return_fields if f not in data[0]]
+            return (
+                HealthResult(
+                    tool=tool_name, provider=provider_name,
+                    status="warn", response_time_ms=round(elapsed, 1),
+                    record_count=record_count,
+                    error=f"schema mismatch: missing return_fields {schema_missing}",
+                    error_kind="schema", schema_ok=False, layer="provider",
+                ),
+                data,
+            )
+
         return (
             HealthResult(
-                tool=tool_name,
-                provider=provider_name,
-                status="ok",
-                response_time_ms=round(elapsed, 1),
+                tool=tool_name, provider=provider_name,
+                status="ok", response_time_ms=round(elapsed, 1),
                 record_count=record_count,
+                schema_ok=schema_ok, layer="provider",
             ),
             data,
         )
-    except Exception as e:
-        elapsed = 0.0
-        err_msg = str(e)[:200]
-        err_lower = err_msg.lower()
-        if "timeout" in err_lower:
-            status = "timeout"
-        elif "无数据" in err_msg or "近期无" in err_msg:
-            status = "warn"
-        else:
-            status = "error"
+    except DataFetchError as e:
+        elapsed = (time.monotonic() - start) * 1000 if "start" in dir() else 0.0
+        status = "warn" if e.kind == "data" else "error"
         return (
             HealthResult(
-                tool=tool_name,
-                provider=provider_name,
-                status=status,
-                response_time_ms=round(elapsed, 1),
-                error=err_msg,
+                tool=tool_name, provider=provider_name,
+                status=status, response_time_ms=round(elapsed, 1),
+                error=str(e)[:200],
+                error_kind=e.kind, layer="provider",
             ),
             None,
+        )
+    except Exception as e:
+        elapsed = (time.monotonic() - start) * 1000 if "start" in dir() else 0.0
+        err_msg = str(e)[:200]
+        return (
+            HealthResult(
+                tool=tool_name, provider=provider_name,
+                status="error", response_time_ms=round(elapsed, 1),
+                error=err_msg, layer="provider",
+            ),
+            None,
+        )
+
+
+def _run_service_probe(tool_name: str) -> HealthResult:
+    """Execute a probe through the service dispatcher to verify fallback works."""
+    import importlib
+
+    probe = get_tool_probe(tool_name)
+    spec = get_tool_spec(tool_name)
+    if spec is None:
+        return HealthResult(
+            tool=tool_name, provider="service", status="error",
+            error="no ToolSpec found", layer="service",
+        )
+
+    raw_params = dict(probe.default_params) if probe else {}
+    params = resolve_probe_params(raw_params)
+    timeout = probe.timeout_sec if probe else 30
+
+    target = spec.service
+    start = time.monotonic()
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            def _call():
+                mod = importlib.import_module(target.module_path)
+                dispatcher = getattr(mod, target.object_name)
+                method = getattr(dispatcher, target.method_name)
+                return method(**params)
+
+            future = executor.submit(_call)
+            try:
+                result = future.result(timeout=timeout)
+            except concurrent.futures.TimeoutError:
+                elapsed = (time.monotonic() - start) * 1000
+                return HealthResult(
+                    tool=tool_name, provider="service", status="timeout",
+                    response_time_ms=round(elapsed, 1),
+                    error=f"service probe exceeded {timeout}s timeout",
+                    error_kind="timeout", layer="service",
+                )
+
+        elapsed = (time.monotonic() - start) * 1000
+        data = result.data if hasattr(result, "data") else []
+        source = result.source if hasattr(result, "source") else "service"
+        schema_ok = _check_schema(tool_name, data)
+
+        return HealthResult(
+            tool=tool_name, provider=source, status="ok",
+            response_time_ms=round(elapsed, 1),
+            record_count=len(data),
+            schema_ok=schema_ok, layer="service",
+        )
+    except DataFetchError as e:
+        elapsed = (time.monotonic() - start) * 1000
+        status = "warn" if e.kind == "data" else "error"
+        return HealthResult(
+            tool=tool_name, provider="service", status=status,
+            response_time_ms=round(elapsed, 1),
+            error=str(e)[:200],
+            error_kind=e.kind, layer="service",
+        )
+    except Exception as e:
+        elapsed = (time.monotonic() - start) * 1000
+        return HealthResult(
+            tool=tool_name, provider="service", status="error",
+            response_time_ms=round(elapsed, 1),
+            error=str(e)[:200], layer="service",
         )
 
 
@@ -243,6 +333,9 @@ def run_probes(
             yield health_result
             if data is not None and health_result.status == "ok":
                 provider_data[p] = data
+
+        # Service-level probe (through dispatcher fallback chain)
+        yield _run_service_probe(tname)
 
         # After all providers for this tool, run consistency check
         spec = get_tool_spec(tname)
