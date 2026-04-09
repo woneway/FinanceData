@@ -30,15 +30,18 @@ class ToolStats(BaseModel):
 
 
 class ToolInfo(BaseModel):
-    """Tool metadata from TOOL_REGISTRY"""
+    """Tool metadata projected from ToolSpec"""
     name: str
     description: str
     domain: str
     source: str
     source_priority: str
+    freshness: str = ""
+    supports_history: bool = False
     providers: List[str] = Field(default_factory=list)
     return_fields: List[str] = Field(default_factory=list)
     params: List[Dict[str, Any]] = Field(default_factory=list)
+    examples: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class ProviderStatus(BaseModel):

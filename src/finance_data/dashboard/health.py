@@ -1,17 +1,54 @@
 """Health probe logic for dashboard"""
-import datetime
+from __future__ import annotations
+
+import concurrent.futures
 import logging
-import os
+import re
 import time
-from typing import Dict, Generator, List, Optional, Tuple
+from datetime import datetime, timedelta
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 from finance_data.dashboard.consistency import compare_provider_data
 from finance_data.dashboard.models import ConsistencyResult, HealthResult
-from finance_data.provider.metadata.registry import TOOL_REGISTRY
+from finance_data.tool_specs import get_tool_probe, get_tool_spec, list_tool_specs
 
 logger = logging.getLogger(__name__)
 
-_PROBE_TIMEOUT = 30  # seconds
+# ------------------------------------------------------------------
+# Probe date resolution
+# ------------------------------------------------------------------
+
+_RECENT_RE = re.compile(r"^\$RECENT(?:-(\d+))?$")
+
+
+def _recent_trade_date() -> datetime:
+    """Return the most recent likely trading day (skip weekends).
+
+    Uses a simple heuristic — no calendar service call to avoid circular
+    dependencies during health probing.
+    """
+    now = datetime.now()
+    # Use yesterday for EOD tools whose data may not be ready today
+    d = now - timedelta(days=1)
+    # Skip weekends
+    while d.weekday() >= 5:  # 5=Sat, 6=Sun
+        d -= timedelta(days=1)
+    return d
+
+
+def resolve_probe_params(params: dict[str, Any]) -> dict[str, Any]:
+    """Replace ``$RECENT`` / ``$RECENT-N`` placeholders with YYYYMMDD dates."""
+    resolved = {}
+    base = _recent_trade_date()
+    for key, value in params.items():
+        if isinstance(value, str):
+            m = _RECENT_RE.match(value)
+            if m:
+                offset_days = int(m.group(1)) if m.group(1) else 0
+                resolved[key] = (base - timedelta(days=offset_days)).strftime("%Y%m%d")
+                continue
+        resolved[key] = value
+    return resolved
 
 
 def _get_available_providers() -> Dict[str, bool]:
@@ -35,137 +72,6 @@ def _get_available_providers() -> Dict[str, bool]:
     }
 
 
-# Per-tool provider mapping: tool_name -> {provider_name: (class_path, method_name)}
-# Generated from actual service dispatcher introspection.
-_TOOL_PROVIDERS: Dict[str, Dict[str, Tuple[str, str]]] = {
-    "tool_get_stock_info_history": {
-        # akshare 已禁用（东财源不可用）
-        "tushare": ("finance_data.provider.tushare.stock.history:TushareStockHistory", "get_stock_info_history"),
-        "xueqiu": ("finance_data.provider.xueqiu.stock.history:XueqiuStockHistory", "get_stock_info_history"),
-    },
-    "tool_get_kline_history": {
-        "akshare": ("finance_data.provider.akshare.kline.history:AkshareKlineHistory", "get_kline_history"),
-        "tushare": ("finance_data.provider.tushare.kline.history:TushareKlineHistory", "get_kline_history"),
-        "xueqiu": ("finance_data.provider.xueqiu.kline.history:XueqiuKlineHistory", "get_kline_history"),
-        "baostock": ("finance_data.provider.baostock.kline.history:BaostockKlineHistory", "get_kline_history"),
-    },
-    "tool_get_realtime_quote": {
-        # akshare 已禁用（东财源不可用，新浪源太慢）
-        "tushare": ("finance_data.provider.tushare.realtime.realtime:TushareRealtimeQuote", "get_realtime_quote"),
-        "xueqiu": ("finance_data.provider.xueqiu.realtime.realtime:XueqiuRealtimeQuote", "get_realtime_quote"),
-    },
-    "tool_get_index_quote_realtime": {
-        "akshare": ("finance_data.provider.akshare.index.realtime:AkshareIndexQuote", "get_index_quote_realtime"),
-        "tushare": ("finance_data.provider.tushare.index.realtime:TushareIndexQuote", "get_index_quote_realtime"),
-        "xueqiu": ("finance_data.provider.xueqiu.index.realtime:XueqiuIndexQuote", "get_index_quote_realtime"),
-    },
-    "tool_get_index_history": {
-        "akshare": ("finance_data.provider.akshare.index.history:AkshareIndexHistory", "get_index_history"),
-        "tushare": ("finance_data.provider.tushare.index.history:TushareIndexHistory", "get_index_history"),
-        "xueqiu": ("finance_data.provider.xueqiu.index.history:XueqiuIndexHistory", "get_index_history"),
-    },
-    "tool_get_sector_rank_realtime": {
-        "akshare": ("finance_data.provider.akshare.sector.realtime:AkshareSectorRank", "get_sector_rank_realtime"),
-    },
-    "tool_get_chip_distribution_history": {
-        "akshare": ("finance_data.provider.akshare.chip.history:AkshareChipHistory", "get_chip_distribution_history"),
-        "tushare": ("finance_data.provider.tushare.chip.history:TushareChipHistory", "get_chip_distribution_history"),
-    },
-    "tool_get_financial_summary_history": {
-        "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareFinancialSummary", "get_financial_summary_history"),
-        "tushare": ("finance_data.provider.tushare.fundamental.history:TushareFinancialSummary", "get_financial_summary_history"),
-        "xueqiu": ("finance_data.provider.xueqiu.fundamental.history:XueqiuFinancialSummary", "get_financial_summary_history"),
-    },
-    "tool_get_dividend_history": {
-        "akshare": ("finance_data.provider.akshare.fundamental.history:AkshareDividend", "get_dividend_history"),
-        "tushare": ("finance_data.provider.tushare.fundamental.history:TushareDividend", "get_dividend_history"),
-        "xueqiu": ("finance_data.provider.xueqiu.fundamental.history:XueqiuDividend", "get_dividend_history"),
-    },
-    # tool_get_earnings_forecast_history 已禁用（依赖东财 stock_yjyg_em）
-    "tool_get_stock_capital_flow_realtime": {
-        # akshare 已禁用（依赖东财 stock_individual_fund_flow）
-        "xueqiu": ("finance_data.provider.xueqiu.cashflow.realtime:XueqiuStockCapitalFlow", "get_stock_capital_flow_realtime"),
-    },
-    "tool_get_trade_calendar_history": {
-        "tushare": ("finance_data.provider.tushare.calendar.history:TushareTradeCalendar", "get_trade_calendar_history"),
-        "akshare": ("finance_data.provider.akshare.calendar.history:AkshareTradeCalendar", "get_trade_calendar_history"),
-        "baostock": ("finance_data.provider.baostock.calendar.history:BaostockTradeCalendar", "get_trade_calendar_history"),
-    },
-    "tool_get_lhb_detail": {
-        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbDetail", "get_lhb_detail_history"),
-        "tushare": ("finance_data.provider.tushare.lhb.history:TushareLhbDetail", "get_lhb_detail_history"),
-    },
-    "tool_get_lhb_stock_stat": {
-        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbStockStat", "get_lhb_stock_stat_history"),
-    },
-    "tool_get_lhb_active_traders": {
-        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbActiveTraders", "get_lhb_active_traders_history"),
-    },
-    "tool_get_lhb_trader_stat": {
-        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbTraderStat", "get_lhb_trader_stat_history"),
-    },
-    "tool_get_lhb_stock_detail": {
-        "akshare": ("finance_data.provider.akshare.lhb.history:AkshareLhbStockDetail", "get_lhb_stock_detail_history"),
-    },
-    "tool_get_zt_pool": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZtPool", "get_zt_pool_history"),
-    },
-    "tool_get_strong_stocks": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AkshareStrongStocks", "get_strong_stocks_history"),
-    },
-    "tool_get_previous_zt": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AksharePreviousZt", "get_previous_zt_history"),
-    },
-    "tool_get_zbgc_pool": {
-        "akshare": ("finance_data.provider.akshare.pool.history:AkshareZbgcPool", "get_zbgc_pool_history"),
-    },
-    "tool_get_north_stock_hold": {
-        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthStockHold", "get_north_stock_hold_history"),
-        "tushare": ("finance_data.provider.tushare.north_flow.history:TushareNorthStockHold", "get_north_stock_hold_history"),
-    },
-    "tool_get_margin": {
-        "tushare": ("finance_data.provider.tushare.margin.history:TushareMargin", "get_margin_history"),
-        "akshare": ("finance_data.provider.akshare.margin.history:AkshareMargin", "get_margin_history"),
-    },
-    "tool_get_margin_detail": {
-        "tushare": ("finance_data.provider.tushare.margin.history:TushareMarginDetail", "get_margin_detail_history"),
-        "akshare": ("finance_data.provider.akshare.margin.history:AkshareMarginDetail", "get_margin_detail_history"),
-        "xueqiu": ("finance_data.provider.xueqiu.margin.history:XueqiuMarginDetail", "get_margin_detail_history"),
-    },
-    "tool_get_market_stats_realtime": {
-        "akshare": ("finance_data.provider.akshare.market.realtime:AkshareMarketRealtime", "get_market_stats_realtime"),
-    },
-    "tool_get_market_north_capital": {
-        "akshare": ("finance_data.provider.akshare.north_flow.history:AkshareNorthFlow", "get_north_flow_history"),
-    },
-    "tool_get_suspend": {
-        "akshare": ("finance_data.provider.akshare.suspend.history:AkshareSuspend", "get_suspend_history"),
-    },
-    "tool_get_sector_list": {
-        "akshare": ("finance_data.provider.akshare.sector.list:AkshareSectorList", "get_sector_list"),
-    },
-    "tool_get_sector_member": {
-        "akshare": ("finance_data.provider.akshare.sector.member:AkshareSectorMember", "get_sector_member"),
-    },
-    "tool_get_sector_history": {
-        "akshare": ("finance_data.provider.akshare.sector.history:AkshareSectorHistory", "get_sector_history"),
-    },
-    "tool_get_hot_rank": {
-        "akshare": ("finance_data.provider.akshare.hot_rank.realtime:AkshareHotRank", "get_hot_rank_realtime"),
-    },
-    "tool_get_lhb_inst_detail": {
-        "akshare": ("finance_data.provider.akshare.lhb.inst_detail:AkshareLhbInstDetail", "get_lhb_inst_detail_history"),
-    },
-    "tool_get_daily_basic": {
-        "tencent": ("finance_data.provider.tencent.daily_basic:TencentDailyBasic", "get_daily_basic"),
-    },
-    "tool_get_limit_price": {
-        "tencent": ("finance_data.provider.tencent.limit_price:TencentLimitPrice", "get_limit_price"),
-    },
-    # tool_get_sector_capital_flow 已禁用（push2.eastmoney.com 域名不可达）
-}
-
-
 def _import_class(dotted_path: str):
     """Import a class from 'module.path:ClassName'"""
     module_path, class_name = dotted_path.rsplit(":", 1)
@@ -174,85 +80,20 @@ def _import_class(dotted_path: str):
     return getattr(module, class_name)
 
 
-def _last_trading_day() -> str:
-    """Return the most recent past trading day (skip weekends)."""
-    d = datetime.date.today() - datetime.timedelta(days=1)
-    while d.weekday() >= 5:  # 5=Sat, 6=Sun
-        d -= datetime.timedelta(days=1)
-    return d.strftime("%Y%m%d")
-
-
-def _find_recent_lhb_stock() -> dict:
-    """Return hardcoded LHB test params (东财 stock_lhb_detail_em 已禁用)."""
-    return {"symbol": "000001", "date": _last_trading_day(), "flag": "买入"}
-
-
-def _get_test_params(tool_name: str) -> dict:
-    """Return test parameters for a given tool"""
-    today = datetime.date.today().strftime("%Y%m%d")
-    yesterday = _last_trading_day()
-    week_ago = (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d")
-    month_ago = (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y%m%d")
-
-    params_map = {
-        "tool_get_stock_info_history": {"symbol": "000001"},
-        "tool_get_kline_history": {
-            "symbol": "000001", "period": "daily",
-            "start": month_ago, "end": today, "adj": "qfq",
-        },
-        "tool_get_realtime_quote": {"symbol": "000001"},
-        "tool_get_index_quote_realtime": {"symbol": "000001.SH"},
-        "tool_get_index_history": {
-            "symbol": "000001.SH", "start": month_ago, "end": today,
-        },
-        "tool_get_sector_rank_realtime": {},
-        "tool_get_chip_distribution_history": {"symbol": "000001"},
-        "tool_get_financial_summary_history": {"symbol": "000001"},
-        "tool_get_dividend_history": {"symbol": "000001"},
-        "tool_get_stock_capital_flow_realtime": {"symbol": "000001"},
-        "tool_get_trade_calendar_history": {"start": month_ago, "end": today},
-        "tool_get_lhb_detail": {"start_date": week_ago, "end_date": yesterday},
-        "tool_get_lhb_stock_stat": {"period": "近一月"},
-        "tool_get_lhb_active_traders": {"start_date": week_ago, "end_date": yesterday},
-        "tool_get_lhb_trader_stat": {"period": "近一月"},
-        "tool_get_lhb_stock_detail": {"symbol": "", "date": yesterday, "flag": "买入"},
-        "tool_get_north_stock_hold": {
-            "market": "沪股通", "indicator": "5日排行",
-        },
-        "tool_get_margin": {"trade_date": yesterday},
-        "tool_get_margin_detail": {"trade_date": "", "start_date": week_ago, "end_date": yesterday, "ts_code": "000001"},
-        "tool_get_market_stats_realtime": {},
-        "tool_get_zt_pool": {"date": yesterday},
-        "tool_get_strong_stocks": {"date": yesterday},
-        "tool_get_previous_zt": {"date": yesterday},
-        "tool_get_zbgc_pool": {"date": yesterday},
-        "tool_get_market_north_capital": {},
-        "tool_get_suspend": {"date": yesterday},
-        "tool_get_sector_list": {},
-        "tool_get_sector_member": {"symbol": "银行"},
-        "tool_get_sector_history": {"symbol": "银行", "start_date": month_ago, "end_date": today},
-        "tool_get_hot_rank": {},
-        "tool_get_lhb_inst_detail": {"start_date": week_ago, "end_date": yesterday},
-        "tool_get_daily_basic": {"symbol": "000001"},
-        "tool_get_limit_price": {"symbol": "000001"},
-    }
-    return params_map.get(tool_name, {})
-
-
 def get_providers_for_tool(tool_name: str) -> List[Tuple[str, str, str]]:
     """Return (provider_name, class_path, method_name) tuples for a tool.
 
     Only includes providers whose credentials are available.
     """
-    tool_providers = _TOOL_PROVIDERS.get(tool_name, {})
-    if not tool_providers:
+    spec = get_tool_spec(tool_name)
+    if spec is None:
         return []
 
     available = _get_available_providers()
     results = []
-    for provider_name, (class_path, method_name) in tool_providers.items():
-        if available.get(provider_name, False):
-            results.append((provider_name, class_path, method_name))
+    for provider in spec.providers:
+        if available.get(provider.name, False):
+            results.append((provider.name, provider.class_path, provider.method_name))
     return results
 
 
@@ -263,17 +104,73 @@ def _run_single_probe(
     method_name: str,
 ) -> tuple[HealthResult, Optional[list[dict]]]:
     """Execute a single probe, returning health result + raw data for comparison."""
-    params = _get_test_params(tool_name)
+    probe = get_tool_probe(tool_name)
+    raw_params = dict(probe.default_params) if probe else {}
+    params = resolve_probe_params(raw_params)
+
+    timeout = probe.timeout_sec if probe else 30
 
     try:
         cls = _import_class(class_path)
         instance = cls()
         method = getattr(instance, method_name)
+
+        # Execute with timeout to prevent a slow provider from blocking indefinitely
         start = time.monotonic()
-        result = method(**params)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(method, **params)
+            try:
+                result = future.result(timeout=timeout)
+            except concurrent.futures.TimeoutError:
+                elapsed = (time.monotonic() - start) * 1000
+                return (
+                    HealthResult(
+                        tool=tool_name,
+                        provider=provider_name,
+                        status="timeout",
+                        response_time_ms=round(elapsed, 1),
+                        error=f"probe exceeded {timeout}s timeout",
+                    ),
+                    None,
+                )
         elapsed = (time.monotonic() - start) * 1000
         data = result.data if hasattr(result, "data") else []
         record_count = len(data)
+
+        # --- Enforce ProbeSpec invariants ---
+        if probe:
+            # min_records check
+            if probe.min_records and record_count < probe.min_records:
+                return (
+                    HealthResult(
+                        tool=tool_name,
+                        provider=provider_name,
+                        status="warn",
+                        response_time_ms=round(elapsed, 1),
+                        record_count=record_count,
+                        error=f"record_count {record_count} < min_records {probe.min_records}",
+                    ),
+                    data,
+                )
+
+            # required_fields check
+            if probe.required_fields and data:
+                missing = [
+                    f for f in probe.required_fields if f not in data[0]
+                ]
+                if missing:
+                    return (
+                        HealthResult(
+                            tool=tool_name,
+                            provider=provider_name,
+                            status="warn",
+                            response_time_ms=round(elapsed, 1),
+                            record_count=record_count,
+                            error=f"missing required fields: {missing}",
+                        ),
+                        data,
+                    )
+
         return (
             HealthResult(
                 tool=tool_name,
@@ -320,9 +217,10 @@ def run_probes(
     from collections import OrderedDict
 
     if tool_name:
-        tools = {tool_name: TOOL_REGISTRY[tool_name]} if tool_name in TOOL_REGISTRY else {}
+        spec = get_tool_spec(tool_name)
+        tools = OrderedDict([(tool_name, spec)]) if spec is not None else OrderedDict()
     else:
-        tools = TOOL_REGISTRY
+        tools = OrderedDict((spec.name, spec) for spec in list_tool_specs())
 
     # Group tasks by tool (preserve registry order)
     tool_tasks: OrderedDict[str, List[Tuple[str, str, str, str]]] = OrderedDict()
@@ -347,7 +245,8 @@ def run_probes(
                 provider_data[p] = data
 
         # After all providers for this tool, run consistency check
-        if len(provider_data) >= 2:
+        spec = get_tool_spec(tname)
+        if len(provider_data) >= 2 and (spec is None or spec.probe.consistency_enabled):
             consistency = compare_provider_data(tname, provider_data)
             if consistency is not None:
                 yield consistency

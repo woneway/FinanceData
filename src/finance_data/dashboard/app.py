@@ -1,6 +1,4 @@
 """FastAPI dashboard application"""
-import inspect
-import json
 import logging
 import os
 import time
@@ -10,7 +8,6 @@ from typing import Optional
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from fastapi.staticfiles import StaticFiles
 
 from finance_data.dashboard.health import run_probes
 from finance_data.dashboard.metrics import MetricsStore
@@ -22,7 +19,12 @@ from finance_data.dashboard.models import (
     ProviderStatus,
     ToolInfo,
 )
-from finance_data.provider.metadata.registry import TOOL_REGISTRY
+from finance_data.tool_specs import (
+    get_tool_service_target,
+    get_tool_spec,
+    list_tool_specs,
+    normalize_tool_params,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,37 +44,6 @@ _metrics = MetricsStore()
 _STATIC_DIR = Path(__file__).parent / "static"
 
 
-def _get_tool_params(tool_name: str) -> list[dict]:
-    """Expose MCP tool signature for frontend forms."""
-    from finance_data.mcp import server as mcp_server
-
-    fn = getattr(mcp_server, tool_name, None)
-    if fn is None:
-        return []
-
-    params = []
-    for name, param in inspect.signature(fn).parameters.items():
-        if name in {"self", "cls"}:
-            continue
-
-        required = param.default is inspect._empty
-        default = None if required else param.default
-        params.append(
-            {
-                "name": name,
-                "required": required,
-                "default": default,
-            }
-        )
-    return params
-
-
-def _get_providers_for_tool_name(tool_name: str) -> list[str]:
-    """Return actual provider names from _TOOL_PROVIDERS mapping"""
-    from finance_data.dashboard.health import _TOOL_PROVIDERS
-    return list(_TOOL_PROVIDERS.get(tool_name, {}).keys())
-
-
 # ------------------------------------------------------------------
 # Tool metadata
 # ------------------------------------------------------------------
@@ -80,16 +51,20 @@ def _get_providers_for_tool_name(tool_name: str) -> list[str]:
 @app.get("/api/tools")
 async def get_tools() -> list[ToolInfo]:
     results = []
-    for name, meta in TOOL_REGISTRY.items():
+    for spec in list_tool_specs():
+        meta = spec.metadata
         results.append(ToolInfo(
-            name=name,
-            description=meta.description,
-            domain=meta.domain,
-            source=meta.source.value,
+            name=spec.name,
+            description=spec.description,
+            domain=spec.domain,
+            source=meta.source,
             source_priority=meta.source_priority,
-            providers=_get_providers_for_tool_name(name),
-            return_fields=meta.return_fields,
-            params=_get_tool_params(name),
+            freshness=meta.data_freshness,
+            supports_history=meta.supports_history,
+            providers=[provider.name for provider in spec.providers],
+            return_fields=list(spec.return_fields),
+            params=[param.to_api_dict() for param in spec.params],
+            examples=list(meta.examples),
         ))
     return results
 
@@ -165,7 +140,7 @@ async def health_all():
 
 @app.post("/api/health/{tool_name}")
 async def health_tool(tool_name: str):
-    if tool_name not in TOOL_REGISTRY:
+    if get_tool_spec(tool_name) is None:
         return {"error": f"unknown tool: {tool_name}"}
     return StreamingResponse(
         _sse_stream(tool_name=tool_name),
@@ -213,54 +188,9 @@ async def consistency_latest():
 # Tool invocation
 # ------------------------------------------------------------------
 
-# Maps tool_name -> (service_module, dispatcher_attr, method_name)
-_INVOKE_MAP = {
-    "tool_get_stock_info_history": ("finance_data.service.stock", "stock_history", "get_stock_info_history"),
-    "tool_get_kline_history": ("finance_data.service.kline", "kline_history", "get_kline_history"),
-    "tool_get_realtime_quote": ("finance_data.service.realtime", "realtime_quote", "get_realtime_quote"),
-    "tool_get_index_quote_realtime": ("finance_data.service.index", "index_quote", "get_index_quote_realtime"),
-    "tool_get_index_history": ("finance_data.service.index", "index_history", "get_index_history"),
-    "tool_get_sector_rank_realtime": ("finance_data.service.sector", "sector_rank", "get_sector_rank_realtime"),
-    "tool_get_chip_distribution_history": ("finance_data.service.chip", "chip_history", "get_chip_distribution_history"),
-    "tool_get_financial_summary_history": ("finance_data.service.fundamental", "financial_summary", "get_financial_summary_history"),
-    "tool_get_dividend_history": ("finance_data.service.fundamental", "dividend", "get_dividend_history"),
-    "tool_get_earnings_forecast_history": ("finance_data.service.fundamental", "earnings_forecast", "get_earnings_forecast_history"),
-    "tool_get_stock_capital_flow_realtime": ("finance_data.service.cashflow", "stock_capital_flow", "get_stock_capital_flow_realtime"),
-    "tool_get_trade_calendar_history": ("finance_data.service.calendar", "trade_calendar", "get_trade_calendar_history"),
-    "tool_get_lhb_detail": ("finance_data.service.lhb", "lhb_detail", "get_lhb_detail_history"),
-    "tool_get_lhb_stock_stat": ("finance_data.service.lhb", "lhb_stock_stat", "get_lhb_stock_stat_history"),
-    "tool_get_lhb_active_traders": ("finance_data.service.lhb", "lhb_active_traders", "get_lhb_active_traders_history"),
-    "tool_get_lhb_trader_stat": ("finance_data.service.lhb", "lhb_trader_stat", "get_lhb_trader_stat_history"),
-    "tool_get_lhb_stock_detail": ("finance_data.service.lhb", "lhb_stock_detail", "get_lhb_stock_detail_history"),
-    "tool_get_zt_pool": ("finance_data.service.pool", "zt_pool", "get_zt_pool_history"),
-    "tool_get_strong_stocks": ("finance_data.service.pool", "strong_stocks", "get_strong_stocks_history"),
-    "tool_get_previous_zt": ("finance_data.service.pool", "previous_zt", "get_previous_zt_history"),
-    "tool_get_zbgc_pool": ("finance_data.service.pool", "zbgc_pool", "get_zbgc_pool_history"),
-    "tool_get_north_stock_hold": ("finance_data.service.north_flow", "north_stock_hold", "get_north_stock_hold_history"),
-    "tool_get_margin": ("finance_data.service.margin", "margin", "get_margin_history"),
-    "tool_get_margin_detail": ("finance_data.service.margin", "margin_detail", "get_margin_detail_history"),
-    "tool_get_market_stats_realtime": ("finance_data.service.market", "market_realtime", "get_market_stats_realtime"),
-    "tool_get_market_north_capital": ("finance_data.service.north_flow", "north_flow", "get_north_flow_history"),
-    "tool_get_sector_capital_flow": ("finance_data.service.sector_fund_flow", "sector_capital_flow", "get_sector_capital_flow_history"),
-    "tool_get_daily_basic": ("finance_data.service.daily_basic", "daily_basic", "get_daily_basic"),
-    "tool_get_limit_price": ("finance_data.service.limit_price", "limit_price", "get_limit_price"),
-    "tool_get_suspend": ("finance_data.service.suspend", "suspend", "get_suspend_history"),
-    "tool_get_sector_list": ("finance_data.service.sector", "sector_list", "get_sector_list"),
-    "tool_get_sector_member": ("finance_data.service.sector", "sector_member", "get_sector_member"),
-    "tool_get_sector_history": ("finance_data.service.sector", "sector_history", "get_sector_history"),
-    "tool_get_hot_rank": ("finance_data.service.hot_rank", "hot_rank", "get_hot_rank_realtime"),
-    "tool_get_lhb_inst_detail": ("finance_data.service.lhb", "lhb_inst_detail", "get_lhb_inst_detail_history"),
-}
-
-_PROVIDER_PARAM_ALIASES = {
-    "tool_get_sector_member": {"sector_name": "symbol"},
-    "tool_get_sector_history": {"sector_name": "symbol"},
-}
-
-
 @app.post("/api/tools/{tool_name}")
 async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
-    if tool_name not in _INVOKE_MAP:
+    if get_tool_spec(tool_name) is None:
         return InvokeResponse(
             tool=tool_name, provider="unknown", status="error",
             error=f"unknown tool: {tool_name}",
@@ -269,7 +199,7 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
     chosen_provider = req.provider
     try:
         start = time.monotonic()
-        provider_params = dict(req.params)
+        provider_params = normalize_tool_params(tool_name, req.params)
 
         if chosen_provider:
             # Direct provider call — bypass dispatcher
@@ -290,9 +220,6 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
                     tool=tool_name, provider=chosen_provider, status="error",
                     error=f"provider '{chosen_provider}' not available for {tool_name}",
                 )
-            for src_name, dest_name in _PROVIDER_PARAM_ALIASES.get(tool_name, {}).items():
-                if src_name in provider_params and dest_name not in provider_params:
-                    provider_params[dest_name] = provider_params.pop(src_name)
             cls = _import_class(class_path)
             instance = cls()
             method = getattr(instance, method_name)
@@ -300,11 +227,13 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
         else:
             # Dispatcher fallback chain
             import importlib
-            module_path, dispatcher_attr, method_name = _INVOKE_MAP[tool_name]
-            mod = importlib.import_module(module_path)
-            dispatcher = getattr(mod, dispatcher_attr)
-            method = getattr(dispatcher, method_name)
-            result = method(**req.params)
+            target = get_tool_service_target(tool_name)
+            if target is None:
+                raise ValueError(f"service target not found for {tool_name}")
+            mod = importlib.import_module(target.module_path)
+            dispatcher = getattr(mod, target.object_name)
+            method = getattr(dispatcher, target.method_name)
+            result = method(**provider_params)
 
         elapsed = round((time.monotonic() - start) * 1000, 1)
         actual_provider = chosen_provider or result.source

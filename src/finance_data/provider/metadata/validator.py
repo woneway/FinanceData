@@ -3,6 +3,7 @@ import re
 import inspect
 from typing import Dict, List, Any
 from finance_data.provider.metadata.registry import TOOL_REGISTRY
+from finance_data.tool_specs import get_tool_service_target, get_tool_spec, list_tool_specs
 
 
 class ValidationResult:
@@ -26,6 +27,7 @@ class Validator:
     3. docstring 包含必要章节
     4. 与 ToolMeta 元数据一致性
     5. 参数命名规范
+    6. 与 ToolSpec 签名 / service target 一致
     """
 
     REQUIRED_SECTIONS = [
@@ -75,6 +77,10 @@ class Validator:
 
         # 5. 校验数量一致性
         results.extend(self._validate_tool_count())
+
+        # 6. 校验 ToolSpec 对齐
+        results.extend(self._validate_toolspec_signature_alignment())
+        results.extend(self._validate_toolspec_service_alignment())
 
         return results
 
@@ -188,6 +194,63 @@ class Validator:
 
         return results
 
+    def _validate_toolspec_signature_alignment(self) -> List[ValidationResult]:
+        """校验 MCP 函数签名与 ToolSpec 参数定义一致。"""
+        results = []
+
+        for name, fn in self.tool_functions.items():
+            spec = get_tool_spec(name)
+            if spec is None:
+                results.append(ValidationResult(False, "ToolSpec 未注册", name))
+                continue
+
+            sig = inspect.signature(fn)
+            actual_params = []
+            for param in sig.parameters.values():
+                if param.name in {"self", "cls"}:
+                    continue
+                actual_params.append(
+                    (
+                        param.name,
+                        param.default is inspect._empty,
+                        None if param.default is inspect._empty else param.default,
+                    )
+                )
+
+            expected_params = [
+                (param.name, param.required, param.default)
+                for param in spec.params
+            ]
+
+            if actual_params != expected_params:
+                results.append(ValidationResult(
+                    False,
+                    f"ToolSpec 参数与 MCP 签名不一致: expected={expected_params}, actual={actual_params}",
+                    name,
+                ))
+
+        return results
+
+    def _validate_toolspec_service_alignment(self) -> List[ValidationResult]:
+        """校验 MCP 函数实现引用的 service target 与 ToolSpec 一致。"""
+        results = []
+
+        for name, fn in self.tool_functions.items():
+            target = get_tool_service_target(name)
+            if target is None:
+                results.append(ValidationResult(False, "ToolSpec service target 缺失", name))
+                continue
+
+            names = set(fn.__code__.co_names)
+            if target.object_name not in names or target.method_name not in names:
+                results.append(ValidationResult(
+                    False,
+                    f"MCP 未引用 ToolSpec service target: {target.object_name}.{target.method_name}",
+                    name,
+                ))
+
+        return results
+
     def run_report(self) -> str:
         """生成校验报告"""
         results = self.validate_all()
@@ -222,6 +285,37 @@ def validate_all_tools() -> List[ValidationResult]:
     server = importlib.import_module("finance_data.mcp.server")
     validator = Validator(server)
     return validator.validate_all()
+
+
+def validate_toolspec_registry_consistency() -> List[ValidationResult]:
+    """校验 ToolSpec / ToolMeta / MCP 显式函数三者一致。"""
+    import importlib
+
+    results: List[ValidationResult] = []
+    server = importlib.import_module("finance_data.mcp.server")
+    validator = Validator(server)
+
+    meta_names = set(TOOL_REGISTRY.keys())
+    spec_names = {spec.name for spec in list_tool_specs()}
+    tool_names = set(validator.tool_functions.keys())
+
+    if meta_names != spec_names:
+        results.append(ValidationResult(
+            False,
+            f"ToolMeta 与 ToolSpec 注册集合不一致: meta_only={sorted(meta_names - spec_names)}, spec_only={sorted(spec_names - meta_names)}",
+            "registry",
+        ))
+
+    if tool_names != spec_names:
+        results.append(ValidationResult(
+            False,
+            f"MCP tools 与 ToolSpec 注册集合不一致: mcp_only={sorted(tool_names - spec_names)}, spec_only={sorted(spec_names - tool_names)}",
+            "registry",
+        ))
+
+    results.extend(validator._validate_toolspec_signature_alignment())
+    results.extend(validator._validate_toolspec_service_alignment())
+    return results
 
 
 def run_validation_report() -> str:

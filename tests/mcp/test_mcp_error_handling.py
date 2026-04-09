@@ -6,7 +6,7 @@ from finance_data.interface.types import DataFetchError
 
 
 def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 def test_kline_mcp_returns_error_json():
