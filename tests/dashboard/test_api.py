@@ -281,6 +281,8 @@ class TestInvokeTool:
             board_name="银行",
             idx_type="行业板块",
             trade_date="",
+            start_date="",
+            end_date="",
         )
 
     def test_invoke_direct_provider_uses_registered_provider_even_if_health_filter_would_hide_it(self, client):

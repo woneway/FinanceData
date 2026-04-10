@@ -6,7 +6,13 @@ from finance_data.interface.types import DataResult
 
 
 class BoardIndexProtocol(Protocol):
-    def get_board_index(self, idx_type: str, trade_date: str = "") -> DataResult: ...
+    def get_board_index(
+        self,
+        idx_type: str,
+        trade_date: str = "",
+        start_date: str = "",
+        end_date: str = "",
+    ) -> DataResult: ...
 
 
 @dataclass

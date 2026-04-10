@@ -241,16 +241,23 @@ async def tool_get_index_history(
 async def tool_get_board_index(
     idx_type: str = "行业板块",
     trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
 ) -> str:
     """
     获取东财板块索引/快照。
 
     数据源: tushare(dc_index)
     实时性: 日频
-    历史查询: 支持按交易日
+    历史查询: 支持（trade_date 单日快照，或 start_date/end_date 日期范围）
     """
     try:
-        result = board_index.get_board_index(idx_type=idx_type, trade_date=trade_date)
+        result = board_index.get_board_index(
+            idx_type=idx_type,
+            trade_date=trade_date,
+            start_date=start_date,
+            end_date=end_date,
+        )
         return _to_json(result)
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
@@ -784,13 +791,15 @@ async def tool_get_board_member(
     board_name: str,
     idx_type: str = "行业板块",
     trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
 ) -> str:
     """
     获取东财板块成分股列表。
 
     数据源: tushare(dc_index + dc_member)
     实时性: 日频
-    历史查询: 支持按交易日
+    历史查询: 支持（trade_date 单日成分，或 start_date/end_date 日期范围）
     """
     try:
         return _to_json(
@@ -798,6 +807,8 @@ async def tool_get_board_member(
                 board_name=board_name,
                 idx_type=idx_type,
                 trade_date=trade_date,
+                start_date=start_date,
+                end_date=end_date,
             )
         )
     except Exception as e:

@@ -17,8 +17,9 @@ class TushareBoardMember:
     def __init__(self, index_provider: TushareBoardIndex | None = None):
         self._index_provider = index_provider or TushareBoardIndex()
 
-    def _resolve_board(self, board_name: str, idx_type: str, trade_date: str = "") -> dict:
-        index_result = self._index_provider.get_board_index(idx_type=idx_type, trade_date=trade_date)
+    def _resolve_board(self, board_name: str, idx_type: str) -> dict:
+        # 不传日期，让 board_index 默认取最新交易日
+        index_result = self._index_provider.get_board_index(idx_type=idx_type)
         matches = [row for row in index_result.data if row.get("board_name") == board_name]
         if not matches:
             raise DataFetchError(
@@ -34,12 +35,19 @@ class TushareBoardMember:
         board_name: str,
         idx_type: str,
         trade_date: str = "",
+        start_date: str = "",
+        end_date: str = "",
     ) -> DataResult:
-        board = self._resolve_board(board_name=board_name, idx_type=idx_type, trade_date=trade_date)
+        board = self._resolve_board(board_name=board_name, idx_type=idx_type)
         pro = get_pro()
-        kwargs = {"ts_code": board["board_code"]}
+        has_date_param = bool(trade_date or start_date or end_date)
+        kwargs: dict[str, str] = {"ts_code": board["board_code"]}
         if trade_date:
             kwargs["trade_date"] = trade_date
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
             df = pro.dc_member(**kwargs)
         except _NETWORK_ERRORS as e:
@@ -54,6 +62,11 @@ class TushareBoardMember:
                 f"无数据: {board_name} ({board['board_code']})",
                 "data",
             )
+
+        # 默认不传日期时上游返回多日数据，只保留最新交易日
+        if not has_date_param:
+            latest = df["trade_date"].max()
+            df = df[df["trade_date"] == latest]
 
         rows = [
             BoardMemberRow(

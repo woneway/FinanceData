@@ -10,7 +10,7 @@ from finance_data.tool_specs.adapters import list_tool_specs
 
 _VALID_FRESHNESS = {"realtime", "end_of_day", "historical", "quarterly"}
 _VALID_TIMING = {"T+0", "T+1_15:30", "T+1_16:00", "T+1_17:00", "next_trade_day_9:30", "quarterly"}
-_VALID_SOURCE = {"akshare", "tencent", "both", "multi"}
+_VALID_SOURCE = {"akshare", "tencent", "tushare", "both", "multi"}
 
 
 def validate_tool_specs() -> dict[str, list[str]]:

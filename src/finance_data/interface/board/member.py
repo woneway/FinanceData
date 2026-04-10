@@ -11,6 +11,8 @@ class BoardMemberProtocol(Protocol):
         board_name: str,
         idx_type: str,
         trade_date: str = "",
+        start_date: str = "",
+        end_date: str = "",
     ) -> DataResult: ...
 
 

@@ -239,7 +239,7 @@ def test_empty_raises():
 8. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 9. **更新本文件**：更新下方接口列表
 
-## 当前接口（35 个）
+## 当前接口（34 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -251,7 +251,6 @@ def test_empty_raises():
 | `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare(新浪)+tushare+xueqiu |
 | `tool_get_index_history` | index | 大盘指数历史 K线，akshare(新浪)+tushare+xueqiu |
 | `tool_get_sector_rank_realtime` | sector | 行业板块涨跌排名，akshare(同花顺) |
-| `tool_get_sector_list` | sector | 行业板块列表（含实时行情概览），akshare(东财) |
 | `tool_get_sector_member` | sector | 行业板块成分股列表，akshare(东财) |
 | `tool_get_sector_history` | sector | 行业板块历史K线行情，akshare(东财) |
 | `tool_get_chip_distribution_history` | chip | 个股筹码分布（获利比例、成本、集中度），akshare(东财)+tushare |
@@ -286,6 +285,7 @@ def test_empty_raises():
 | `tool_get_kline_history` | 已拆分为 daily/weekly/monthly 三个独立工具，分钟级已下线 |
 | `tool_get_earnings_forecast_history` | 依赖东财 stock_yjyg_em，无 provider 实现 |
 | `tool_get_sector_capital_flow` | push2.eastmoney.com 域名不可达 |
+| `tool_get_sector_list` | push2.eastmoney.com 域名不可达（stock_board_industry_name_em） |
 
 ## MCP 配置
 
