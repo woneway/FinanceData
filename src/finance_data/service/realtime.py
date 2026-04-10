@@ -33,15 +33,11 @@ class _RealtimeQuoteDispatcher:
 
 
 def _build_realtime_quote() -> _RealtimeQuoteDispatcher:
-    # akshare 实时行情已禁用（东财源不可用，新浪源太慢）
-    providers: list[RealtimeQuoteProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
-        from finance_data.provider.tushare.realtime.realtime import TushareRealtimeQuote
-        providers.append(TushareRealtimeQuote())
-    # 雪球作为主要数据源（无需 token，海外可达，~180ms）
+    # 实时行情仅使用 xueqiu（真正的盘中实时价格，无需 token/cookie）
+    # tushare 已移除：pro.daily(limit=1) 返回的是收盘价，不是实时行情
+    # akshare 已禁用：东财源不可用，新浪源太慢
     from finance_data.provider.xueqiu.realtime.realtime import XueqiuRealtimeQuote
-    providers.append(XueqiuRealtimeQuote())
-    return _RealtimeQuoteDispatcher(providers=providers)
+    return _RealtimeQuoteDispatcher(providers=[XueqiuRealtimeQuote()])
 
 
 realtime_quote = _build_realtime_quote()

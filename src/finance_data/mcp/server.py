@@ -164,7 +164,7 @@ async def tool_get_realtime_quote(symbol: str) -> str:
     """
     获取股票实时行情（含 20 分钟缓存）。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: xueqiu（盘中实时价格）
     实时性: 盘中实时（T+0）
     历史查询: 不支持
     缓存: 有（20 分钟）
@@ -173,7 +173,9 @@ async def tool_get_realtime_quote(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，每条包含 symbol、name、price、pct_chg、volume、amount
+        JSON 列表，每条包含 symbol、name、price(元)、pct_chg(%)、
+        volume(股)、amount(元)、market_cap(元)、pe、pb、
+        turnover_rate(%)、timestamp(ISO 8601)
     """
     try:
         result = realtime_quote.get_realtime_quote(symbol)

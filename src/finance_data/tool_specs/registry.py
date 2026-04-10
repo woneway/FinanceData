@@ -195,14 +195,13 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
             ),
-            return_fields=("symbol", "name", "price", "pct_chg", "volume", "amount"),
+            return_fields=("symbol", "name", "price", "pct_chg", "volume", "amount", "market_cap", "pe", "pb", "turnover_rate", "timestamp"),
             service=_service("finance_data.service.realtime", "realtime_quote", "get_realtime_quote"),
             providers=(
-                _provider("tushare", "finance_data.provider.tushare.realtime.realtime:TushareRealtimeQuote", "get_realtime_quote", available_if="tushare_token"),
-                _provider("xueqiu", "finance_data.provider.xueqiu.realtime.realtime:XueqiuRealtimeQuote", "get_realtime_quote", available_if="xueqiu_cookie"),
+                _provider("xueqiu", "finance_data.provider.xueqiu.realtime.realtime:XueqiuRealtimeQuote", "get_realtime_quote"),
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("symbol", "price")),
-            metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, cache_ttl=20, source="both", source_priority="xueqiu", api_name="stock_zh_a_spot", primary_key="symbol", examples=({"symbol": "000001"},)),
+            metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, cache_ttl=20, source="multi", source_priority="xueqiu", api_name="quotec.json", primary_key="symbol", examples=({"symbol": "000001"},)),
         ),
         ToolSpec(
             name="tool_get_index_quote_realtime",

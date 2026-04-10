@@ -20,7 +20,7 @@ def test_realtime_quote_toolspec_has_expected_service_and_providers():
     assert spec.service.module_path == "finance_data.service.realtime"
     assert spec.service.object_name == "realtime_quote"
     assert spec.service.method_name == "get_realtime_quote"
-    assert [provider.name for provider in spec.providers] == ["tushare", "xueqiu"]
+    assert [provider.name for provider in spec.providers] == ["xueqiu"]
 
 
 def test_sector_history_toolspec_probe_and_aliases():

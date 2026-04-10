@@ -3,10 +3,10 @@ from finance_data.provider.metadata.registry import TOOL_REGISTRY
 
 
 def test_realtime_api_name_matches_actual():
-    """realtime 实际用 stock_zh_a_spot (sina 源)，非 stock_zh_a_spot_em"""
+    """realtime 实际用 xueqiu quotec.json"""
     meta = TOOL_REGISTRY["tool_get_realtime_quote"]
-    assert meta.api_name == "stock_zh_a_spot", \
-        f"实际用 sina 源 stock_zh_a_spot，registry 写了 {meta.api_name}"
+    assert meta.api_name == "quotec.json", \
+        f"实际用 xueqiu quotec.json，registry 写了 {meta.api_name}"
 
 
 def test_index_quote_api_name_matches_actual():
