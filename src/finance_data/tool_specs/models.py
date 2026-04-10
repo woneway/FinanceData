@@ -6,6 +6,12 @@ from typing import Any
 
 
 @dataclass(frozen=True)
+class ToolParamChoice:
+    value: Any
+    label: str
+
+
+@dataclass(frozen=True)
 class ToolParamSpec:
     name: str
     required: bool
@@ -13,13 +19,17 @@ class ToolParamSpec:
     description: str = ""
     example: Any = None
     aliases: tuple[str, ...] = ()
+    choices: tuple[ToolParamChoice, ...] = ()
 
     def to_api_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "name": self.name,
             "required": self.required,
             "default": self.default,
         }
+        if self.choices:
+            data["choices"] = [{"value": c.value, "label": c.label} for c in self.choices]
+        return data
 
 
 @dataclass(frozen=True)
@@ -75,4 +85,3 @@ class ToolSpec:
     providers: tuple[ProviderSpec, ...]
     probe: ProbeSpec
     metadata: ToolMetadataSpec
-

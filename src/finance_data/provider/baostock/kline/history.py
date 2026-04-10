@@ -3,6 +3,8 @@
 稳定的免费数据源，作为 akshare/tushare 的最终 fallback。
 支持日/周/月/5min/15min/30min/60min。
 """
+from datetime import datetime, timedelta
+
 from finance_data.interface.kline.history import KlineBar
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.baostock.client import (
@@ -27,6 +29,16 @@ _ADJ_MAP = {
     "none": "3",   # 不复权
 }
 
+_LOOKBACK_DAYS = {
+    "daily": 10,
+    "weekly": 20,
+    "monthly": 40,
+    "5min": 7,
+    "15min": 7,
+    "30min": 7,
+    "60min": 7,
+}
+
 
 def _safe_float(val: str, default: float = 0.0) -> float:
     if not val or val.strip() == "":
@@ -35,6 +47,12 @@ def _safe_float(val: str, default: float = 0.0) -> float:
         return float(val)
     except (ValueError, TypeError):
         return default
+
+
+def _extend_start(start: str, period: str) -> str:
+    dt = datetime.strptime(start.replace("-", ""), "%Y%m%d")
+    lookback_days = _LOOKBACK_DAYS.get(period, 10)
+    return (dt - timedelta(days=lookback_days)).strftime("%Y%m%d")
 
 
 class BaostockKlineHistory:
@@ -54,7 +72,7 @@ class BaostockKlineHistory:
             with baostock_session() as bs:
                 rs = bs.query_history_k_data_plus(
                     bs_code, fields,
-                    start_date=_format_date(start),
+                    start_date=_format_date(_extend_start(start, period)),
                     end_date=_format_date(end),
                     frequency=frequency,
                     adjustflag=adjustflag,
@@ -79,22 +97,26 @@ class BaostockKlineHistory:
         # fields: date,code,open,high,low,close,volume,amount
         prev_close = 0.0
         rows = []
+        start_date = start.replace("-", "")
+        end_date = end.replace("-", "")
         for row in data:
+            date = _parse_date(row[0])
             close = _safe_float(row[5])
             pct_chg = ((close - prev_close) / prev_close * 100) if prev_close > 0 else 0.0
-            rows.append(KlineBar(
-                symbol=symbol,
-                date=_parse_date(row[0]),
-                period=period,
-                open=_safe_float(row[2]),
-                high=_safe_float(row[3]),
-                low=_safe_float(row[4]),
-                close=close,
-                volume=_safe_float(row[6]),   # baostock volume 已经是股
-                amount=_safe_float(row[7]),   # baostock amount 已经是元
-                pct_chg=round(pct_chg, 2),
-                adj=adj,
-            ).to_dict())
+            if start_date <= date <= end_date:
+                rows.append(KlineBar(
+                    symbol=symbol,
+                    date=date,
+                    period=period,
+                    open=_safe_float(row[2]),
+                    high=_safe_float(row[3]),
+                    low=_safe_float(row[4]),
+                    close=close,
+                    volume=_safe_float(row[6]),   # baostock volume 已经是股
+                    amount=_safe_float(row[7]),   # baostock amount 已经是元
+                    pct_chg=round(pct_chg, 2),
+                    adj=adj,
+                ).to_dict())
             prev_close = close
 
         return DataResult(data=rows, source="baostock",

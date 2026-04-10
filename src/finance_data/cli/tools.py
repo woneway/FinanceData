@@ -13,6 +13,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from finance_data.tool_specs import (
+    apply_tool_defaults,
     get_tool_spec,
     get_tool_service_target,
     list_tool_specs,
@@ -77,6 +78,7 @@ def _spec_to_dict(spec) -> dict[str, Any]:
                 "description": p.description,
                 "example": p.example,
                 "aliases": list(p.aliases),
+                "choices": [{"value": c.value, "label": c.label} for c in p.choices],
             }
             for p in spec.params
         ],
@@ -135,13 +137,16 @@ def describe_cmd(tool: str, as_json: bool) -> None:
         pt.add_column("Required")
         pt.add_column("Default")
         pt.add_column("Description")
+        pt.add_column("Choices")
         pt.add_column("Example")
         for p in spec.params:
+            choices = ", ".join(f"{c.value}={c.label}" for c in p.choices)
             pt.add_row(
                 p.name,
                 "yes" if p.required else "no",
                 str(p.default) if p.default is not None else "",
                 p.description,
+                choices,
                 str(p.example) if p.example is not None else "",
             )
         console.print(pt)
@@ -209,10 +214,7 @@ def invoke_cmd(tool: str, param: tuple[str, ...], provider: str | None, as_json:
                     params[p.name] = params.pop(alias)
                     break
 
-    # Fill defaults for missing optional params
-    for p in spec.params:
-        if p.name not in params and not p.required and p.default is not None:
-            params[p.name] = p.default
+    params = apply_tool_defaults(tool, params)
 
     # Validate required params (after alias resolution)
     for p in spec.params:
@@ -225,12 +227,11 @@ def invoke_cmd(tool: str, param: tuple[str, ...], provider: str | None, as_json:
         call_params = normalize_tool_params(tool, params)
 
         if provider:
-            from finance_data.dashboard.health import _import_class, get_providers_for_tool
+            from finance_data.dashboard.health import _import_class
 
-            entries = get_providers_for_tool(tool)
-            matched = [(cp, mn) for pn, cp, mn in entries if pn == provider]
+            matched = [(p.class_path, p.method_name) for p in spec.providers if p.name == provider]
             if not matched:
-                click.echo(f"Error: provider '{provider}' not available for {tool}", err=True)
+                click.echo(f"Error: provider '{provider}' not registered for {tool}", err=True)
                 sys.exit(1)
             class_path, method_name = matched[0]
             cls = _import_class(class_path)

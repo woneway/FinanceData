@@ -37,6 +37,12 @@ export interface ToolParam {
   name: string
   required: boolean
   default: unknown
+  choices?: ToolParamChoice[]
+}
+
+export interface ToolParamChoice {
+  value: string
+  label: string
 }
 
 export interface ProviderStatus {

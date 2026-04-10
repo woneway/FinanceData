@@ -8,6 +8,7 @@ from finance_data.tool_specs.models import (
     ProbeSpec,
     ProviderSpec,
     ServiceTargetSpec,
+    ToolParamChoice,
     ToolMetadataSpec,
     ToolParamSpec,
     ToolSpec,
@@ -22,6 +23,7 @@ def _param(
     description: str = "",
     example: Any = None,
     aliases: tuple[str, ...] = (),
+    choices: tuple[tuple[Any, str], ...] = (),
 ) -> ToolParamSpec:
     return ToolParamSpec(
         name=name,
@@ -30,6 +32,7 @@ def _param(
         description=description,
         example=example,
         aliases=aliases,
+        choices=tuple(ToolParamChoice(value=value, label=label) for value, label in choices),
     )
 
 
@@ -125,32 +128,65 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             service=_service("finance_data.service.stock", "stock_history", "get_stock_info_history"),
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.stock.history:TushareStockHistory", "get_stock_info_history", available_if="tushare_token"),
-                _provider("xueqiu", "finance_data.provider.xueqiu.stock.history:XueqiuStockHistory", "get_stock_info_history", available_if="xueqiu_cookie"),
+                _provider("xueqiu", "finance_data.provider.xueqiu.stock.history:XueqiuStockHistory", "get_stock_info_history"),
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("symbol",)),
-            metadata=_meta(entity="stock_info", scope="history", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="both", source_priority="xueqiu", api_name="stock_individual_basic_info_xq", limitations=("tushare 提供更完整的财务数据",), primary_key="symbol", examples=({"symbol": "000001"},)),
+            metadata=_meta(entity="stock_info", scope="history", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="both", source_priority="tushare", api_name="stock_basic,stock_company", limitations=(), primary_key="symbol", examples=({"symbol": "000001"},)),
         ),
         ToolSpec(
-            name="tool_get_kline_history",
-            description="获取K线历史数据",
+            name="tool_get_daily_kline_history",
+            description="获取个股历史日线行情",
             domain="kline",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
-                _param("period", required=False, default="daily", description="K线周期", example="daily"),
                 _param("start", required=False, default="20240101", description="开始日期 YYYYMMDD", example="20240301"),
                 _param("end", required=False, default="", description="结束日期 YYYYMMDD", example="20240401"),
                 _param("adj", required=False, default="qfq", description="复权类型", example="qfq"),
             ),
-            return_fields=("date", "open", "high", "low", "close", "volume", "amount"),
-            service=_service("finance_data.service.kline", "kline_history", "get_kline_history"),
+            return_fields=("date", "open", "high", "low", "close", "volume", "amount", "pct_chg"),
+            service=_service("finance_data.service.kline", "daily_kline_history", "get_daily_kline_history"),
             providers=(
-                _provider("akshare", "finance_data.provider.akshare.kline.history:AkshareKlineHistory", "get_kline_history"),
-                _provider("tushare", "finance_data.provider.tushare.kline.history:TushareKlineHistory", "get_kline_history", available_if="tushare_token"),
-                _provider("xueqiu", "finance_data.provider.xueqiu.kline.history:XueqiuKlineHistory", "get_kline_history", available_if="xueqiu_cookie"),
-                _provider("baostock", "finance_data.provider.baostock.kline.history:BaostockKlineHistory", "get_kline_history"),
+                _provider("tushare", "finance_data.provider.tushare.kline.history:TushareKlineHistory", "get_daily_kline_history", available_if="tushare_token"),
+                _provider("akshare", "finance_data.provider.akshare.kline.history:AkshareKlineHistory", "get_daily_kline_history"),
             ),
-            probe=_probe({"symbol": "000001", "period": "daily", "start": "$RECENT-30", "end": "$RECENT", "adj": "qfq"}, required_fields=("date", "close")),
-            metadata=_meta(entity="stock", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="both", source_priority="akshare", api_name="stock_zh_a_hist", examples=({"symbol": "000001", "period": "daily", "start": "20240101"},)),
+            probe=_probe({"symbol": "000001", "start": "$RECENT-30", "end": "$RECENT", "adj": "qfq"}, required_fields=("date", "close")),
+            metadata=_meta(entity="stock", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="both", source_priority="tushare", api_name="daily", examples=({"symbol": "000001", "start": "20240101"},)),
+        ),
+        ToolSpec(
+            name="tool_get_weekly_kline_history",
+            description="获取个股历史周线行情（每日更新）",
+            domain="kline",
+            params=(
+                _param("symbol", required=True, description="股票代码", example="000001"),
+                _param("start", required=False, default="20240101", description="开始日期 YYYYMMDD", example="20240301"),
+                _param("end", required=False, default="", description="结束日期 YYYYMMDD", example="20240401"),
+                _param("adj", required=False, default="qfq", description="复权类型", example="qfq"),
+            ),
+            return_fields=("date", "open", "high", "low", "close", "volume", "amount", "pct_chg"),
+            service=_service("finance_data.service.kline", "weekly_kline_history", "get_weekly_kline_history"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.kline.history:TushareKlineHistory", "get_weekly_kline_history", available_if="tushare_token"),
+            ),
+            probe=_probe({"symbol": "000001", "start": "$RECENT-90", "end": "$RECENT", "adj": "qfq"}, required_fields=("date", "close")),
+            metadata=_meta(entity="stock", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="multi", source_priority="tushare", api_name="weekly", examples=({"symbol": "000001", "start": "20240101"},)),
+        ),
+        ToolSpec(
+            name="tool_get_monthly_kline_history",
+            description="获取个股历史月线行情（每日更新）",
+            domain="kline",
+            params=(
+                _param("symbol", required=True, description="股票代码", example="000001"),
+                _param("start", required=False, default="20240101", description="开始日期 YYYYMMDD", example="20240301"),
+                _param("end", required=False, default="", description="结束日期 YYYYMMDD", example="20240401"),
+                _param("adj", required=False, default="qfq", description="复权类型", example="qfq"),
+            ),
+            return_fields=("date", "open", "high", "low", "close", "volume", "amount", "pct_chg"),
+            service=_service("finance_data.service.kline", "monthly_kline_history", "get_monthly_kline_history"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.kline.history:TushareKlineHistory", "get_monthly_kline_history", available_if="tushare_token"),
+            ),
+            probe=_probe({"symbol": "000001", "start": "$RECENT-365", "end": "$RECENT", "adj": "qfq"}, required_fields=("date", "close")),
+            metadata=_meta(entity="stock", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="multi", source_priority="tushare", api_name="monthly", examples=({"symbol": "000001", "start": "20240101"},)),
         ),
         ToolSpec(
             name="tool_get_realtime_quote",
@@ -456,7 +492,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _provider("akshare", "finance_data.provider.akshare.north_flow.history:AkshareNorthStockHold", "get_north_stock_hold_history"),
                 _provider("tushare", "finance_data.provider.tushare.north_flow.history:TushareNorthStockHold", "get_north_stock_hold_history", available_if="tushare_token"),
             ),
-            probe=_probe({"market": "沪股通", "indicator": "5日排行"}, required_fields=("symbol",)),
+            probe=_probe({"market": "沪股通", "indicator": "5日排行", "symbol": "", "trade_date": ""}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=True, source="both", source_priority="akshare", api_name="stock_hsgt_hold_stock_em", limitations=("tushare hk_hold 自2024年8月20日起改为季度披露", "tushare close_price/pct_change/hold_market_cap/hold_total_ratio 为 0"), primary_key="symbol"),
         ),
         ToolSpec(
@@ -475,7 +511,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _provider("tushare", "finance_data.provider.tushare.margin.history:TushareMargin", "get_margin_history", available_if="tushare_token"),
                 _provider("akshare", "finance_data.provider.akshare.margin.history:AkshareMargin", "get_margin_history"),
             ),
-            probe=_probe({"trade_date": "$RECENT"}, required_fields=("date",)),
+            probe=_probe({"trade_date": "$RECENT", "start_date": "", "end_date": "", "exchange_id": ""}, required_fields=("date",)),
             metadata=_meta(entity="market", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20100101", source="both", source_priority="tushare", api_name="margin", limitations=("akshare SSE rzche 始终为 0（数据源不提供融资偿还额）",), primary_key="date"),
         ),
         ToolSpec(
@@ -646,4 +682,3 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
         ),
     ]
 )
-

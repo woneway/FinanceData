@@ -72,14 +72,12 @@ class TestXueqiuStockHistory:
         assert row["name"] == "平安银行"
         assert row["full_name"] == "平安银行股份有限公司"
         assert row["industry"] == "银行"
-        assert row["area"] == "广东"
         assert row["list_date"] == "20080101"
         assert row["chairman"] == "张三"
         assert row["reg_capital"] == 19405918198.0
         assert row["staff_num"] == 42000
         assert row["website"] == "https://bank.pingan.com"
         assert row["email"] == "ir@pingan.com"
-        assert row["reg_address"] == "深圳市"
 
     def test_sh_symbol_conversion(self, provider, mock_company_response):
         session = _mock_session(mock_company_response)

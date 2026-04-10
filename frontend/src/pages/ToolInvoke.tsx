@@ -13,6 +13,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { type InvokeResponse, type ToolInfo, invokeTool } from "@/lib/api"
 
 const DOMAIN_LABELS: Record<string, string> = {
@@ -73,6 +80,19 @@ interface ToolInvokeProps {
   tools: ToolInfo[]
 }
 
+function todayYmd() {
+  return new Date().toISOString().slice(0, 10).replaceAll("-", "")
+}
+
+function previousTradingDayYmd() {
+  const date = new Date()
+  date.setDate(date.getDate() - 1)
+  while (date.getDay() === 0 || date.getDay() === 6) {
+    date.setDate(date.getDate() - 1)
+  }
+  return date.toISOString().slice(0, 10).replaceAll("-", "")
+}
+
 export default function ToolInvoke({ tools }: ToolInvokeProps) {
   const [search, setSearch] = useState("")
   const [selectedTool, setSelectedTool] = useState<string>("")
@@ -101,6 +121,41 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
   const selectedToolInfo = tools.find((t) => t.name === selectedTool)
   const paramDefs = selectedToolInfo?.params ?? []
 
+  const getDisplayDefault = (paramName: string) => {
+    const klineTools = ["tool_get_daily_kline_history", "tool_get_weekly_kline_history", "tool_get_monthly_kline_history"]
+    if (klineTools.includes(selectedTool) && paramName === "start") {
+      return previousTradingDayYmd()
+    }
+    if (klineTools.includes(selectedTool) && paramName === "end") {
+      return todayYmd()
+    }
+    const param = paramDefs.find((p) => p.name === paramName)
+    return param?.default == null ? "" : String(param.default)
+  }
+
+  const buildParams = () => {
+    const mergedParams: Record<string, string> = {}
+    for (const param of paramDefs) {
+      const rawValue = params[param.name]
+      if (rawValue !== undefined) {
+        const trimmed = rawValue.trim()
+        if (trimmed) mergedParams[param.name] = trimmed
+        continue
+      }
+      if (param.default !== null && param.default !== undefined) {
+        const defaultValue = getDisplayDefault(param.name).trim()
+        if (defaultValue) mergedParams[param.name] = defaultValue
+      }
+    }
+    return mergedParams
+  }
+
+  const missingRequiredParams = () =>
+    paramDefs
+      .filter((param) => param.required)
+      .map((param) => param.name)
+      .filter((name) => !(buildParams()[name] ?? "").trim())
+
   const handleSelectTool = (name: string) => {
     setSelectedTool(name)
     setParams({})
@@ -121,11 +176,8 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
     if (!selectedTool) return
     setInvoking(true)
     setResults(new Map())
-
-    const cleanParams: Record<string, string> = {}
-    for (const [k, v] of Object.entries(params)) {
-      if (v.trim()) cleanParams[k] = v.trim()
-    }
+    const cleanParams = buildParams()
+    const missingParams = missingRequiredParams()
 
     const calls: { key: string; provider?: string }[] = []
     if (selectedProviders.size === 0) {
@@ -134,6 +186,23 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
       for (const p of selectedProviders) {
         calls.push({ key: p, provider: p })
       }
+    }
+
+    if (missingParams.length > 0) {
+      const newResults = new Map<string, InvokeResponse>()
+      for (const { key, provider } of calls) {
+        newResults.set(key, {
+          tool: selectedTool,
+          provider: provider ?? "auto",
+          status: "error",
+          response_time_ms: 0,
+          data: null,
+          error: `missing required params: ${missingParams.join(", ")}`,
+        })
+      }
+      setResults(newResults)
+      setInvoking(false)
+      return
     }
 
     const promises = calls.map(async ({ key, provider }) => {
@@ -276,16 +345,42 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                           {PARAM_LABELS[p.name] ?? p.name}
                           {p.required ? "" : "（可选）"}
                         </label>
-                        <Input
-                          placeholder={PARAM_PLACEHOLDERS[p.name] ?? String(p.default ?? "")}
-                          value={params[p.name] ?? String(p.default ?? "")}
-                          onChange={(e) =>
-                            setParams((prev) => ({
-                              ...prev,
-                              [p.name]: e.target.value,
-                            }))
-                          }
-                        />
+                        {p.choices && p.choices.length > 0 ? (
+                          <Select
+                            value={params[p.name] ?? getDisplayDefault(p.name)}
+                            onValueChange={(value) =>
+                              value == null
+                                ? undefined
+                                :
+                              setParams((prev) => ({
+                                ...prev,
+                                [p.name]: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {p.choices.map((choice) => (
+                                <SelectItem key={choice.value} value={choice.value}>
+                                  {choice.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            placeholder={PARAM_PLACEHOLDERS[p.name] ?? getDisplayDefault(p.name)}
+                            value={params[p.name] ?? getDisplayDefault(p.name)}
+                            onChange={(e) =>
+                              setParams((prev) => ({
+                                ...prev,
+                                [p.name]: e.target.value,
+                              }))
+                            }
+                          />
+                        )}
                       </div>
                     ))}
                   </div>

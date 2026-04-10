@@ -67,15 +67,12 @@ class TushareStockHistory:
 
         info = StockInfo(
             symbol=symbol, name=_str(b.get("name")), industry=_str(b.get("industry")),
-            list_date=_str(b.get("list_date")), area=_str(b.get("area")),
-            market=_str(b.get("market")), city=_co("city"), exchange=_co("exchange"),
-            ts_code=_str(b.get("ts_code")), full_name=_co("com_name"),
-            established_date=_co("setup_date"), main_business=_co("main_business"),
-            introduction=_co("introduction"), chairman=_co("chairman"),
-            legal_representative="", general_manager=_co("manager"),
-            secretary=_co("secretary"), reg_capital=_co_num("reg_capital"),
+            list_date=_str(b.get("list_date")), exchange=_co("exchange"),
+            full_name=_co("com_name"),
+            established_date=_co("setup_date"), chairman=_co("chairman"),
+            general_manager=_co("manager"), secretary=_co("secretary"),
+            reg_capital=_co_num("reg_capital") * 10000 if _co_num("reg_capital") is not None else None,  # tushare 返回万元，统一转元
             staff_num=_co_int("employees"), website=_co("website"),
-            email=_co("email"), reg_address=_co("office"),
-            actual_controller=_str(b.get("act_name")),
+            email=_co("email"),
         )
         return DataResult(data=[info.to_dict()], source="tushare", meta={"rows": 1, "symbol": symbol})

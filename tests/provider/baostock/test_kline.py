@@ -70,6 +70,36 @@ def test_fields_correct(provider, mock_rs):
     assert row["amount"] == 1025538832.67
 
 
+def test_first_row_pct_chg_uses_previous_close(provider):
+    rs = MagicMock()
+    rs.error_code = "0"
+    rs.fields = ["date", "code", "open", "high", "low", "close", "volume", "amount"]
+    rs._data = [
+        ["2026-03-31", "sz.000001", "11.00", "11.12", "10.98", "11.10", "88000000", "980000000.00"],
+        ["2026-04-01", "sz.000001", "11.09", "11.23", "11.08", "11.15", "91892539", "1025538832.67"],
+        ["2026-04-02", "sz.000001", "11.15", "11.30", "11.10", "11.22", "85000000", "950000000.00"],
+    ]
+    rs._idx = 0
+
+    def _next():
+        return rs._idx < len(rs._data)
+
+    def _get_row():
+        row = rs._data[rs._idx]
+        rs._idx += 1
+        return row
+
+    rs.next = _next
+    rs.get_row_data = _get_row
+
+    with patch("finance_data.provider.baostock.kline.history.baostock_session", _mock_session(rs)):
+        result = provider.get_kline_history("000001", "daily", "20260401", "20260402", "qfq")
+
+    assert [row["date"] for row in result.data] == ["20260401", "20260402"]
+    assert result.data[0]["pct_chg"] == 0.45
+    assert result.data[1]["pct_chg"] == 0.63
+
+
 def test_empty_raises(provider):
     from contextlib import contextmanager
 

@@ -1,4 +1,4 @@
-"""K线历史数据 - akshare 实现（腾讯源日线 + 新浪源分钟线）"""
+"""K线历史数据 - akshare 实现（仅腾讯源日线）"""
 import contextlib
 import datetime
 import logging
@@ -11,9 +11,6 @@ from finance_data.interface.types import DataResult, DataFetchError
 logger = logging.getLogger(__name__)
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
-_PERIODS_DAILY = {"daily", "weekly", "monthly"}
-_PERIODS_MIN = {"1min", "5min", "15min", "30min", "60min"}
-_MIN_MAP = {"1min": "1", "5min": "5", "15min": "15", "30min": "30", "60min": "60"}
 
 
 @contextlib.contextmanager
@@ -34,16 +31,6 @@ def _no_proxy():
 def _parse_date(val) -> str:
     s = str(val).strip().replace("-", "").replace(" ", "")[:8]
     return s if s.isdigit() else ""
-
-
-def _in_date_range(date_str: str, start: str, end: str) -> bool:
-    if not date_str:
-        return False
-    if start and date_str < start:
-        return False
-    if end and date_str > end:
-        return False
-    return True
 
 
 def _symbol_to_tx(symbol: str) -> str:
@@ -89,84 +76,45 @@ def _build_bars_from_tx(df, symbol: str, period: str, adj: str, start: str) -> l
     return [bar for date, bar in all_bars if date >= start]
 
 
+def _get_daily_tx(symbol: str, start: str, end: str, adj: str,
+                  adj_ak: str, func_name: str) -> DataResult:
+    """腾讯源日线。"""
+    try:
+        fetch_start = _prev_days(start, days=5)
+        with _no_proxy():
+            df = ak.stock_zh_a_hist_tx(
+                symbol=_symbol_to_tx(symbol),
+                start_date=fetch_start, end_date=end, adjust=adj_ak,
+            )
+        if df is not None and not df.empty:
+            bars = _build_bars_from_tx(df, symbol, "daily", adj, start)
+            if bars:
+                return DataResult(data=bars, source="akshare",
+                                  meta={"rows": len(bars), "symbol": symbol,
+                                        "period": "daily", "upstream": "tencent"})
+    except DataFetchError:
+        raise
+    except _NETWORK_ERRORS as e:
+        raise DataFetchError("akshare", func_name, str(e), "network") from e
+    except Exception as tx_err:
+        logger.info("腾讯源日线失败: %s", tx_err)
+
+    raise DataFetchError("akshare", func_name,
+                         f"无可用数据源: {symbol} daily {start}-{end}", "data")
+
 class AkshareKlineHistory:
     def get_kline_history(self, symbol: str, period: str, start: str, end: str,
                           adj: str = "qfq") -> DataResult:
         adj_ak = {"qfq": "qfq", "hfq": "hfq", "none": ""}.get(adj, adj)
 
-        if period in _PERIODS_DAILY:
-            return self._get_daily(symbol, period, start, end, adj, adj_ak)
-        elif period in _PERIODS_MIN:
-            return self._get_minute(symbol, period, start, end, adj, adj_ak)
+        if period == "daily":
+            return _get_daily_tx(symbol, start, end, adj, adj_ak, "get_kline_history")
         else:
             raise DataFetchError("akshare", "get_kline_history",
                                  f"不支持的 period: {period}", "data")
 
-    def _get_daily(self, symbol: str, period: str, start: str, end: str,
-                   adj: str, adj_ak: str) -> DataResult:
-        # 腾讯源（仅 daily）
-        if period == "daily":
-            try:
-                fetch_start = _prev_days(start, days=5)
-                with _no_proxy():
-                    df = ak.stock_zh_a_hist_tx(
-                        symbol=_symbol_to_tx(symbol),
-                        start_date=fetch_start, end_date=end, adjust=adj_ak,
-                    )
-                if df is not None and not df.empty:
-                    bars = _build_bars_from_tx(df, symbol, period, adj, start)
-                    if bars:
-                        return DataResult(data=bars, source="akshare",
-                                          meta={"rows": len(bars), "symbol": symbol,
-                                                "period": period, "upstream": "tencent"})
-            except DataFetchError:
-                raise
-            except _NETWORK_ERRORS as e:
-                raise DataFetchError("akshare", "get_kline_history", str(e), "network") from e
-            except Exception as tx_err:
-                logger.info("腾讯源失败: %s", tx_err)
-
-        # weekly/monthly 无腾讯源替代，直接报错
-        raise DataFetchError("akshare", "get_kline_history",
-                             f"无可用数据源: {symbol} {period} {start}-{end}", "data")
-
-    def _get_minute(self, symbol: str, period: str, start: str, end: str,
-                    adj: str, adj_ak: str) -> DataResult:
-        # 新浪源分钟线（替代原东财 stock_zh_a_hist_min_em）
-        sina_symbol = _symbol_to_tx(symbol)  # sh600519 格式
-        try:
-            with _no_proxy():
-                df = ak.stock_zh_a_minute(
-                    symbol=sina_symbol, period=_MIN_MAP[period],
-                    adjust=adj_ak,
-                )
-        except _NETWORK_ERRORS as e:
-            raise DataFetchError("akshare", "get_kline_history", str(e), "network") from e
-        except Exception as e:
-            raise DataFetchError("akshare", "get_kline_history", str(e), "data") from e
-
-        if df is None or df.empty:
-            raise DataFetchError("akshare", "get_kline_history",
-                                 f"无数据: {symbol} {period} {start}-{end}", "data")
-
-        bars = []
-        prev_close = 0.0
-        for _, row in df.iterrows():
-            date_str = _parse_date(row.get("day", ""))
-            if not _in_date_range(date_str, start, end):
-                continue
-            close = float(row.get("close", 0))
-            pct_chg = round((close - prev_close) / prev_close * 100, 2) if prev_close > 0 else 0.0
-            prev_close = close
-            bars.append(KlineBar(
-                symbol=symbol, date=date_str,
-                period=period,
-                open=float(row.get("open", 0)), high=float(row.get("high", 0)),
-                low=float(row.get("low", 0)), close=close,
-                volume=float(row.get("volume", 0)), amount=float(row.get("amount", 0)),
-                pct_chg=pct_chg, adj=adj,
-            ).to_dict())
-
-        return DataResult(data=bars, source="akshare",
-                          meta={"rows": len(bars), "symbol": symbol,
-                                "period": period, "upstream": "sina"})
+    def get_daily_kline_history(self, symbol: str, start: str, end: str,
+                                adj: str = "qfq") -> DataResult:
+        adj_ak = {"qfq": "qfq", "hfq": "hfq", "none": ""}.get(adj, adj)
+        return _get_daily_tx(symbol, start, end, adj, adj_ak,
+                             "get_daily_kline_history")

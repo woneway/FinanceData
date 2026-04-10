@@ -1,6 +1,7 @@
 """Adapters for reading ToolSpec registry."""
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 from finance_data.tool_specs.models import ProbeSpec, ProviderSpec, ServiceTargetSpec, ToolParamSpec, ToolSpec
@@ -55,3 +56,21 @@ def normalize_tool_params(name: str, params: dict[str, Any]) -> dict[str, Any]:
                 break
     return normalized
 
+
+def apply_tool_defaults(name: str, params: dict[str, Any]) -> dict[str, Any]:
+    """Fill missing optional params from ToolSpec and resolve dynamic date defaults."""
+    spec = get_tool_spec(name)
+    if spec is None:
+        return dict(params)
+
+    resolved = dict(params)
+    for param in spec.params:
+        if param.name in resolved:
+            continue
+        if param.required or param.default is None:
+            continue
+        value = param.default
+        if param.name == "end" and value == "":
+            value = datetime.date.today().strftime("%Y%m%d")
+        resolved[param.name] = value
+    return resolved

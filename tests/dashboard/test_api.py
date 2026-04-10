@@ -59,6 +59,18 @@ class TestGetTools:
             "sector_name", "start_date", "end_date", "period",
         ]
 
+    def test_kline_tools_split_by_period(self, client):
+        resp = client.get("/api/tools")
+        tools = {tool["name"]: tool for tool in resp.json()}
+        assert "tool_get_daily_kline_history" in tools
+        assert "tool_get_weekly_kline_history" in tools
+        assert "tool_get_monthly_kline_history" in tools
+        assert "tool_get_kline_history" not in tools
+        # 新工具不再有 period 参数
+        daily = tools["tool_get_daily_kline_history"]
+        param_names = [p["name"] for p in daily["params"]]
+        assert "period" not in param_names
+
 
 class TestGetProviders:
     def test_returns_list(self, client):
@@ -197,6 +209,30 @@ class TestInvokeTool:
             assert data["provider"] == "akshare"
             assert data["data"]["data"][0]["symbol"] == "000001"
 
+    def test_invoke_daily_kline_symbol_only_applies_defaults(self, client):
+        mock_result = DataResult(
+            data=[{"symbol": "000001", "date": "20260409", "close": 11.1}],
+            source="tushare",
+            meta={},
+        )
+        mock_dispatcher = MagicMock()
+        mock_dispatcher.get_daily_kline_history.return_value = mock_result
+        mock_module = MagicMock()
+        mock_module.daily_kline_history = mock_dispatcher
+
+        with patch("importlib.import_module", return_value=mock_module):
+            resp = client.post(
+                "/api/tools/tool_get_daily_kline_history",
+                json={"params": {"symbol": "000001"}},
+            )
+            data = resp.json()
+            assert data["status"] == "ok"
+            _, kwargs = mock_dispatcher.get_daily_kline_history.call_args
+            assert kwargs["symbol"] == "000001"
+            assert kwargs["start"] == "20240101"
+            assert len(kwargs["end"]) == 8
+            assert kwargs["adj"] == "qfq"
+
     def test_invoke_error(self, client):
         mock_module = MagicMock()
         mock_module.realtime_quote.get_realtime_quote.side_effect = Exception("network error")
@@ -242,6 +278,59 @@ class TestInvokeTool:
         data = resp.json()
         assert data["status"] == "ok"
         mock_instance.get_sector_member.assert_called_once_with(symbol="银行")
+
+    def test_invoke_direct_provider_uses_registered_provider_even_if_health_filter_would_hide_it(self, client):
+        mock_result = DataResult(
+            data=[{"symbol": "000001", "date": "20260324"}],
+            source="tushare",
+            meta={},
+        )
+        mock_instance = MagicMock()
+        mock_instance.get_daily_kline_history.return_value = mock_result
+        mock_cls = MagicMock(return_value=mock_instance)
+
+        with patch(
+            "finance_data.dashboard.health._import_class",
+            return_value=mock_cls,
+        ):
+            resp = client.post(
+                "/api/tools/tool_get_daily_kline_history",
+                json={
+                    "params": {
+                        "symbol": "000001",
+                        "start": "20260324",
+                        "end": "20260324",
+                    },
+                    "provider": "tushare",
+                },
+            )
+
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["provider"] == "tushare"
+        mock_instance.get_daily_kline_history.assert_called_once_with(
+            symbol="000001",
+            start="20260324",
+            end="20260324",
+            adj="qfq",
+        )
+
+    def test_invoke_direct_provider_rejects_unregistered_provider(self, client):
+        resp = client.post(
+            "/api/tools/tool_get_daily_kline_history",
+            json={
+                "params": {
+                    "symbol": "000001",
+                    "start": "20260324",
+                    "end": "20260324",
+                },
+                "provider": "not_real",
+            },
+        )
+
+        data = resp.json()
+        assert data["status"] == "error"
+        assert "not registered" in data["error"]
 
 
 class TestSPAFallback:

@@ -8,7 +8,7 @@ import logging
 from fastmcp import FastMCP
 
 from finance_data.service.stock import stock_history
-from finance_data.service.kline import kline_history
+from finance_data.service.kline import daily_kline_history, weekly_kline_history, monthly_kline_history
 from finance_data.service.realtime import realtime_quote
 from finance_data.service.index import index_quote, index_history
 from finance_data.service.sector import sector_rank, sector_list, sector_member, sector_history
@@ -46,7 +46,7 @@ async def tool_get_stock_info_history(symbol: str) -> str:
     """
     获取个股基本信息。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: tushare 优先，xueqiu fallback
     实时性: 收盘后更新（T+1_16:00）
     历史查询: 不支持
 
@@ -54,7 +54,8 @@ async def tool_get_stock_info_history(symbol: str) -> str:
         symbol: 股票代码，如 "000001"（平安银行）
 
     Returns:
-        JSON 格式的个股信息，包含股票代码、名称、行业、上市时间等
+        JSON 格式的个股信息，包含 symbol、name、industry、list_date、
+        area、reg_capital(注册资本元)、staff_num(员工数) 等
     """
     try:
         return _to_json(stock_history.get_stock_info_history(symbol))
@@ -63,34 +64,96 @@ async def tool_get_stock_info_history(symbol: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_kline_history(
+async def tool_get_daily_kline_history(
     symbol: str,
-    period: str = "daily",
     start: str = "20240101",
     end: str = "",
     adj: str = "qfq",
 ) -> str:
     """
-    获取 K线历史数据。
+    获取个股历史日线行情。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: tushare 优先，akshare(腾讯) fallback
     实时性: 收盘后更新（T+1_16:00）
     历史查询: 支持（1990年至今）
 
     Args:
         symbol: 股票代码，如 "000001"
-        period: daily/weekly/monthly/1min/5min/15min/30min/60min
         start: 开始日期 YYYYMMDD
         end: 结束日期 YYYYMMDD（默认当天）
         adj: qfq（前复权）/ hfq（后复权）/ none
 
     Returns:
-        JSON 列表，每条包含 date、open、high、low、close、volume、amount
+        JSON 列表，每条包含 date、open、high、low、close、volume(股)、amount(元)、pct_chg(%)
     """
     if not end:
         end = datetime.date.today().strftime("%Y%m%d")
     try:
-        result = kline_history.get_kline_history(symbol, period=period, start=start, end=end, adj=adj)
+        result = daily_kline_history.get_daily_kline_history(symbol, start=start, end=end, adj=adj)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_weekly_kline_history(
+    symbol: str,
+    start: str = "20240101",
+    end: str = "",
+    adj: str = "qfq",
+) -> str:
+    """
+    获取个股历史周线行情（每日更新，含当前未完成周）。
+
+    数据源: tushare
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 支持（1990年至今）
+
+    Args:
+        symbol: 股票代码，如 "000001"
+        start: 开始日期 YYYYMMDD
+        end: 结束日期 YYYYMMDD（默认当天）
+        adj: qfq（前复权）/ hfq（后复权）/ none
+
+    Returns:
+        JSON 列表，每条包含 date、open、high、low、close、volume(股)、amount(元)、pct_chg(%)
+    """
+    if not end:
+        end = datetime.date.today().strftime("%Y%m%d")
+    try:
+        result = weekly_kline_history.get_weekly_kline_history(symbol, start=start, end=end, adj=adj)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_monthly_kline_history(
+    symbol: str,
+    start: str = "20240101",
+    end: str = "",
+    adj: str = "qfq",
+) -> str:
+    """
+    获取个股历史月线行情（每日更新，含当前未完成月）。
+
+    数据源: tushare
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 支持（1990年至今）
+
+    Args:
+        symbol: 股票代码，如 "000001"
+        start: 开始日期 YYYYMMDD
+        end: 结束日期 YYYYMMDD（默认当天）
+        adj: qfq（前复权）/ hfq（后复权）/ none
+
+    Returns:
+        JSON 列表，每条包含 date、open、high、low、close、volume(股)、amount(元)、pct_chg(%)
+    """
+    if not end:
+        end = datetime.date.today().strftime("%Y%m%d")
+    try:
+        result = monthly_kline_history.get_monthly_kline_history(symbol, start=start, end=end, adj=adj)
         return _to_json(result)
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)

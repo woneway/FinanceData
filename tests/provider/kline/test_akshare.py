@@ -58,51 +58,28 @@ def test_get_kline_empty_raises_data_error(provider):
     assert exc.value.kind == "data"
 
 
-@pytest.fixture
-def mock_min_df():
-    """新浪源 stock_zh_a_minute 返回格式"""
-    return pd.DataFrame([{
-        "day": "2024-01-02 09:31:00", "open": 10.0, "high": 10.2,
-        "low": 9.9, "close": 10.1, "volume": 5000, "amount": 50500.0,
-    }])
+def test_unsupported_period_raises(provider):
+    """分钟级已下线，应抛出 DataFetchError"""
+    with pytest.raises(DataFetchError) as exc:
+        provider.get_kline_history("000001", period="1min", start="20240101", end="20240101")
+    assert exc.value.kind == "data"
 
 
-def test_get_kline_1min(provider, mock_min_df):
-    with patch("finance_data.provider.akshare.kline.history.ak.stock_zh_a_minute",
-               return_value=mock_min_df):
-        result = provider.get_kline_history("000001", period="1min", start="20240102", end="20240102")
-    assert result.data[0]["period"] == "1min"
-    assert result.data[0]["date"] == "20240102"
-    assert result.meta["upstream"] == "sina"
+# --- 新独立方法测试 ---
+
+def test_get_daily_kline_history(provider, mock_tx_df):
+    with patch("finance_data.provider.akshare.kline.history.ak.stock_zh_a_hist_tx",
+               return_value=mock_tx_df):
+        result = provider.get_daily_kline_history("000001", start="20240101", end="20240101")
+    assert isinstance(result, DataResult)
+    assert result.source == "akshare"
+    assert result.meta["upstream"] == "tencent"
+    assert result.data[0]["period"] == "daily"
 
 
-def test_get_kline_1min_respects_date_range(provider):
-    mock_df = pd.DataFrame([
-        {
-            "day": "2024-01-01 09:31:00",
-            "open": 9.8,
-            "high": 10.0,
-            "low": 9.7,
-            "close": 9.9,
-            "volume": 1000,
-            "amount": 9900.0,
-        },
-        {
-            "day": "2024-01-02 09:31:00",
-            "open": 10.0,
-            "high": 10.2,
-            "low": 9.9,
-            "close": 10.1,
-            "volume": 5000,
-            "amount": 50500.0,
-        },
-    ])
-
-    with patch("finance_data.provider.akshare.kline.history.ak.stock_zh_a_minute",
-               return_value=mock_df):
-        result = provider.get_kline_history(
-            "000001", period="1min", start="20240102", end="20240102"
-        )
-
-    assert len(result.data) == 1
-    assert result.data[0]["date"] == "20240102"
+def test_get_daily_kline_network_error(provider):
+    with patch("finance_data.provider.akshare.kline.history.ak.stock_zh_a_hist_tx",
+               side_effect=ConnectionError("timeout")):
+        with pytest.raises(DataFetchError) as exc:
+            provider.get_daily_kline_history("000001", start="20240101", end="20240101")
+    assert exc.value.kind == "network"

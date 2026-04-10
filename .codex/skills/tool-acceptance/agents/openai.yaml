@@ -1,0 +1,7 @@
+interface:
+  display_name: "Tool Acceptance"
+  short_description: "对单个接口做正式链路验收并输出签收结论"
+  default_prompt: "Use $tool-acceptance to formally accept a single FinanceData interface end-to-end."
+
+policy:
+  allow_implicit_invocation: true

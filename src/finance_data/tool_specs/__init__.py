@@ -1,5 +1,6 @@
 """Unified ToolSpec registry exports."""
 from finance_data.tool_specs.adapters import (
+    apply_tool_defaults,
     get_tool_params,
     get_tool_probe,
     get_tool_providers,
@@ -11,6 +12,7 @@ from finance_data.tool_specs.adapters import (
 from finance_data.tool_specs.models import (
     ProbeSpec,
     ProviderSpec,
+    ToolParamChoice,
     ServiceTargetSpec,
     ToolMetadataSpec,
     ToolParamSpec,
@@ -22,11 +24,13 @@ from finance_data.tool_specs.validators import validate_tool_specs
 __all__ = [
     "ProbeSpec",
     "ProviderSpec",
+    "ToolParamChoice",
     "ServiceTargetSpec",
     "ToolMetadataSpec",
     "ToolParamSpec",
     "ToolSpec",
     "TOOL_SPEC_REGISTRY",
+    "apply_tool_defaults",
     "get_tool_params",
     "get_tool_probe",
     "get_tool_providers",

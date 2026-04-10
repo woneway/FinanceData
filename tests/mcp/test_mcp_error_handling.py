@@ -9,11 +9,29 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-def test_kline_mcp_returns_error_json():
-    from finance_data.mcp.server import tool_get_kline_history
-    with patch("finance_data.mcp.server.kline_history") as mock:
-        mock.get_kline_history.side_effect = DataFetchError("test", "fn", "boom", "data")
-        result = _run(tool_get_kline_history("000001"))
+def test_daily_kline_mcp_returns_error_json():
+    from finance_data.mcp.server import tool_get_daily_kline_history
+    with patch("finance_data.mcp.server.daily_kline_history") as mock:
+        mock.get_daily_kline_history.side_effect = DataFetchError("test", "fn", "boom", "data")
+        result = _run(tool_get_daily_kline_history("000001"))
+    parsed = json.loads(result)
+    assert "error" in parsed
+
+
+def test_weekly_kline_mcp_returns_error_json():
+    from finance_data.mcp.server import tool_get_weekly_kline_history
+    with patch("finance_data.mcp.server.weekly_kline_history") as mock:
+        mock.get_weekly_kline_history.side_effect = DataFetchError("test", "fn", "boom", "data")
+        result = _run(tool_get_weekly_kline_history("000001"))
+    parsed = json.loads(result)
+    assert "error" in parsed
+
+
+def test_monthly_kline_mcp_returns_error_json():
+    from finance_data.mcp.server import tool_get_monthly_kline_history
+    with patch("finance_data.mcp.server.monthly_kline_history") as mock:
+        mock.get_monthly_kline_history.side_effect = DataFetchError("test", "fn", "boom", "data")
+        result = _run(tool_get_monthly_kline_history("000001"))
     parsed = json.loads(result)
     assert "error" in parsed
 

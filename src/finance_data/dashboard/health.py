@@ -312,7 +312,7 @@ def run_probes(
     else:
         tools = OrderedDict((spec.name, spec) for spec in list_tool_specs())
 
-    # Group tasks by tool (preserve registry order)
+    # Group provider tasks by tool (preserve registry order)
     tool_tasks: OrderedDict[str, List[Tuple[str, str, str, str]]] = OrderedDict()
     for tname in tools:
         for provider_name, class_path, method_name in get_providers_for_tool(tname):
@@ -320,21 +320,22 @@ def run_probes(
                 (tname, provider_name, class_path, method_name)
             )
 
-    if not tool_tasks:
+    if not tools:
         return
 
     # Run probes sequentially — akshare uses py_mini_racer (V8 engine)
     # which crashes under concurrent thread access.
-    for tname, tasks in tool_tasks.items():
+    for tname in tools:
         provider_data: Dict[str, list[dict]] = {}
 
-        for t, p, c, m in tasks:
+        # Provider probes (only if credentials available)
+        for t, p, c, m in tool_tasks.get(tname, []):
             health_result, data = _run_single_probe(t, p, c, m)
             yield health_result
             if data is not None and health_result.status == "ok":
                 provider_data[p] = data
 
-        # Service-level probe (through dispatcher fallback chain)
+        # Service-level probe (always, even if no provider probes ran)
         yield _run_service_probe(tname)
 
         # After all providers for this tool, run consistency check

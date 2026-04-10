@@ -1,0 +1,45 @@
+schema: spec-driven
+
+context: |
+  项目：FinanceData，面向金融数据场景，提供 CLI、MCP 和 Web 管理后台三类入口。
+  技术栈：Python、FastAPI、MCP server、React/Vite、pytest、Playwright。
+  目标架构：CLI/MCP/Web -> service -> provider 兼容层 -> 上游数据源。
+  领域约束：
+  - 外部使用方只应感知统一的 service 语义，不应关心底层 provider。
+  - Web 是管理后台，必须同时暴露 service 可用性、provider 健康度和验收状态。
+  - 数据语义以上游官方文档和原始接口返回为准，不能只依据现有适配代码推断。
+  - 涉及数据源接入时，必须先完成“上游对齐”：定位官方文档入口、实际调用原始接口、确认字段/单位/更新时间语义，再实现适配。
+  - provider 数量不是目标，优先控制复杂度：默认只启用主源和 fallback，其他源先关闭开关，单独验收后再放开。
+  当前偏好：
+  - 个股历史行情优先使用 tushare 和 akshare。
+  - xueqiu、baostock、tencent 可以保留实现，但默认不参与历史行情主交付链，除非明确需要且单独验收通过。
+  测试与交付要求：
+  - 行为变更必须更新相应 pytest 用例。
+  - 交付层变更需要验证 CLI、HTTP API、MCP 和 Web 管理后台。
+  - 前端管理后台验收优先使用 Playwright 做真实页面交互和渲染验证。
+  - 实现阶段按任务顺序推进，每完成一个逻辑任务组就运行相关测试。
+  - 如果实现偏离 proposal、specs 或 design，必须先同步制品，再继续实现。
+  - 验收阶段固定检查 Completeness、Correctness、Coherence，并显式记录未测试场景、spec drift、缺失追踪关系和上游未对齐项。
+
+rules:
+  proposal:
+    - 使用中文书写。
+    - 明确用户可见变化、非目标、兼容性影响、迁移影响和上线风险。
+    - 涉及数据源时，必须写出上游官方文档入口，说明该 change 依赖哪些官方定义。
+    - 一个 change 只聚焦一个逻辑意图，禁止把无关重构混入同一个 change。
+  specs:
+    - 使用中文书写。
+    - 只写行为契约，不写实现方案。
+    - 使用 RFC 2119 关键词和 Given/When/Then 场景结构。
+    - 不要写类名、函数名、框架名或文件路径。
+    - 数据接口必须显式定义：更新时效、字段含义、单位、未完成周期处理方式、错误行为。
+  design:
+    - 使用中文书写。
+    - 必须说明 service 对外语义、provider 策略、上游接口映射、兼容性影响和后台可观测性设计。
+    - 当不同 provider 或不同参数组合对应不同上游接口时，必须给出明确的 source-of-truth 映射表。
+    - 必须写清 breaking change、迁移策略和旧入口处理方式。
+  tasks:
+    - 使用中文书写。
+    - 每个任务都必须能追溯到至少一个 requirement 或 scenario。
+    - 任务应拆成小而可审查的单元，并写清验证方式。
+    - 必须包含正常路径、边界场景、后台可见性、回归覆盖和文档更新任务。

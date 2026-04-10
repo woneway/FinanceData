@@ -27,7 +27,7 @@ def mock_company_df():
         "chairman": "谢永林",
         "manager": "冀光恒",
         "secretary": "周强",
-        "reg_capital": 19405918198.0,
+        "reg_capital": 1940591.8198,  # tushare 原始单位: 万元
         "setup_date": "19871222",
         "province": "广东省",
         "city": "深圳市",
@@ -71,8 +71,7 @@ def test_get_stock_info_basic_fields(mock_basic_df, mock_company_df):
     assert row["name"] == "平安银行"
     assert row["industry"] == "银行"
     assert row["list_date"] == "19910403"
-    assert row["ts_code"] == "000001.SZ"
-    assert row["actual_controller"] == "无实际控制人"
+    assert row["exchange"] == "SZSE"
 
 
 def test_get_stock_info_company_fields(mock_basic_df, mock_company_df):
@@ -84,8 +83,7 @@ def test_get_stock_info_company_fields(mock_basic_df, mock_company_df):
     assert row["full_name"] == "平安银行股份有限公司"
     assert row["chairman"] == "谢永林"
     assert row["general_manager"] == "冀光恒"
-    assert row["reg_capital"] == 19405918198.0
-    assert row["city"] == "深圳市"
+    assert row["reg_capital"] == 19405918198.0  # 1940591.8198万元 × 10000 = 元
     assert row["exchange"] == "SZSE"
     assert row["staff_num"] == 41698
 

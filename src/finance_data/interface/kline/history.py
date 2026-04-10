@@ -28,5 +28,21 @@ class KlineBar:
 
 
 class KlineHistoryProtocol(Protocol):
+    """旧接口，保留供内部兼容。"""
     def get_kline_history(self, symbol: str, period: str, start: str, end: str,
                           adj: str) -> DataResult: ...
+
+
+class DailyKlineHistoryProtocol(Protocol):
+    def get_daily_kline_history(self, symbol: str, start: str, end: str,
+                                adj: str = "qfq") -> DataResult: ...
+
+
+class WeeklyKlineHistoryProtocol(Protocol):
+    def get_weekly_kline_history(self, symbol: str, start: str, end: str,
+                                 adj: str = "qfq") -> DataResult: ...
+
+
+class MonthlyKlineHistoryProtocol(Protocol):
+    def get_monthly_kline_history(self, symbol: str, start: str, end: str,
+                                  adj: str = "qfq") -> DataResult: ...

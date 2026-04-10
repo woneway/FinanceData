@@ -20,6 +20,7 @@ from finance_data.dashboard.models import (
     ToolInfo,
 )
 from finance_data.tool_specs import (
+    apply_tool_defaults,
     get_tool_service_target,
     get_tool_spec,
     list_tool_specs,
@@ -190,7 +191,8 @@ async def consistency_latest():
 
 @app.post("/api/tools/{tool_name}")
 async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
-    if get_tool_spec(tool_name) is None:
+    spec = get_tool_spec(tool_name)
+    if spec is None:
         return InvokeResponse(
             tool=tool_name, provider="unknown", status="error",
             error=f"unknown tool: {tool_name}",
@@ -199,26 +201,22 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
     chosen_provider = req.provider
     try:
         start = time.monotonic()
-        provider_params = normalize_tool_params(tool_name, req.params)
+        provider_params = normalize_tool_params(tool_name, apply_tool_defaults(tool_name, req.params))
 
         if chosen_provider:
             # Direct provider call — bypass dispatcher
-            from finance_data.dashboard.health import (
-                _import_class,
-                get_providers_for_tool,
-            )
-            provider_entries = get_providers_for_tool(tool_name)
+            from finance_data.dashboard.health import _import_class
             class_path = None
             method_name = None
-            for pname, cpath, mname in provider_entries:
-                if pname == chosen_provider:
-                    class_path = cpath
-                    method_name = mname
+            for provider in spec.providers:
+                if provider.name == chosen_provider:
+                    class_path = provider.class_path
+                    method_name = provider.method_name
                     break
             if not class_path:
                 return InvokeResponse(
                     tool=tool_name, provider=chosen_provider, status="error",
-                    error=f"provider '{chosen_provider}' not available for {tool_name}",
+                    error=f"provider '{chosen_provider}' not registered for {tool_name}",
                 )
             cls = _import_class(class_path)
             instance = cls()

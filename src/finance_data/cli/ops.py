@@ -100,32 +100,21 @@ def health_cmd(tool: str | None, as_json: bool) -> None:
 @click.command()
 @click.option("--include-pytest", is_flag=True, help="Also run pytest suite")
 @click.option("--include-dashboard", is_flag=True, help="Run dashboard API alignment check")
+@click.option("--include-smoke", is_flag=True, help="Run smoke tests (requires network)")
 @click.option("--json", "as_json", is_flag=True, help="Output JSON")
-def verify_cmd(include_pytest: bool, include_dashboard: bool, as_json: bool) -> None:
-    """Run consistency validators and optionally pytest."""
-    from finance_data.tool_specs.validators import (
-        validate_probe_params_against_mcp,
-        validate_service_targets,
-        validate_tool_specs,
+def verify_cmd(
+    include_pytest: bool,
+    include_dashboard: bool,
+    include_smoke: bool,
+    as_json: bool,
+) -> None:
+    """Run consistency validators and optionally pytest / smoke tests."""
+    from finance_data.verify import print_report, run_verify
+
+    report = run_verify(
+        include_smoke=include_smoke,
+        include_dashboard=include_dashboard,
     )
-
-    checks: dict[str, dict[str, list[str]]] = {}
-
-    checks["tool_specs"] = validate_tool_specs()
-    checks["service_targets"] = validate_service_targets()
-    checks["probe_params"] = validate_probe_params_against_mcp()
-
-    # ToolSpec ↔ ToolMeta ↔ MCP 三方一致性
-    from finance_data.provider.metadata.validator import validate_toolspec_registry_consistency
-    toolspec_results = validate_toolspec_registry_consistency()
-    toolspec_failures = {str(r): [r.message] for r in toolspec_results if not r.passed}
-    checks["toolspec_registry"] = toolspec_failures
-
-    if include_dashboard:
-        from finance_data.tool_specs.validators import validate_dashboard_tools_api_against_registry
-        checks["dashboard_api"] = validate_dashboard_tools_api_against_registry()
-
-    all_passed = all(not errors for errors in checks.values())
 
     pytest_ok = True
     if include_pytest:
@@ -139,26 +128,15 @@ def verify_cmd(include_pytest: bool, include_dashboard: bool, as_json: bool) -> 
         if not as_json and not pytest_ok:
             console.print(f"[red]pytest exited with code {ret.returncode}[/red]")
 
-    overall = all_passed and pytest_ok
+    overall = report.passed and pytest_ok
 
     if as_json:
-        output: dict = {"passed": overall, "checks": checks}
+        output = json.loads(report.model_dump_json())
+        output["passed"] = overall
         if include_pytest:
             output["pytest"] = {"exit_code": ret.returncode, "passed": pytest_ok}
-        click.echo(json.dumps(output, ensure_ascii=False, indent=2, default=str))
+        click.echo(json.dumps(output, ensure_ascii=False, indent=2))
     else:
-        for name, errors in checks.items():
-            if errors:
-                console.print(f"[red]FAIL[/red] {name}")
-                for tool, msgs in errors.items():
-                    for msg in msgs:
-                        console.print(f"  {tool}: {msg}")
-            else:
-                console.print(f"[green]PASS[/green] {name}")
-
-        if overall:
-            console.print("\n[bold green]All checks passed.[/bold green]")
-        else:
-            console.print("\n[bold red]Some checks failed.[/bold red]")
+        print_report(report)
 
     sys.exit(0 if overall else 1)

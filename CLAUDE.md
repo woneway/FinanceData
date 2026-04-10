@@ -239,12 +239,14 @@ def test_empty_raises():
 8. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 9. **更新本文件**：更新下方接口列表
 
-## 当前接口（33 个）
+## 当前接口（35 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
 | `tool_get_stock_info_history` | stock | 个股基本信息，tushare+xueqiu |
-| `tool_get_kline_history` | kline | K线历史数据（daily/weekly/monthly/分钟级），akshare(腾讯+新浪)+tushare+xueqiu |
+| `tool_get_daily_kline_history` | kline | 个股历史日线行情，tushare+akshare(腾讯) |
+| `tool_get_weekly_kline_history` | kline | 个股历史周线行情（每日更新），tushare |
+| `tool_get_monthly_kline_history` | kline | 个股历史月线行情（每日更新），tushare |
 | `tool_get_realtime_quote` | realtime | 实时行情（含 20 分钟缓存），tushare+xueqiu |
 | `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare(新浪)+tushare+xueqiu |
 | `tool_get_index_history` | index | 大盘指数历史 K线，akshare(新浪)+tushare+xueqiu |
@@ -277,10 +279,11 @@ def test_empty_raises():
 | `tool_get_margin` | margin | 融资融券汇总（按交易所），tushare+akshare(交易所) |
 | `tool_get_margin_detail` | margin | 融资融券个股明细，tushare+akshare(上交所)+xueqiu |
 
-### 已禁用接口（2 个）
+### 已下线接口
 
 | Tool | 原因 |
 |------|------|
+| `tool_get_kline_history` | 已拆分为 daily/weekly/monthly 三个独立工具，分钟级已下线 |
 | `tool_get_earnings_forecast_history` | 依赖东财 stock_yjyg_em，无 provider 实现 |
 | `tool_get_sector_capital_flow` | push2.eastmoney.com 域名不可达 |
 
