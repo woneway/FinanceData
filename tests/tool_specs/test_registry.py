@@ -23,17 +23,16 @@ def test_realtime_quote_toolspec_has_expected_service_and_providers():
     assert [provider.name for provider in spec.providers] == ["xueqiu"]
 
 
-def test_sector_history_toolspec_probe_and_aliases():
-    probe = get_tool_probe("tool_get_sector_history")
+def test_board_daily_toolspec_probe_defaults():
+    probe = get_tool_probe("tool_get_board_daily")
     assert probe is not None
-    assert probe.default_params["symbol"] == "银行"
+    assert probe.default_params["board_name"] == "银行"
 
     normalized = normalize_tool_params(
-        "tool_get_sector_history",
-        {"sector_name": "半导体", "start_date": "20240101"},
+        "tool_get_board_daily",
+        {"board_name": "半导体", "start_date": "20240101"},
     )
-    assert normalized["symbol"] == "半导体"
-    assert "sector_name" not in normalized
+    assert normalized["board_name"] == "半导体"
 
 
 def test_get_tool_service_target_returns_target():

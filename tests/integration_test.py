@@ -161,12 +161,12 @@ run("tool_get_index_history", "tushare",
     TushareIndexHistory().get_index_history, "000001.SH", "20250101", "20250320")
 
 
-section("6. sector — 行业板块涨跌排名")
+section("6. board — 东财板块索引")
 
-print("  [akshare] get_sector_rank...")
-from finance_data.provider.akshare.sector.realtime import AkshareSectorRank
-run("tool_get_sector_rank", "akshare",
-    AkshareSectorRank().get_sector_rank_realtime)
+print("  [tushare] get_board_index (行业板块)...")
+from finance_data.provider.tushare.board.index import TushareBoardIndex
+run("tool_get_board_index", "tushare",
+    TushareBoardIndex().get_board_index, "行业板块")
 
 
 section("7. chip — 个股筹码分布")
@@ -310,7 +310,7 @@ tool_seq = [
     "tool_get_realtime_quote",
     "tool_get_index_quote",
     "tool_get_index_history",
-    "tool_get_sector_rank",
+    "tool_get_board_index",
     "tool_get_chip_distribution",
     "tool_get_financial_summary",
     "tool_get_dividend",

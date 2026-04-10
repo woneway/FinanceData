@@ -63,11 +63,11 @@ def test_index_history_mcp_returns_error_json():
     assert "error" in parsed
 
 
-def test_sector_rank_mcp_returns_error_json():
-    from finance_data.mcp.server import tool_get_sector_rank_realtime
-    with patch("finance_data.mcp.server.sector_rank") as mock:
-        mock.get_sector_rank_realtime.side_effect = DataFetchError("test", "fn", "boom", "data")
-        result = _run(tool_get_sector_rank_realtime())
+def test_board_index_mcp_returns_error_json():
+    from finance_data.mcp.server import tool_get_board_index
+    with patch("finance_data.mcp.server.board_index") as mock:
+        mock.get_board_index.side_effect = DataFetchError("test", "fn", "boom", "data")
+        result = _run(tool_get_board_index("行业板块"))
     parsed = json.loads(result)
     assert "error" in parsed
 

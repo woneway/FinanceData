@@ -27,7 +27,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   kline: "K线数据",
   realtime: "实时行情",
   index: "指数数据",
-  sector: "板块排名",
+  board: "板块数据",
   chip: "筹码分布",
   fundamental: "基本面",
   cashflow: "资金流向",
@@ -55,7 +55,8 @@ const PARAM_LABELS: Record<string, string> = {
   ts_code: "TS 代码",
   date: "日期",
   flag: "方向",
-  sector_name: "板块名称",
+  board_name: "板块名称",
+  idx_type: "板块类型",
 }
 
 const PARAM_PLACEHOLDERS: Record<string, string> = {
@@ -73,7 +74,8 @@ const PARAM_PLACEHOLDERS: Record<string, string> = {
   ts_code: "如 000001.SZ",
   date: "YYYYMMDD",
   flag: "买入/卖出",
-  sector_name: "如 银行/半导体",
+  board_name: "如 银行/人工智能",
+  idx_type: "行业板块/概念板块/地域板块",
 }
 
 interface ToolInvokeProps {

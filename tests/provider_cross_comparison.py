@@ -293,7 +293,6 @@ def test_single_provider_all_interfaces():
         ("realtime", lambda: __import__('finance_data.provider.akshare.realtime.realtime', fromlist=['AkshareRealtimeQuote']).AkshareRealtimeQuote().get_realtime_quote, "000001"),
         ("index_quote", lambda: __import__('finance_data.provider.akshare.index.realtime', fromlist=['AkshareIndexQuote']).AkshareIndexQuote().get_index_quote_realtime, "000001.SH"),
         ("index_history", lambda: __import__('finance_data.provider.akshare.index.history', fromlist=['AkshareIndexHistory']).AkshareIndexHistory().get_index_history, "000001.SH", "20250101", "20250110"),
-        ("sector_rank", lambda: __import__('finance_data.provider.akshare.sector.realtime', fromlist=['AkshareSectorRank']).AkshareSectorRank().get_sector_rank_realtime),
         ("market_stats", lambda: __import__('finance_data.provider.akshare.market.realtime', fromlist=['AkshareMarketRealtime']).AkshareMarketRealtime().get_market_stats_realtime),
     ]
 

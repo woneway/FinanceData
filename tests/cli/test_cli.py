@@ -164,15 +164,17 @@ def test_invoke_bad_param_format():
     assert "key=value" in result.output
 
 
-def test_invoke_alias_resolves_before_required_check():
-    """CLI should accept alias 'symbol' for canonical 'sector_name'."""
+def test_invoke_board_member():
     mock_result = _make_data_result(
-        [{"symbol": "000001", "name": "Test", "price": 10.5, "pct_chg": 1.2, "volume": 1000, "amount": 10000}],
-        source="akshare",
+        [{"symbol": "000001", "name": "Test", "board_name": "银行", "idx_type": "行业板块"}],
+        source="tushare",
     )
-    with patch("finance_data.service.sector.sector_member") as mock_svc:
-        mock_svc.get_sector_member.return_value = mock_result
-        result = runner.invoke(main, ["invoke", "tool_get_sector_member", "-p", "symbol=银行"])
+    with patch("finance_data.service.board.board_member") as mock_svc:
+        mock_svc.get_board_member.return_value = mock_result
+        result = runner.invoke(
+            main,
+            ["invoke", "tool_get_board_member", "-p", "board_name=银行", "-p", "idx_type=行业板块"],
+        )
     assert result.exit_code == 0
     assert "000001" in result.output
 

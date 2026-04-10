@@ -81,7 +81,7 @@ def _run_timed(name: str, fn: Any, level: str = "check") -> VerifyResult:
 _SMOKE_TOOLS = [
     "tool_get_trade_calendar_history",
     "tool_get_kline_history",
-    "tool_get_sector_rank_realtime",
+    "tool_get_board_index",
     "tool_get_index_quote_realtime",
     "tool_get_market_stats_realtime",
 ]

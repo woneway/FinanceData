@@ -54,9 +54,9 @@ class TestGetTools:
             {"name": "date", "required": True, "default": None}
         ]
 
-        sector_history = tools["tool_get_sector_history"]
-        assert [param["name"] for param in sector_history["params"]] == [
-            "sector_name", "start_date", "end_date", "period",
+        board_daily = tools["tool_get_board_daily"]
+        assert [param["name"] for param in board_daily["params"]] == [
+            "board_name", "idx_type", "trade_date", "start_date", "end_date",
         ]
 
     def test_kline_tools_split_by_period(self, client):
@@ -246,14 +246,14 @@ class TestInvokeTool:
             assert data["status"] == "error"
             assert "network error" in data["error"]
 
-    def test_invoke_provider_aliases_sector_name_to_symbol(self, client):
+    def test_invoke_direct_provider_board_member(self, client):
         mock_result = DataResult(
             data=[{"symbol": "601398", "name": "工商银行"}],
-            source="akshare",
+            source="tushare",
             meta={},
         )
         mock_instance = MagicMock()
-        mock_instance.get_sector_member.return_value = mock_result
+        mock_instance.get_board_member.return_value = mock_result
         mock_cls = MagicMock(return_value=mock_instance)
 
         with patch(
@@ -264,20 +264,24 @@ class TestInvokeTool:
                 "finance_data.dashboard.health.get_providers_for_tool",
                 return_value=[
                     (
-                        "akshare",
-                        "finance_data.provider.akshare.sector.member:AkshareSectorMember",
-                        "get_sector_member",
+                        "tushare",
+                        "finance_data.provider.tushare.board.member:TushareBoardMember",
+                        "get_board_member",
                     )
                 ],
             ):
                 resp = client.post(
-                    "/api/tools/tool_get_sector_member",
-                    json={"params": {"sector_name": "银行"}, "provider": "akshare"},
+                    "/api/tools/tool_get_board_member",
+                    json={"params": {"board_name": "银行", "idx_type": "行业板块"}, "provider": "tushare"},
                 )
 
         data = resp.json()
         assert data["status"] == "ok"
-        mock_instance.get_sector_member.assert_called_once_with(symbol="银行")
+        mock_instance.get_board_member.assert_called_once_with(
+            board_name="银行",
+            idx_type="行业板块",
+            trade_date="",
+        )
 
     def test_invoke_direct_provider_uses_registered_provider_even_if_health_filter_would_hide_it(self, client):
         mock_result = DataResult(

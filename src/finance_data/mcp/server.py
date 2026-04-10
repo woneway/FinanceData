@@ -11,7 +11,7 @@ from finance_data.service.stock import stock_history
 from finance_data.service.kline import daily_kline_history, weekly_kline_history, monthly_kline_history
 from finance_data.service.realtime import realtime_quote
 from finance_data.service.index import index_quote, index_history
-from finance_data.service.sector import sector_rank, sector_list, sector_member, sector_history
+from finance_data.service.board import board_index, board_member, board_daily
 from finance_data.service.chip import chip_history
 from finance_data.service.fundamental import financial_summary, dividend
 from finance_data.service.cashflow import stock_capital_flow
@@ -238,24 +238,19 @@ async def tool_get_index_history(
 
 
 @mcp.tool()
-async def tool_get_sector_rank_realtime() -> str:
+async def tool_get_board_index(
+    idx_type: str = "行业板块",
+    trade_date: str = "",
+) -> str:
     """
-    获取行业板块涨跌排名（按涨跌幅排序）。
+    获取东财板块索引/快照。
 
-    数据源: akshare(同花顺)
-    实时性: 盘中实时（T+0）
-    历史查询: 不支持
-
-    Args:
-        无参数
-
-    Returns:
-        JSON 列表，每条包含 name(板块名)、pct_chg(涨跌幅%)、
-        leader_stock(领涨股)、leader_pct_chg(领涨股涨跌幅%)、
-        up_count(上涨家数)、down_count(下跌家数)
+    数据源: tushare(dc_index)
+    实时性: 日频
+    历史查询: 支持按交易日
     """
     try:
-        result = sector_rank.get_sector_rank_realtime()
+        result = board_index.get_board_index(idx_type=idx_type, trade_date=trade_date)
         return _to_json(result)
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
@@ -785,80 +780,55 @@ async def tool_get_suspend(date: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_sector_list() -> str:
-    """
-    获取行业板块列表（含实时行情概览）。
-
-    数据源: akshare(东财)
-    实时性: 盘中实时（T+0）
-    历史查询: 不支持
-
-    Args:
-        无参数
-
-    Returns:
-        JSON 列表，每条包含：name(板块名称)、code(板块代码)、pct_chg(涨跌幅%)、
-        market_cap(总市值)、turnover(换手率)、up_count(上涨家数)、
-        down_count(下跌家数)、leader_stock(领涨股)
-    """
-    try:
-        return _to_json(sector_list.get_sector_list())
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
-
-
-@mcp.tool()
-async def tool_get_sector_member(sector_name: str) -> str:
-    """
-    获取行业板块成分股列表。
-
-    数据源: akshare(东财)
-    实时性: 盘中实时（T+0）
-    历史查询: 不支持
-
-    Args:
-        sector_name: 板块名称，如 "银行"、"半导体"
-
-    Returns:
-        JSON 列表，每条包含：symbol(代码)、name(名称)、price(最新价)、
-        pct_chg(涨跌幅%)、volume(成交量)、amount(成交额)
-    """
-    try:
-        return _to_json(sector_member.get_sector_member(sector_name))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
-
-
-@mcp.tool()
-async def tool_get_sector_history(
-    sector_name: str,
-    start_date: str = "20240101",
-    end_date: str = "",
-    period: str = "日k",
+async def tool_get_board_member(
+    board_name: str,
+    idx_type: str = "行业板块",
+    trade_date: str = "",
 ) -> str:
     """
-    获取行业板块历史K线行情。
+    获取东财板块成分股列表。
 
-    数据源: akshare(东财)
-    实时性: 收盘后更新（T+1_16:00）
-    历史查询: 支持
-
-    Args:
-        sector_name: 板块名称，如 "银行"、"半导体"
-        start_date: 开始日期 YYYYMMDD
-        end_date: 结束日期 YYYYMMDD（默认当天）
-        period: 日k/周k/月k
-
-    Returns:
-        JSON 列表，每条包含：date(YYYYMMDD)、open、close、high、low、
-        volume、amount、pct_chg(涨跌幅%)、amplitude(振幅%)、turnover(换手率%)
+    数据源: tushare(dc_index + dc_member)
+    实时性: 日频
+    历史查询: 支持按交易日
     """
-    if not end_date:
-        end_date = datetime.date.today().strftime("%Y%m%d")
     try:
-        return _to_json(sector_history.get_sector_history(
-            symbol=sector_name, start_date=start_date, end_date=end_date, period=period,
-        ))
+        return _to_json(
+            board_member.get_board_member(
+                board_name=board_name,
+                idx_type=idx_type,
+                trade_date=trade_date,
+            )
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_board_daily(
+    board_name: str,
+    idx_type: str = "行业板块",
+    trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
+) -> str:
+    """
+    获取东财板块日行情。
+
+    数据源: tushare(dc_index + dc_daily)
+    实时性: 日频
+    历史查询: 支持
+    """
+    try:
+        return _to_json(
+            board_daily.get_board_daily(
+                board_name=board_name,
+                idx_type=idx_type,
+                trade_date=trade_date,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        )
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
