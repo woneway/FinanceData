@@ -216,7 +216,7 @@ async def tool_get_index_history(
     """
     获取大盘指数历史 K线。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: tushare 优先，xueqiu fallback
     实时性: 收盘后更新（T+1_16:00）
     历史查询: 支持（1990年至今）
 

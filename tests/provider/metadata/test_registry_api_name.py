@@ -17,7 +17,7 @@ def test_index_quote_api_name_matches_actual():
 
 
 def test_index_history_api_name_matches_actual():
-    """index_history 实际用 stock_zh_index_daily_tx，非 index_zh_a_hist"""
+    """index_history 实际用 stock_zh_index_daily（新浪源）"""
     meta = TOOL_REGISTRY["tool_get_index_history"]
-    assert meta.api_name == "stock_zh_index_daily_tx", \
-        f"实际用腾讯源，registry 写了 {meta.api_name}"
+    assert meta.api_name == "index_daily", \
+        f"实际用 tushare index_daily，registry 写了 {meta.api_name}"

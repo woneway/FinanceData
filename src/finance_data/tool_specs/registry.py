@@ -228,15 +228,14 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start", required=False, default="20240101", description="开始日期 YYYYMMDD", example="20240301"),
                 _param("end", required=False, default="", description="结束日期 YYYYMMDD", example="20240401"),
             ),
-            return_fields=("date", "open", "high", "low", "close", "volume"),
+            return_fields=("symbol", "date", "open", "high", "low", "close", "volume", "amount", "pct_chg"),
             service=_service("finance_data.service.index", "index_history", "get_index_history"),
             providers=(
-                _provider("akshare", "finance_data.provider.akshare.index.history:AkshareIndexHistory", "get_index_history"),
                 _provider("tushare", "finance_data.provider.tushare.index.history:TushareIndexHistory", "get_index_history", available_if="tushare_token"),
                 _provider("xueqiu", "finance_data.provider.xueqiu.index.history:XueqiuIndexHistory", "get_index_history", available_if="xueqiu_cookie"),
             ),
             probe=_probe({"symbol": "000001.SH", "start": "$RECENT-30", "end": "$RECENT"}, required_fields=("date", "close")),
-            metadata=_meta(entity="index", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="both", source_priority="akshare", api_name="stock_zh_index_daily_tx", examples=({"symbol": "000001.SH", "start": "20240101"},)),
+            metadata=_meta(entity="index", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="both", source_priority="tushare", api_name="index_daily", examples=({"symbol": "000001.SH", "start": "20240101"},)),
         ),
         ToolSpec(
             name="tool_get_sector_rank_realtime",

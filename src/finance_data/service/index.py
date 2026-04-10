@@ -6,7 +6,6 @@ from finance_data.interface.index.realtime import IndexQuoteProtocol
 from finance_data.interface.index.history import IndexHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.akshare.index.realtime import AkshareIndexQuote
-from finance_data.provider.akshare.index.history import AkshareIndexHistory
 from finance_data.provider.xueqiu.client import has_login_cookie
 
 logger = logging.getLogger(__name__)
@@ -48,7 +47,8 @@ def _build_index_quote() -> _IndexQuoteDispatcher:
 
 
 def _build_index_history() -> _IndexHistoryDispatcher:
-    providers: list[IndexHistoryProtocol] = [AkshareIndexHistory()]
+    # akshare(新浪源) 已移除：amount 始终为 0，会产生静默错误数据
+    providers: list[IndexHistoryProtocol] = []
     if os.getenv("TUSHARE_TOKEN"):
         from finance_data.provider.tushare.index.history import TushareIndexHistory
         providers.append(TushareIndexHistory())
