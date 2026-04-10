@@ -189,7 +189,7 @@ async def tool_get_index_quote_realtime(symbol: str = "000001.SH") -> str:
     """
     获取大盘指数实时行情。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: akshare(新浪) 优先，xueqiu fallback
     实时性: 盘中实时（T+0）
     历史查询: 不支持
 
@@ -197,7 +197,8 @@ async def tool_get_index_quote_realtime(symbol: str = "000001.SH") -> str:
         symbol: 指数代码，如 000001.SH（上证）/ 399001.SZ（深证）
 
     Returns:
-        JSON 列表，每条包含 symbol、name、price、pct_chg、volume
+        JSON 列表，每条包含 symbol、name、price(点)、pct_chg(%)、
+        volume(股)、amount(元)、timestamp(ISO 8601)
     """
     try:
         result = index_quote.get_index_quote_realtime(symbol)

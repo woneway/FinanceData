@@ -39,11 +39,9 @@ class _IndexHistoryDispatcher:
 
 
 def _build_index_quote() -> _IndexQuoteDispatcher:
+    # 指数实时行情：akshare(新浪) 主源 + xueqiu fallback（两者都是盘中实时）
+    # tushare 已移除：index_daily(limit=1) 是收盘价，不是实时行情
     providers: list[IndexQuoteProtocol] = [AkshareIndexQuote()]
-    if os.getenv("TUSHARE_TOKEN"):
-        from finance_data.provider.tushare.index.realtime import TushareIndexQuote
-        providers.append(TushareIndexQuote())
-    # 雪球指数实时行情作为最后 fallback（无需 token，海外可达）
     from finance_data.provider.xueqiu.index.realtime import XueqiuIndexQuote
     providers.append(XueqiuIndexQuote())
     return _IndexQuoteDispatcher(providers=providers)

@@ -210,12 +210,11 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             params=(
                 _param("symbol", required=False, default="000001.SH", description="指数代码", example="000001.SH"),
             ),
-            return_fields=("symbol", "name", "price", "pct_chg", "volume"),
+            return_fields=("symbol", "name", "price", "pct_chg", "volume", "amount", "timestamp"),
             service=_service("finance_data.service.index", "index_quote", "get_index_quote_realtime"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.index.realtime:AkshareIndexQuote", "get_index_quote_realtime"),
-                _provider("tushare", "finance_data.provider.tushare.index.realtime:TushareIndexQuote", "get_index_quote_realtime", available_if="tushare_token"),
-                _provider("xueqiu", "finance_data.provider.xueqiu.index.realtime:XueqiuIndexQuote", "get_index_quote_realtime", available_if="xueqiu_cookie"),
+                _provider("xueqiu", "finance_data.provider.xueqiu.index.realtime:XueqiuIndexQuote", "get_index_quote_realtime"),
             ),
             probe=_probe({"symbol": "000001.SH"}, required_fields=("symbol", "price")),
             metadata=_meta(entity="index", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, cache_ttl=20, source="both", source_priority="akshare", api_name="stock_zh_index_spot_sina", primary_key="symbol", examples=({"symbol": "000001.SH"},)),
