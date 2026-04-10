@@ -248,7 +248,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _provider("akshare", "finance_data.provider.akshare.sector.realtime:AkshareSectorRank", "get_sector_rank_realtime"),
             ),
             probe=_probe({}, required_fields=("name", "pct_chg")),
-            metadata=_meta(entity="sector", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_board_industry_name_em", limitations=("tushare 无此接口",), primary_key="name"),
+            metadata=_meta(entity="sector", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_board_industry_name_em", limitations=(), primary_key="name"),
         ),
         ToolSpec(
             name="tool_get_chip_distribution_history",
