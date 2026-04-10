@@ -242,7 +242,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             description="获取行业板块涨跌排名",
             domain="sector",
             params=(),
-            return_fields=("rank", "name", "pct_chg", "volume", "amount"),
+            return_fields=("name", "pct_chg", "leader_stock", "leader_pct_chg", "up_count", "down_count"),
             service=_service("finance_data.service.sector", "sector_rank", "get_sector_rank_realtime"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.sector.realtime:AkshareSectorRank", "get_sector_rank_realtime"),

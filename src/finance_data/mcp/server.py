@@ -242,7 +242,7 @@ async def tool_get_sector_rank_realtime() -> str:
     """
     获取行业板块涨跌排名（按涨跌幅排序）。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: akshare(同花顺)
     实时性: 盘中实时（T+0）
     历史查询: 不支持
 
@@ -250,7 +250,9 @@ async def tool_get_sector_rank_realtime() -> str:
         无参数
 
     Returns:
-        JSON 列表，每条包含 rank、name、pct_chg、volume、amount
+        JSON 列表，每条包含 name(板块名)、pct_chg(涨跌幅%)、
+        leader_stock(领涨股)、leader_pct_chg(领涨股涨跌幅%)、
+        up_count(上涨家数)、down_count(下跌家数)
     """
     try:
         result = sector_rank.get_sector_rank_realtime()
