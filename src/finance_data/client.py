@@ -239,6 +239,16 @@ class FinanceData:
             trade_date=trade_date, limit_type=limit_type,
         )
 
+    def kpl_list(self, trade_date: str, tag: str = "涨停") -> DataResult:
+        """获取开盘啦榜单（涨停/跌停/炸板/自然涨停/竞价）"""
+        return self._get_service("pool", "kpl_list").get_kpl_list(
+            trade_date=trade_date, tag=tag,
+        )
+
+    def limit_step(self, trade_date: str) -> DataResult:
+        """获取涨停连板天梯"""
+        return self._get_service("pool", "limit_step").get_limit_step(trade_date=trade_date)
+
     # ------------------------------------------------------------------
     # lhb 追加 — 游资
     # ------------------------------------------------------------------
@@ -264,6 +274,10 @@ class FinanceData:
     def auction(self, trade_date: str) -> DataResult:
         """获取开盘集合竞价成交数据"""
         return self._get_service("market", "auction").get_auction(trade_date=trade_date)
+
+    def auction_close(self, trade_date: str) -> DataResult:
+        """获取收盘集合竞价成交数据"""
+        return self._get_service("market", "auction_close").get_auction_close(trade_date=trade_date)
 
     # ------------------------------------------------------------------
     # north_flow — 北向资金

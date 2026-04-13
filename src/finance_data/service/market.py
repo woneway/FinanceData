@@ -49,5 +49,27 @@ def _build_auction() -> _AuctionDispatcher:
     return _AuctionDispatcher(providers=providers)
 
 
+class _AuctionCloseDispatcher:
+    def __init__(self, providers: list):
+        self._providers = providers
+
+    def get_auction_close(self, trade_date: str) -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_auction_close(trade_date=trade_date)
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} 失败: {e}")
+        raise DataFetchError("all", "get_auction_close", "所有数据源均失败", "data")
+
+
+def _build_auction_close() -> _AuctionCloseDispatcher:
+    providers = []
+    if os.getenv("TUSHARE_TOKEN"):
+        from finance_data.provider.tushare.market.auction_close import TushareAuctionClose
+        providers.append(TushareAuctionClose())
+    return _AuctionCloseDispatcher(providers=providers)
+
+
 market_realtime = _build_market_realtime()
 auction = _build_auction()
+auction_close = _build_auction_close()

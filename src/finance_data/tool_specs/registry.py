@@ -794,5 +794,54 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+0", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="stk_auction", primary_key="symbol"),
             display_name="开盘竞价",
         ),
+        ToolSpec(
+            name="tool_get_kpl_list_daily",
+            description="获取开盘啦榜单数据",
+            domain="pool",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+                _param("tag", required=False, default="涨停", description="榜单类型", example="涨停", choices=(("涨停", "涨停"), ("跌停", "跌停"), ("炸板", "炸板"), ("自然涨停", "自然涨停"), ("竞价", "竞价"))),
+            ),
+            return_fields=("symbol", "name", "pct_chg", "tag", "theme", "status", "lu_desc"),
+            service=_service("finance_data.service.pool", "kpl_list", "get_kpl_list"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.pool.kpl_list:TushareKplList", "get_kpl_list", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT", "tag": "涨停"}, required_fields=("symbol", "name")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+0", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="kpl_list", primary_key="symbol"),
+            display_name="开盘啦榜单",
+        ),
+        ToolSpec(
+            name="tool_get_limit_step_daily",
+            description="获取涨停连板天梯",
+            domain="pool",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+            ),
+            return_fields=("symbol", "name", "trade_date", "nums"),
+            service=_service("finance_data.service.pool", "limit_step", "get_limit_step"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.pool.limit_step:TushareLimitStep", "get_limit_step", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "nums")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="limit_step", primary_key="symbol"),
+            display_name="连板天梯",
+        ),
+        ToolSpec(
+            name="tool_get_auction_close_daily",
+            description="获取收盘集合竞价成交数据",
+            domain="market",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+            ),
+            return_fields=("symbol", "trade_date", "close", "volume", "amount", "vwap"),
+            service=_service("finance_data.service.market", "auction_close", "get_auction_close"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.market.auction_close:TushareAuctionClose", "get_auction_close", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "close")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="stk_auction_c", primary_key="symbol"),
+            display_name="收盘竞价",
+        ),
     ]
 )

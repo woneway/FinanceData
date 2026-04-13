@@ -28,9 +28,9 @@ from finance_data.service.daily_basic import daily_basic
 from finance_data.service.limit_price import limit_price
 from finance_data.service.suspend import suspend
 from finance_data.service.hot_rank import hot_rank, ths_hot
-from finance_data.service.pool import limit_list
+from finance_data.service.pool import limit_list, kpl_list, limit_step
 from finance_data.service.lhb import hm_list, hm_detail
-from finance_data.service.market import auction
+from finance_data.service.market import auction, auction_close
 from finance_data.interface.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -1028,6 +1028,58 @@ async def tool_get_auction_daily(trade_date: str) -> str:
     """
     try:
         return _to_json(auction.get_auction(trade_date=trade_date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_kpl_list_daily(
+    trade_date: str,
+    tag: str = "涨停",
+) -> str:
+    """
+    获取开盘啦榜单数据。
+
+    数据源: tushare(kpl_list)
+    实时性: 日频
+    历史查询: 支持按交易日
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD
+        tag: 涨停/跌停/炸板/自然涨停/竞价
+    """
+    try:
+        return _to_json(kpl_list.get_kpl_list(trade_date=trade_date, tag=tag))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_limit_step_daily(trade_date: str) -> str:
+    """
+    获取涨停连板天梯。
+
+    数据源: tushare(limit_step)
+    实时性: 日频
+    历史查询: 支持按交易日
+    """
+    try:
+        return _to_json(limit_step.get_limit_step(trade_date=trade_date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_auction_close_daily(trade_date: str) -> str:
+    """
+    获取收盘集合竞价成交数据。
+
+    数据源: tushare(stk_auction_c)
+    实时性: 日频
+    历史查询: 支持按交易日
+    """
+    try:
+        return _to_json(auction_close.get_auction_close(trade_date=trade_date))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 

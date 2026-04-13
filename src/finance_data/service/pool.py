@@ -86,8 +86,52 @@ def _build_limit_list() -> _LimitListDispatcher:
     return _LimitListDispatcher(providers=providers)
 
 
+class _KplListDispatcher:
+    def __init__(self, providers: list):
+        self._providers = providers
+
+    def get_kpl_list(self, trade_date: str, tag: str = "涨停") -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_kpl_list(trade_date=trade_date, tag=tag)
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} 失败: {e}")
+        raise DataFetchError("all", "get_kpl_list", "所有数据源均失败", "data")
+
+
+class _LimitStepDispatcher:
+    def __init__(self, providers: list):
+        self._providers = providers
+
+    def get_limit_step(self, trade_date: str) -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_limit_step(trade_date=trade_date)
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} 失败: {e}")
+        raise DataFetchError("all", "get_limit_step", "所有数据源均失败", "data")
+
+
+def _build_kpl_list() -> _KplListDispatcher:
+    providers = []
+    if os.getenv("TUSHARE_TOKEN"):
+        from finance_data.provider.tushare.pool.kpl_list import TushareKplList
+        providers.append(TushareKplList())
+    return _KplListDispatcher(providers=providers)
+
+
+def _build_limit_step() -> _LimitStepDispatcher:
+    providers = []
+    if os.getenv("TUSHARE_TOKEN"):
+        from finance_data.provider.tushare.pool.limit_step import TushareLimitStep
+        providers.append(TushareLimitStep())
+    return _LimitStepDispatcher(providers=providers)
+
+
 zt_pool = _ZtPoolDispatcher(providers=[AkshareZtPool()])
 strong_stocks = _StrongStocksDispatcher(providers=[AkshareStrongStocks()])
 previous_zt = _PreviousZtDispatcher(providers=[AksharePreviousZt()])
 zbgc_pool = _ZbgcPoolDispatcher(providers=[AkshareZbgcPool()])
 limit_list = _build_limit_list()
+kpl_list = _build_kpl_list()
+limit_step = _build_limit_step()
