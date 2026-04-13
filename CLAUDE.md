@@ -284,7 +284,7 @@ def test_empty_raises():
 8. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 9. **更新本文件**：更新下方接口列表
 
-## 当前接口（35 个）
+## 当前接口（42 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -309,10 +309,15 @@ def test_empty_raises():
 | `tool_get_lhb_active_traders_history` | lhb | 活跃游资营业部统计，akshare(新浪) |
 | `tool_get_lhb_trader_stat_history` | lhb | 营业部龙虎榜战绩排行，akshare(新浪) |
 | `tool_get_lhb_stock_detail_daily` | lhb | 个股某日龙虎榜席位明细，akshare(新浪) |
+| `tool_get_hm_list_snapshot` | lhb | 市场游资名录（昵称/描述/营业部），tushare |
+| `tool_get_hm_detail_history` | lhb | 游资每日交易明细（买卖股票/金额），tushare |
 | `tool_get_zt_pool_daily` | pool | 涨停股池（连板数/封板资金），akshare(东财) |
 | `tool_get_strong_stocks_daily` | pool | 强势股池（新高/量比），akshare(东财) |
 | `tool_get_previous_zt_daily` | pool | 昨日涨停今日表现，akshare(东财) |
 | `tool_get_zbgc_pool_daily` | pool | 炸板股池（冲板后开板），akshare(东财) |
+| `tool_get_limit_list_daily` | pool | 同花顺涨跌停榜单（涨停/连扳/炸板/跌停/冲刺），tushare |
+| `tool_get_kpl_list_daily` | pool | 开盘啦榜单（涨停/跌停/炸板/自然涨停/竞价），tushare |
+| `tool_get_limit_step_daily` | pool | 涨停连板天梯，tushare |
 | `tool_get_north_capital_snapshot` | north_flow | 北向资金日频资金流（沪深股通），akshare(东财) |
 | `tool_get_north_hold_daily` | north_flow | 北向资金持股明细，akshare(东财)+tushare |
 | `tool_get_margin_history` | margin | 融资融券汇总（按交易所），tushare+akshare(交易所) |
@@ -323,6 +328,8 @@ def test_empty_raises():
 | `tool_get_hot_rank_realtime` | market | 热股排行（东财人气榜），akshare(东财) |
 | `tool_get_ths_hot_daily` | market | 同花顺热股排行（含概念/热度/上榜理由），tushare |
 | `tool_get_suspend_daily` | market | 停牌股票信息，akshare(东财) |
+| `tool_get_auction_daily` | market | 开盘集合竞价成交（全市场），tushare |
+| `tool_get_auction_close_daily` | market | 收盘集合竞价成交（全市场），tushare |
 
 ### 已下线接口
 
