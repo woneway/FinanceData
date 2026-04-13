@@ -12,6 +12,11 @@ class DataResult:
     source: str
     meta: Dict[str, Any] = field(default_factory=dict)
 
+    def to_dataframe(self):
+        """转为 pandas DataFrame"""
+        import pandas as pd
+        return pd.DataFrame(self.data)
+
 
 class DataFetchError(Exception):
     """数据获取错误"""
