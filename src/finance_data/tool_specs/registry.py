@@ -629,6 +629,21 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_hot_rank_em", primary_key="rank"),
         ),
         ToolSpec(
+            name="tool_get_ths_hot",
+            description="获取同花顺热股排行",
+            domain="hot_rank",
+            params=(
+                _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
+            ),
+            return_fields=("rank", "symbol", "name", "pct_chg", "current_price", "hot", "concept"),
+            service=_service("finance_data.service.hot_rank", "ths_hot", "get_ths_hot"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.hot_rank.ths_hot:TushareThsHot", "get_ths_hot", available_if="tushare_token"),
+            ),
+            probe=_probe({}, required_fields=("rank", "symbol")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="ths_hot", primary_key="rank"),
+        ),
+        ToolSpec(
             name="tool_get_lhb_inst_detail",
             description="获取龙虎榜机构买卖每日统计",
             domain="lhb",

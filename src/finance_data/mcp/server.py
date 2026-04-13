@@ -27,7 +27,7 @@ from finance_data.service.margin import margin, margin_detail
 from finance_data.service.daily_basic import daily_basic
 from finance_data.service.limit_price import limit_price
 from finance_data.service.suspend import suspend
-from finance_data.service.hot_rank import hot_rank
+from finance_data.service.hot_rank import hot_rank, ths_hot
 from finance_data.interface.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -862,6 +862,23 @@ async def tool_get_hot_rank() -> str:
     """
     try:
         return _to_json(hot_rank.get_hot_rank_realtime())
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_ths_hot(
+    trade_date: str = "",
+) -> str:
+    """
+    获取同花顺热股排行。
+
+    数据源: tushare(ths_hot)
+    实时性: 日频（每半小时更新，取最新一期）
+    历史查询: 支持按交易日
+    """
+    try:
+        return _to_json(ths_hot.get_ths_hot(trade_date=trade_date))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 

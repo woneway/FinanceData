@@ -239,7 +239,7 @@ def test_empty_raises():
 8. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 9. **更新本文件**：更新下方接口列表
 
-## 当前接口（34 个）
+## 当前接口（35 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -260,6 +260,7 @@ def test_empty_raises():
 | `tool_get_limit_price` | limit_price | 涨跌停价格，tencent(腾讯API) |
 | `tool_get_suspend` | suspend | 停牌股票信息，akshare(东财) |
 | `tool_get_hot_rank` | hot_rank | 热股排行（东财人气榜），akshare(东财) |
+| `tool_get_ths_hot` | hot_rank | 同花顺热股排行（含概念/热度/上榜理由），tushare |
 | `tool_get_stock_capital_flow_realtime` | cashflow | 个股资金流向（主力净流入），xueqiu |
 | `tool_get_trade_calendar_history` | calendar | 交易日历（is_open 标记），tushare+akshare(新浪) |
 | `tool_get_market_stats_realtime` | market | 市场涨跌统计（盘中实时，涨/跌/平家数），akshare(乐估) |
