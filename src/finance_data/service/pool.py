@@ -1,5 +1,6 @@
-"""股票池 service - 统一对外入口（仅 akshare）"""
+"""股票池 service - 统一对外入口"""
 import logging
+import os
 
 from finance_data.interface.pool.history import (
     ZtPoolProtocol, StrongStocksProtocol, PreviousZtProtocol, ZbgcPoolProtocol,
@@ -64,7 +65,29 @@ class _ZbgcPoolDispatcher:
         raise DataFetchError("all", "get_zbgc_pool_history", "所有数据源均失败", "data")
 
 
+class _LimitListDispatcher:
+    def __init__(self, providers: list):
+        self._providers = providers
+
+    def get_limit_list(self, trade_date: str, limit_type: str = "涨停池") -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_limit_list(trade_date=trade_date, limit_type=limit_type)
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} 失败: {e}")
+        raise DataFetchError("all", "get_limit_list", "所有数据源均失败", "data")
+
+
+def _build_limit_list() -> _LimitListDispatcher:
+    providers = []
+    if os.getenv("TUSHARE_TOKEN"):
+        from finance_data.provider.tushare.pool.limit_list import TushareLimitList
+        providers.append(TushareLimitList())
+    return _LimitListDispatcher(providers=providers)
+
+
 zt_pool = _ZtPoolDispatcher(providers=[AkshareZtPool()])
 strong_stocks = _StrongStocksDispatcher(providers=[AkshareStrongStocks()])
 previous_zt = _PreviousZtDispatcher(providers=[AksharePreviousZt()])
 zbgc_pool = _ZbgcPoolDispatcher(providers=[AkshareZbgcPool()])
+limit_list = _build_limit_list()

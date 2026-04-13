@@ -728,5 +728,71 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="tencent", source_priority="tencent", api_name="qt.gtimg.cn", primary_key="symbol"),
             display_name="涨跌停价",
         ),
+        ToolSpec(
+            name="tool_get_limit_list_daily",
+            description="获取同花顺涨跌停榜单",
+            domain="pool",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+                _param("limit_type", required=False, default="涨停池", description="榜单类型", example="涨停池", choices=(("涨停池", "涨停池"), ("连扳池", "连扳池"), ("炸板池", "炸板池"), ("跌停池", "跌停池"), ("冲刺涨停", "冲刺涨停"))),
+            ),
+            return_fields=("symbol", "name", "pct_chg", "lu_desc", "tag", "status", "limit_amount"),
+            service=_service("finance_data.service.pool", "limit_list", "get_limit_list"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.pool.limit_list:TushareLimitList", "get_limit_list", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT", "limit_type": "涨停池"}, required_fields=("symbol", "name")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20231101", source="tushare", source_priority="tushare", api_name="limit_list_ths", primary_key="symbol"),
+            display_name="涨跌停榜单",
+        ),
+        ToolSpec(
+            name="tool_get_hm_list_snapshot",
+            description="获取市场游资名录",
+            domain="lhb",
+            params=(),
+            return_fields=("name", "desc", "orgs"),
+            service=_service("finance_data.service.lhb", "hm_list", "get_hm_list"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.lhb.hm_list:TushareHmList", "get_hm_list", available_if="tushare_token"),
+            ),
+            probe=_probe({}, required_fields=("name",)),
+            metadata=_meta(entity="hm", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="tushare", source_priority="tushare", api_name="hm_list", primary_key="name"),
+            display_name="游资名录",
+        ),
+        ToolSpec(
+            name="tool_get_hm_detail_history",
+            description="获取游资每日交易明细",
+            domain="lhb",
+            params=(
+                _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260408"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
+                _param("hm_name", required=False, default="", description="游资名称", example=""),
+            ),
+            return_fields=("trade_date", "symbol", "name", "buy_amount", "sell_amount", "net_amount", "hm_name"),
+            service=_service("finance_data.service.lhb", "hm_detail", "get_hm_detail"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.lhb.hm_detail:TushareHmDetail", "get_hm_detail", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "hm_name")),
+            metadata=_meta(entity="hm", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="hm_detail", primary_key="symbol"),
+            display_name="游资明细",
+        ),
+        ToolSpec(
+            name="tool_get_auction_daily",
+            description="获取开盘集合竞价成交数据",
+            domain="market",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+            ),
+            return_fields=("symbol", "trade_date", "price", "volume", "amount", "pre_close", "volume_ratio"),
+            service=_service("finance_data.service.market", "auction", "get_auction"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.market.auction:TushareAuction", "get_auction", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "price")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+0", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="stk_auction", primary_key="symbol"),
+            display_name="开盘竞价",
+        ),
     ]
 )

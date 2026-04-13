@@ -128,9 +128,61 @@ def _build_lhb_inst_detail() -> _LhbInstDetailDispatcher:
     return _LhbInstDetailDispatcher(providers=[AkshareLhbInstDetail()])
 
 
+class _HmListDispatcher:
+    def __init__(self, providers: list):
+        self._providers = providers
+
+    def get_hm_list(self) -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_hm_list()
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} 失败: {e}")
+        raise DataFetchError("all", "get_hm_list", "所有数据源均失败", "data")
+
+
+class _HmDetailDispatcher:
+    def __init__(self, providers: list):
+        self._providers = providers
+
+    def get_hm_detail(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+        hm_name: str = "",
+    ) -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_hm_detail(
+                    trade_date=trade_date, start_date=start_date,
+                    end_date=end_date, hm_name=hm_name,
+                )
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} 失败: {e}")
+        raise DataFetchError("all", "get_hm_detail", "所有数据源均失败", "data")
+
+
+def _build_hm_list() -> _HmListDispatcher:
+    import os
+    providers = []
+    if os.getenv("TUSHARE_TOKEN"):
+        from finance_data.provider.tushare.lhb.hm_list import TushareHmList
+        providers.append(TushareHmList())
+    return _HmListDispatcher(providers=providers)
+
+
+def _build_hm_detail() -> _HmDetailDispatcher:
+    import os
+    providers = []
+    if os.getenv("TUSHARE_TOKEN"):
+        from finance_data.provider.tushare.lhb.hm_detail import TushareHmDetail
+        providers.append(TushareHmDetail())
+    return _HmDetailDispatcher(providers=providers)
+
+
 lhb_detail = _build_lhb_detail()
 lhb_stock_stat = _build_lhb_stock_stat()
 lhb_active_traders = _build_lhb_active_traders()
 lhb_trader_stat = _build_lhb_trader_stat()
 lhb_stock_detail = _build_lhb_stock_detail()
 lhb_inst_detail = _build_lhb_inst_detail()
+hm_list = _build_hm_list()
+hm_detail = _build_hm_detail()

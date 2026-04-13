@@ -233,6 +233,38 @@ class FinanceData:
         """获取炸板股池"""
         return self._get_service("pool", "zbgc_pool").get_zbgc_pool_history(date)
 
+    def limit_list(self, trade_date: str, limit_type: str = "涨停池") -> DataResult:
+        """获取同花顺涨跌停榜单（涨停池/连扳池/炸板池/跌停池/冲刺涨停）"""
+        return self._get_service("pool", "limit_list").get_limit_list(
+            trade_date=trade_date, limit_type=limit_type,
+        )
+
+    # ------------------------------------------------------------------
+    # lhb 追加 — 游资
+    # ------------------------------------------------------------------
+
+    def hm_list(self) -> DataResult:
+        """获取市场游资名录"""
+        return self._get_service("lhb", "hm_list").get_hm_list()
+
+    def hm_detail(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+        hm_name: str = "",
+    ) -> DataResult:
+        """获取游资每日交易明细"""
+        return self._get_service("lhb", "hm_detail").get_hm_detail(
+            trade_date=trade_date, start_date=start_date,
+            end_date=end_date, hm_name=hm_name,
+        )
+
+    # ------------------------------------------------------------------
+    # market 追加 — 竞价
+    # ------------------------------------------------------------------
+
+    def auction(self, trade_date: str) -> DataResult:
+        """获取开盘集合竞价成交数据"""
+        return self._get_service("market", "auction").get_auction(trade_date=trade_date)
+
     # ------------------------------------------------------------------
     # north_flow — 北向资金
     # ------------------------------------------------------------------

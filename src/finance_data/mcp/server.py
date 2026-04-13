@@ -28,6 +28,9 @@ from finance_data.service.daily_basic import daily_basic
 from finance_data.service.limit_price import limit_price
 from finance_data.service.suspend import suspend
 from finance_data.service.hot_rank import hot_rank, ths_hot
+from finance_data.service.pool import limit_list
+from finance_data.service.lhb import hm_list, hm_detail
+from finance_data.service.market import auction
 from finance_data.interface.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -951,6 +954,80 @@ async def tool_get_limit_price_realtime(symbol: str) -> str:
     """
     try:
         return _to_json(limit_price.get_limit_price(symbol))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_limit_list_daily(
+    trade_date: str,
+    limit_type: str = "涨停池",
+) -> str:
+    """
+    获取同花顺涨跌停榜单。
+
+    数据源: tushare(limit_list_ths)
+    实时性: 日频（T+1_16:00）
+    历史查询: 支持按交易日
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD
+        limit_type: 涨停池/连扳池/炸板池/跌停池/冲刺涨停
+    """
+    try:
+        return _to_json(limit_list.get_limit_list(trade_date=trade_date, limit_type=limit_type))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_hm_list_snapshot() -> str:
+    """
+    获取市场游资名录。
+
+    数据源: tushare(hm_list)
+    实时性: 不定期更新
+    """
+    try:
+        return _to_json(hm_list.get_hm_list())
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_hm_detail_history(
+    trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    hm_name: str = "",
+) -> str:
+    """
+    获取游资每日交易明细。
+
+    数据源: tushare(hm_detail)
+    实时性: 日频
+    历史查询: 支持（trade_date 或 start_date/end_date）
+    """
+    try:
+        return _to_json(hm_detail.get_hm_detail(
+            trade_date=trade_date, start_date=start_date,
+            end_date=end_date, hm_name=hm_name,
+        ))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_auction_daily(trade_date: str) -> str:
+    """
+    获取开盘集合竞价成交数据。
+
+    数据源: tushare(stk_auction)
+    实时性: 日频（盘前更新）
+    历史查询: 支持按交易日
+    """
+    try:
+        return _to_json(auction.get_auction(trade_date=trade_date))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
