@@ -131,7 +131,7 @@ section("3. realtime — 实时行情")
 # akshare realtime 已禁用（东财源不可用，新浪源太慢）
 print("  [tushare] get_realtime_quote (000001)...")
 from finance_data.provider.tushare.realtime.realtime import TushareRealtimeQuote
-run("tool_get_realtime_quote", "tushare",
+run("tool_get_quote_realtime", "tushare",
     TushareRealtimeQuote().get_realtime_quote, "000001")
 
 
@@ -152,12 +152,12 @@ section("5. index — 大盘指数历史K线")
 
 print("  [akshare] get_index_history (000001.SH 20250101-20250320)...")
 from finance_data.provider.akshare.index.history import AkshareIndexHistory
-run("tool_get_index_history", "akshare",
+run("tool_get_index_kline_history", "akshare",
     AkshareIndexHistory().get_index_history, "000001.SH", "20250101", "20250320")
 
 print("  [tushare] get_index_history (000001.SH 20250101-20250320)...")
 from finance_data.provider.tushare.index.history import TushareIndexHistory
-run("tool_get_index_history", "tushare",
+run("tool_get_index_kline_history", "tushare",
     TushareIndexHistory().get_index_history, "000001.SH", "20250101", "20250320")
 
 
@@ -165,7 +165,7 @@ section("6. board — 东财板块索引")
 
 print("  [tushare] get_board_index (行业板块)...")
 from finance_data.provider.tushare.board.index import TushareBoardIndex
-run("tool_get_board_index", "tushare",
+run("tool_get_board_index_history", "tushare",
     TushareBoardIndex().get_board_index, "行业板块")
 
 
@@ -231,7 +231,7 @@ lhb_end = trade_date
 # akshare lhb 已禁用（依赖东财 stock_lhb_detail_em）
 print(f"  [tushare] get_lhb_detail ({trade_date})...")
 from finance_data.provider.tushare.lhb.history import TushareLhbDetail
-run("tool_get_lhb_detail", "tushare",
+run("tool_get_lhb_detail_history", "tushare",
     TushareLhbDetail().get_lhb_detail_history, trade_date, trade_date)
 
 # sections 15-18 (lhb_stock_stat, active_traders, trader_stat, stock_detail) 已禁用（东财源）
@@ -243,7 +243,7 @@ section("15. north_flow — 北向持股明细")
 # akshare 北向持股已禁用（依赖东财 stock_hsgt_hold_stock_em）
 print("  [tushare] get_north_stock_hold (600519 20250320)...")
 from finance_data.provider.tushare.north_flow.history import TushareNorthStockHold
-run("tool_get_north_stock_hold", "tushare",
+run("tool_get_north_hold_daily", "tushare",
     TushareNorthStockHold().get_north_stock_hold_history,
     symbol="600519", trade_date="20250320")
 
@@ -252,12 +252,12 @@ section("16. margin — 融资融券汇总")
 
 print(f"  [akshare] get_margin (trade_date={trade_date})...")
 from finance_data.provider.akshare.margin.history import AkshareMargin
-run("tool_get_margin", "akshare",
+run("tool_get_margin_history", "akshare",
     AkshareMargin().get_margin_history, trade_date=trade_date)
 
 print(f"  [tushare] get_margin (trade_date={trade_date})...")
 from finance_data.provider.tushare.margin.history import TushareMargin
-run("tool_get_margin", "tushare",
+run("tool_get_margin_history", "tushare",
     TushareMargin().get_margin_history, trade_date=trade_date)
 
 
@@ -265,12 +265,12 @@ section("17. margin — 融资融券个股明细")
 
 print(f"  [akshare] get_margin_detail (trade_date={trade_date})...")
 from finance_data.provider.akshare.margin.history import AkshareMarginDetail
-run("tool_get_margin_detail", "akshare",
+run("tool_get_margin_detail_history", "akshare",
     AkshareMarginDetail().get_margin_detail_history, trade_date=trade_date)
 
 print(f"  [tushare] get_margin_detail (trade_date={trade_date})...")
 from finance_data.provider.tushare.margin.history import TushareMarginDetail
-run("tool_get_margin_detail", "tushare",
+run("tool_get_margin_detail_history", "tushare",
     TushareMarginDetail().get_margin_detail_history, trade_date=trade_date)
 
 
@@ -307,19 +307,19 @@ lines = [
 tool_seq = [
     "tool_get_stock_info",
     "tool_get_kline",
-    "tool_get_realtime_quote",
+    "tool_get_quote_realtime",
     "tool_get_index_quote",
-    "tool_get_index_history",
-    "tool_get_board_index",
+    "tool_get_index_kline_history",
+    "tool_get_board_index_history",
     "tool_get_chip_distribution",
     "tool_get_financial_summary",
     "tool_get_dividend",
     "tool_get_trade_calendar",
     "tool_get_market_stats_realtime",
-    "tool_get_lhb_detail",
-    "tool_get_north_stock_hold",
-    "tool_get_margin",
-    "tool_get_margin_detail",
+    "tool_get_lhb_detail_history",
+    "tool_get_north_hold_daily",
+    "tool_get_margin_history",
+    "tool_get_margin_detail_history",
 ]
 
 STATUS_EMOJI = {"PASS": "✅", "FAIL": "❌", "SKIP": "⚠️"}

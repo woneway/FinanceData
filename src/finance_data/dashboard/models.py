@@ -34,6 +34,7 @@ class ToolInfo(BaseModel):
     name: str
     description: str
     domain: str
+    display_name: str = ""
     source: str
     source_priority: str
     freshness: str = ""

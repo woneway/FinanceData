@@ -19,7 +19,7 @@ runner = CliRunner()
 def test_tools_list():
     result = runner.invoke(main, ["tools"])
     assert result.exit_code == 0
-    assert "tool_get_daily_kline_history" in result.output
+    assert "tool_get_kline_daily_history" in result.output
 
 
 def test_tools_json():
@@ -28,20 +28,20 @@ def test_tools_json():
     data = json.loads(result.output)
     assert isinstance(data, list)
     names = [t["name"] for t in data]
-    assert "tool_get_daily_kline_history" in names
+    assert "tool_get_kline_daily_history" in names
 
 
 def test_tools_domain_filter():
     result = runner.invoke(main, ["tools", "--domain", "kline"])
     assert result.exit_code == 0
-    assert "tool_get_daily_kline_history" in result.output
+    assert "tool_get_kline_daily_history" in result.output
 
 
 def test_tools_domain_filter_empty():
     result = runner.invoke(main, ["tools", "--domain", "nonexistent"])
     assert result.exit_code == 0
     # Table header still shows but no tool rows
-    assert "tool_get_daily_kline_history" not in result.output
+    assert "tool_get_kline_daily_history" not in result.output
 
 
 # ------------------------------------------------------------------
@@ -49,17 +49,17 @@ def test_tools_domain_filter_empty():
 # ------------------------------------------------------------------
 
 def test_describe_known_tool():
-    result = runner.invoke(main, ["describe", "tool_get_daily_kline_history"])
+    result = runner.invoke(main, ["describe", "tool_get_kline_daily_history"])
     assert result.exit_code == 0
     assert "symbol" in result.output
     assert "tushare" in result.output
 
 
 def test_describe_json():
-    result = runner.invoke(main, ["describe", "tool_get_daily_kline_history", "--json"])
+    result = runner.invoke(main, ["describe", "tool_get_kline_daily_history", "--json"])
     assert result.exit_code == 0
     data = json.loads(result.output)
-    assert data["name"] == "tool_get_daily_kline_history"
+    assert data["name"] == "tool_get_kline_daily_history"
     assert "params" in data
     param_names = [p["name"] for p in data["params"]]
     assert "symbol" in param_names
@@ -109,7 +109,7 @@ def test_invoke_via_service():
     )
     with patch("finance_data.service.realtime.realtime_quote") as mock_svc:
         mock_svc.get_realtime_quote.return_value = mock_result
-        result = runner.invoke(main, ["invoke", "tool_get_realtime_quote", "-p", "symbol=000001"])
+        result = runner.invoke(main, ["invoke", "tool_get_quote_realtime", "-p", "symbol=000001"])
     assert result.exit_code == 0
     assert "000001" in result.output
 
@@ -121,10 +121,10 @@ def test_invoke_json():
     )
     with patch("finance_data.service.realtime.realtime_quote") as mock_svc:
         mock_svc.get_realtime_quote.return_value = mock_result
-        result = runner.invoke(main, ["invoke", "tool_get_realtime_quote", "-p", "symbol=000001", "--json"])
+        result = runner.invoke(main, ["invoke", "tool_get_quote_realtime", "-p", "symbol=000001", "--json"])
     assert result.exit_code == 0
     data = json.loads(result.output)
-    assert data["tool"] == "tool_get_realtime_quote"
+    assert data["tool"] == "tool_get_quote_realtime"
     assert len(data["data"]) == 1
 
 
@@ -135,10 +135,10 @@ def test_invoke_kline_symbol_only_applies_defaults():
     )
     with patch("finance_data.service.kline.daily_kline_history") as mock_svc:
         mock_svc.get_daily_kline_history.return_value = mock_result
-        result = runner.invoke(main, ["invoke", "tool_get_daily_kline_history", "-p", "symbol=000001", "--json"])
+        result = runner.invoke(main, ["invoke", "tool_get_kline_daily_history", "-p", "symbol=000001", "--json"])
     assert result.exit_code == 0
     data = json.loads(result.output)
-    assert data["tool"] == "tool_get_daily_kline_history"
+    assert data["tool"] == "tool_get_kline_daily_history"
     _, kwargs = mock_svc.get_daily_kline_history.call_args
     assert kwargs["symbol"] == "000001"
     assert kwargs["start"] == "20240101"
@@ -147,7 +147,7 @@ def test_invoke_kline_symbol_only_applies_defaults():
 
 
 def test_invoke_missing_required_param():
-    result = runner.invoke(main, ["invoke", "tool_get_realtime_quote"])
+    result = runner.invoke(main, ["invoke", "tool_get_quote_realtime"])
     assert result.exit_code == 1
     assert "missing required param" in result.output
 
@@ -159,7 +159,7 @@ def test_invoke_unknown_tool():
 
 
 def test_invoke_bad_param_format():
-    result = runner.invoke(main, ["invoke", "tool_get_realtime_quote", "-p", "no_equals"])
+    result = runner.invoke(main, ["invoke", "tool_get_quote_realtime", "-p", "no_equals"])
     assert result.exit_code == 1
     assert "key=value" in result.output
 
@@ -173,7 +173,7 @@ def test_invoke_board_member():
         mock_svc.get_board_member.return_value = mock_result
         result = runner.invoke(
             main,
-            ["invoke", "tool_get_board_member", "-p", "board_name=银行", "-p", "idx_type=行业板块"],
+            ["invoke", "tool_get_board_member_history", "-p", "board_name=银行", "-p", "idx_type=行业板块"],
         )
     assert result.exit_code == 0
     assert "000001" in result.output

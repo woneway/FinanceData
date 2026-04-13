@@ -58,6 +58,7 @@ async def get_tools() -> list[ToolInfo]:
             name=spec.name,
             description=spec.description,
             domain=spec.domain,
+            display_name=spec.display_name,
             source=meta.source,
             source_priority=meta.source_priority,
             freshness=meta.data_freshness,

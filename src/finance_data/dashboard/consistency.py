@@ -9,7 +9,7 @@ _ALWAYS_SKIP: Set[str] = {"source", "timestamp"}
 
 # Per-tool 跳过字段（已知跨源差异，非 bug）
 _TOOL_SKIP: Dict[str, Set[str]] = {
-    "tool_get_index_history": {"amount"},       # 新浪源不提供成交额，固定为 0
+    "tool_get_index_kline_history": {"amount"},       # 新浪源不提供成交额，固定为 0
     "tool_get_index_quote_realtime": {"name"},   # xueqiu API 对指数不返回 name
 }
 

@@ -85,3 +85,4 @@ class ToolSpec:
     providers: tuple[ProviderSpec, ...]
     probe: ProbeSpec
     metadata: ToolMetadataSpec
+    display_name: str = ""

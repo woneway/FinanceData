@@ -15,7 +15,7 @@ def test_toolspec_registry_matches_metadata_registry():
 
 
 def test_realtime_quote_toolspec_has_expected_service_and_providers():
-    spec = get_tool_spec("tool_get_realtime_quote")
+    spec = get_tool_spec("tool_get_quote_realtime")
     assert spec is not None
     assert spec.service.module_path == "finance_data.service.realtime"
     assert spec.service.object_name == "realtime_quote"
@@ -24,19 +24,19 @@ def test_realtime_quote_toolspec_has_expected_service_and_providers():
 
 
 def test_board_daily_toolspec_probe_defaults():
-    probe = get_tool_probe("tool_get_board_daily")
+    probe = get_tool_probe("tool_get_board_kline_history")
     assert probe is not None
     assert probe.default_params["board_name"] == "银行"
 
     normalized = normalize_tool_params(
-        "tool_get_board_daily",
+        "tool_get_board_kline_history",
         {"board_name": "半导体", "start_date": "20240101"},
     )
     assert normalized["board_name"] == "半导体"
 
 
 def test_get_tool_service_target_returns_target():
-    target = get_tool_service_target("tool_get_suspend")
+    target = get_tool_service_target("tool_get_suspend_daily")
     assert target is not None
     assert target.module_path == "finance_data.service.suspend"
     assert target.object_name == "suspend"

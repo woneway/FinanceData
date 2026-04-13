@@ -118,7 +118,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
     )
     for spec in [
         ToolSpec(
-            name="tool_get_stock_info_history",
+            name="tool_get_stock_info_snapshot",
             description="获取个股基本信息",
             domain="stock",
             params=(
@@ -132,9 +132,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("symbol",)),
             metadata=_meta(entity="stock_info", scope="history", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="both", source_priority="tushare", api_name="stock_basic,stock_company", limitations=(), primary_key="symbol", examples=({"symbol": "000001"},)),
+            display_name="个股基本信息",
         ),
         ToolSpec(
-            name="tool_get_daily_kline_history",
+            name="tool_get_kline_daily_history",
             description="获取个股历史日线行情",
             domain="kline",
             params=(
@@ -151,9 +152,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001", "start": "$RECENT-30", "end": "$RECENT", "adj": "qfq"}, required_fields=("date", "close")),
             metadata=_meta(entity="stock", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="both", source_priority="tushare", api_name="daily", examples=({"symbol": "000001", "start": "20240101"},)),
+            display_name="日线行情",
         ),
         ToolSpec(
-            name="tool_get_weekly_kline_history",
+            name="tool_get_kline_weekly_history",
             description="获取个股历史周线行情（每日更新）",
             domain="kline",
             params=(
@@ -169,9 +171,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001", "start": "$RECENT-90", "end": "$RECENT", "adj": "qfq"}, required_fields=("date", "close")),
             metadata=_meta(entity="stock", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="multi", source_priority="tushare", api_name="weekly", examples=({"symbol": "000001", "start": "20240101"},)),
+            display_name="周线行情",
         ),
         ToolSpec(
-            name="tool_get_monthly_kline_history",
+            name="tool_get_kline_monthly_history",
             description="获取个股历史月线行情（每日更新）",
             domain="kline",
             params=(
@@ -187,11 +190,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001", "start": "$RECENT-365", "end": "$RECENT", "adj": "qfq"}, required_fields=("date", "close")),
             metadata=_meta(entity="stock", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="multi", source_priority="tushare", api_name="monthly", examples=({"symbol": "000001", "start": "20240101"},)),
+            display_name="月线行情",
         ),
         ToolSpec(
-            name="tool_get_realtime_quote",
+            name="tool_get_quote_realtime",
             description="获取股票实时行情",
-            domain="realtime",
+            domain="quote",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
             ),
@@ -202,6 +206,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("symbol", "price")),
             metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, cache_ttl=20, source="multi", source_priority="xueqiu", api_name="quotec.json", primary_key="symbol", examples=({"symbol": "000001"},)),
+            display_name="实时行情",
         ),
         ToolSpec(
             name="tool_get_index_quote_realtime",
@@ -218,9 +223,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001.SH"}, required_fields=("symbol", "price")),
             metadata=_meta(entity="index", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, cache_ttl=20, source="both", source_priority="akshare", api_name="stock_zh_index_spot_sina", primary_key="symbol", examples=({"symbol": "000001.SH"},)),
+            display_name="指数实时",
         ),
         ToolSpec(
-            name="tool_get_index_history",
+            name="tool_get_index_kline_history",
             description="获取大盘指数历史K线",
             domain="index",
             params=(
@@ -236,9 +242,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001.SH", "start": "$RECENT-30", "end": "$RECENT"}, required_fields=("date", "close")),
             metadata=_meta(entity="index", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="both", source_priority="tushare", api_name="index_daily", examples=({"symbol": "000001.SH", "start": "20240101"},)),
+            display_name="指数K线",
         ),
         ToolSpec(
-            name="tool_get_board_index",
+            name="tool_get_board_index_history",
             description="获取东财板块索引/快照",
             domain="board",
             params=(
@@ -254,11 +261,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"idx_type": "行业板块"}, required_fields=("board_code", "board_name")),
             metadata=_meta(entity="board", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="dc_index", primary_key="board_code"),
+            display_name="板块索引",
         ),
         ToolSpec(
             name="tool_get_chip_distribution_history",
             description="获取个股筹码分布",
-            domain="chip",
+            domain="fundamental",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
             ),
@@ -270,6 +278,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("date",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="both", source_priority="akshare", api_name="stock_gpzy_plate_em", limitations=("筹码数据基于历史交易计算",), examples=({"symbol": "000001"},)),
+            display_name="筹码分布",
         ),
         ToolSpec(
             name="tool_get_financial_summary_history",
@@ -287,6 +296,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("period",)),
             metadata=_meta(entity="stock", scope="quarterly", data_freshness="quarterly", update_timing="quarterly", supports_history=True, history_start="19900101", source="both", source_priority="akshare", api_name="stock_financial_analysis_indicator", limitations=("财报季披露，延迟较大",), primary_key="period", examples=({"symbol": "000001"},)),
+            display_name="财务摘要",
         ),
         ToolSpec(
             name="tool_get_dividend_history",
@@ -304,9 +314,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("ex_date",)),
             metadata=_meta(entity="stock", scope="historical", data_freshness="historical", update_timing="quarterly", supports_history=True, source="both", source_priority="akshare", api_name="stock分红", primary_key="ex_date", examples=({"symbol": "000001"},)),
+            display_name="分红记录",
         ),
         ToolSpec(
-            name="tool_get_stock_capital_flow_realtime",
+            name="tool_get_capital_flow_realtime",
             description="获取个股资金流向",
             domain="cashflow",
             params=(
@@ -319,11 +330,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("date",)),
             metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_individual_fund_flow", limitations=("tushare 无个股资金流向接口", "盘中实时更新，收盘后数据更准确"), examples=({"symbol": "000001"},)),
+            display_name="资金流向",
         ),
         ToolSpec(
             name="tool_get_trade_calendar_history",
             description="获取交易日历",
-            domain="calendar",
+            domain="market",
             params=(
                 _param("start", required=True, description="开始日期 YYYYMMDD", example="20240301"),
                 _param("end", required=True, description="结束日期 YYYYMMDD", example="20240401"),
@@ -337,9 +349,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"start": "$RECENT-30", "end": "$RECENT"}, required_fields=("cal_date",)),
             metadata=_meta(entity="market", scope="historical", data_freshness="historical", update_timing="T+1_17:00", supports_history=True, history_start="19900101", source="both", source_priority="tushare", api_name="trade_cal", primary_key="cal_date", examples=({"start": "20240101", "end": "20240401"},)),
+            display_name="交易日历",
         ),
         ToolSpec(
-            name="tool_get_lhb_detail",
+            name="tool_get_lhb_detail_history",
             description="获取龙虎榜每日上榜详情",
             domain="lhb",
             params=(
@@ -354,9 +367,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"start_date": "$RECENT-7", "end_date": "$RECENT"}, required_fields=("date", "symbol")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20200101", source="both", source_priority="akshare", api_name="stock_lhb_detail_em", primary_key="date", examples=({"start_date": "20240401", "end_date": "20240409"},)),
+            display_name="龙虎榜详情",
         ),
         ToolSpec(
-            name="tool_get_lhb_stock_stat",
+            name="tool_get_lhb_stock_stat_history",
             description="获取个股龙虎榜上榜统计",
             domain="lhb",
             params=(
@@ -369,9 +383,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"period": "近一月"}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_lhb_ggtj_sina", primary_key="symbol"),
+            display_name="个股统计",
         ),
         ToolSpec(
-            name="tool_get_lhb_active_traders",
+            name="tool_get_lhb_active_traders_history",
             description="获取活跃游资营业部统计",
             domain="lhb",
             params=(
@@ -385,9 +400,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"start_date": "$RECENT-7", "end_date": "$RECENT"}, required_fields=("branch_name",)),
             metadata=_meta(entity="lhb", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_lhb_yytj_sina", primary_key="branch_name"),
+            display_name="活跃游资",
         ),
         ToolSpec(
-            name="tool_get_lhb_trader_stat",
+            name="tool_get_lhb_trader_stat_history",
             description="获取营业部龙虎榜战绩排行",
             domain="lhb",
             params=(
@@ -400,9 +416,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"period": "近一月"}, required_fields=("branch_name",)),
             metadata=_meta(entity="lhb", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_lhb_yytj_sina", primary_key="branch_name"),
+            display_name="营业部排行",
         ),
         ToolSpec(
-            name="tool_get_lhb_stock_detail",
+            name="tool_get_lhb_stock_detail_daily",
             description="获取个股龙虎榜席位明细",
             domain="lhb",
             params=(
@@ -417,9 +434,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "", "date": "$RECENT", "flag": "买入"}, required_fields=("symbol", "date")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_lhb_detail_daily_sina", primary_key="symbol"),
+            display_name="席位明细",
         ),
         ToolSpec(
-            name="tool_get_zt_pool",
+            name="tool_get_zt_pool_daily",
             description="获取涨停股池",
             domain="pool",
             params=(
@@ -432,9 +450,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"date": "$RECENT"}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_zt_pool_em", limitations=("tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"), primary_key="symbol"),
+            display_name="涨停股池",
         ),
         ToolSpec(
-            name="tool_get_strong_stocks",
+            name="tool_get_strong_stocks_daily",
             description="获取强势股池",
             domain="pool",
             params=(
@@ -447,9 +466,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"date": "$RECENT"}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_strong_list_em", limitations=("tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"), primary_key="symbol"),
+            display_name="强势股池",
         ),
         ToolSpec(
-            name="tool_get_previous_zt",
+            name="tool_get_previous_zt_daily",
             description="获取昨日涨停今日数据",
             domain="pool",
             params=(
@@ -462,9 +482,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"date": "$RECENT"}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_zt_pool_previous_em", limitations=("tushare 不支持此接口", "非实时；无历史查询"), primary_key="symbol"),
+            display_name="昨日涨停",
         ),
         ToolSpec(
-            name="tool_get_zbgc_pool",
+            name="tool_get_zbgc_pool_daily",
             description="获取炸板股池",
             domain="pool",
             params=(
@@ -477,9 +498,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"date": "$RECENT"}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_zbgc_em", limitations=("tushare 不支持此接口", "非实时，收盘后约15:30更新；无历史查询"), primary_key="symbol"),
+            display_name="炸板股池",
         ),
         ToolSpec(
-            name="tool_get_north_stock_hold",
+            name="tool_get_north_hold_daily",
             description="获取北向资金持股明细",
             domain="north_flow",
             params=(
@@ -496,9 +518,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"market": "沪股通", "indicator": "5日排行", "symbol": "", "trade_date": ""}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=True, source="both", source_priority="akshare", api_name="stock_hsgt_hold_stock_em", limitations=("tushare hk_hold 自2024年8月20日起改为季度披露", "tushare close_price/pct_change/hold_market_cap/hold_total_ratio 为 0"), primary_key="symbol"),
+            display_name="北向持股",
         ),
         ToolSpec(
-            name="tool_get_margin",
+            name="tool_get_margin_history",
             description="获取融资融券汇总数据",
             domain="margin",
             params=(
@@ -515,9 +538,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"trade_date": "$RECENT", "start_date": "", "end_date": "", "exchange_id": ""}, required_fields=("date",)),
             metadata=_meta(entity="market", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20100101", source="both", source_priority="tushare", api_name="margin", limitations=("akshare SSE rzche 始终为 0（数据源不提供融资偿还额）",), primary_key="date"),
+            display_name="两融汇总",
         ),
         ToolSpec(
-            name="tool_get_margin_detail",
+            name="tool_get_margin_detail_history",
             description="获取融资融券个股明细",
             domain="margin",
             params=(
@@ -535,6 +559,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"trade_date": "", "start_date": "$RECENT-7", "end_date": "$RECENT", "ts_code": "000001"}, required_fields=("date", "symbol")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20100101", source="both", source_priority="tushare", api_name="margin_detail", limitations=("akshare 仅 SSE，rqye/rqyl/rqchl/rzrqye 为 0（不含融券数据）",), primary_key="symbol"),
+            display_name="两融明细",
         ),
         ToolSpec(
             name="tool_get_market_stats_realtime",
@@ -548,9 +573,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({}, required_fields=("date",)),
             metadata=_meta(entity="market_stats", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_market_activity_legu", limitations=("tushare 无等效接口",), primary_key="date"),
+            display_name="涨跌统计",
         ),
         ToolSpec(
-            name="tool_get_market_north_capital",
+            name="tool_get_north_capital_snapshot",
             description="获取北向资金日频资金流（沪股通+深股通）",
             domain="north_flow",
             params=(),
@@ -561,11 +587,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({}, required_fields=("date",)),
             metadata=_meta(entity="market", scope="daily", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_hsgt_fund_flow_summary_em", limitations=("tushare 无等效接口",), primary_key="date"),
+            display_name="北向资金流",
         ),
         ToolSpec(
-            name="tool_get_suspend",
+            name="tool_get_suspend_daily",
             description="获取停牌股票信息",
-            domain="suspend",
+            domain="market",
             params=(
                 _param("date", required=True, description="交易日期 YYYYMMDD", example="20240408"),
             ),
@@ -576,9 +603,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"date": "$RECENT"}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_tfp_em", primary_key="symbol"),
+            display_name="停牌信息",
         ),
         ToolSpec(
-            name="tool_get_board_member",
+            name="tool_get_board_member_history",
             description="获取东财板块成分股列表",
             domain="board",
             params=(
@@ -595,9 +623,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"board_name": "银行", "idx_type": "行业板块"}, required_fields=("symbol", "name")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="dc_index,dc_member", primary_key="symbol"),
+            display_name="板块成分",
         ),
         ToolSpec(
-            name="tool_get_board_daily",
+            name="tool_get_board_kline_history",
             description="获取东财板块日行情",
             domain="board",
             params=(
@@ -614,11 +643,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"board_name": "银行", "idx_type": "行业板块", "start_date": "$RECENT-30", "end_date": "$RECENT"}, required_fields=("trade_date", "close")),
             metadata=_meta(entity="board", scope="historical", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="dc_index,dc_daily", primary_key="trade_date"),
+            display_name="板块行情",
         ),
         ToolSpec(
-            name="tool_get_hot_rank",
+            name="tool_get_hot_rank_realtime",
             description="获取热股排行（东财人气榜）",
-            domain="hot_rank",
+            domain="market",
             params=(),
             return_fields=("rank", "symbol", "name", "current", "pct_chg"),
             service=_service("finance_data.service.hot_rank", "hot_rank", "get_hot_rank_realtime"),
@@ -627,11 +657,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({}, required_fields=("rank", "symbol")),
             metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_hot_rank_em", primary_key="rank"),
+            display_name="东财人气榜",
         ),
         ToolSpec(
-            name="tool_get_ths_hot",
+            name="tool_get_ths_hot_daily",
             description="获取同花顺热股排行",
-            domain="hot_rank",
+            domain="market",
             params=(
                 _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
             ),
@@ -642,9 +673,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({}, required_fields=("rank", "symbol")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="ths_hot", primary_key="rank"),
+            display_name="同花顺热股",
         ),
         ToolSpec(
-            name="tool_get_lhb_inst_detail",
+            name="tool_get_lhb_inst_detail_history",
             description="获取龙虎榜机构买卖每日统计",
             domain="lhb",
             params=(
@@ -658,11 +690,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"start_date": "$RECENT-7", "end_date": "$RECENT"}, required_fields=("symbol", "date")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20200101", source="akshare", source_priority="akshare", api_name="stock_lhb_jgmmtj_em", primary_key="symbol"),
+            display_name="机构明细",
         ),
         ToolSpec(
-            name="tool_get_daily_basic",
+            name="tool_get_daily_basic_realtime",
             description="获取个股日频基本面指标（PE/PB/市值/换手率/量比）",
-            domain="daily_basic",
+            domain="quote",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
             ),
@@ -673,11 +706,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("symbol", "date")),
             metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="tencent", source_priority="tencent", api_name="qt.gtimg.cn", primary_key="symbol"),
+            display_name="日频指标",
         ),
         ToolSpec(
-            name="tool_get_limit_price",
+            name="tool_get_limit_price_realtime",
             description="获取个股涨跌停价格",
-            domain="limit_price",
+            domain="quote",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
             ),
@@ -688,6 +722,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("symbol", "limit_up", "limit_down")),
             metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="tencent", source_priority="tencent", api_name="qt.gtimg.cn", primary_key="symbol"),
+            display_name="涨跌停价",
         ),
     ]
 )

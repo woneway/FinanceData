@@ -49,12 +49,12 @@ class TestGetTools:
     def test_tool_exposes_signature_params(self, client):
         resp = client.get("/api/tools")
         tools = {tool["name"]: tool for tool in resp.json()}
-        suspend = tools["tool_get_suspend"]
+        suspend = tools["tool_get_suspend_daily"]
         assert suspend["params"] == [
             {"name": "date", "required": True, "default": None}
         ]
 
-        board_daily = tools["tool_get_board_daily"]
+        board_daily = tools["tool_get_board_kline_history"]
         assert [param["name"] for param in board_daily["params"]] == [
             "board_name", "idx_type", "trade_date", "start_date", "end_date",
         ]
@@ -62,12 +62,12 @@ class TestGetTools:
     def test_kline_tools_split_by_period(self, client):
         resp = client.get("/api/tools")
         tools = {tool["name"]: tool for tool in resp.json()}
-        assert "tool_get_daily_kline_history" in tools
-        assert "tool_get_weekly_kline_history" in tools
-        assert "tool_get_monthly_kline_history" in tools
+        assert "tool_get_kline_daily_history" in tools
+        assert "tool_get_kline_weekly_history" in tools
+        assert "tool_get_kline_monthly_history" in tools
         assert "tool_get_kline_history" not in tools
         # 新工具不再有 period 参数
-        daily = tools["tool_get_daily_kline_history"]
+        daily = tools["tool_get_kline_daily_history"]
         param_names = [p["name"] for p in daily["params"]]
         assert "period" not in param_names
 
@@ -93,7 +93,7 @@ class TestGetProviders:
 class TestHealthProbes:
     def test_health_all_returns_sse(self, client):
         mock_result = HealthResult(
-            tool="tool_get_realtime_quote",
+            tool="tool_get_quote_realtime",
             provider="akshare",
             status="ok",
             response_time_ms=150.0,
@@ -111,7 +111,7 @@ class TestHealthProbes:
             data_lines = [l for l in lines if l.startswith("data: ")]
             assert len(data_lines) >= 2  # result + [DONE]
             first = json.loads(data_lines[0].removeprefix("data: "))
-            assert first["tool"] == "tool_get_realtime_quote"
+            assert first["tool"] == "tool_get_quote_realtime"
             assert first["status"] == "ok"
             assert data_lines[-1] == "data: [DONE]"
 
@@ -201,7 +201,7 @@ class TestInvokeTool:
 
         with patch("importlib.import_module", return_value=mock_module):
             resp = client.post(
-                "/api/tools/tool_get_realtime_quote",
+                "/api/tools/tool_get_quote_realtime",
                 json={"params": {"symbol": "000001"}},
             )
             data = resp.json()
@@ -222,7 +222,7 @@ class TestInvokeTool:
 
         with patch("importlib.import_module", return_value=mock_module):
             resp = client.post(
-                "/api/tools/tool_get_daily_kline_history",
+                "/api/tools/tool_get_kline_daily_history",
                 json={"params": {"symbol": "000001"}},
             )
             data = resp.json()
@@ -239,7 +239,7 @@ class TestInvokeTool:
 
         with patch("importlib.import_module", return_value=mock_module):
             resp = client.post(
-                "/api/tools/tool_get_realtime_quote",
+                "/api/tools/tool_get_quote_realtime",
                 json={"params": {"symbol": "000001"}},
             )
             data = resp.json()
@@ -271,7 +271,7 @@ class TestInvokeTool:
                 ],
             ):
                 resp = client.post(
-                    "/api/tools/tool_get_board_member",
+                    "/api/tools/tool_get_board_member_history",
                     json={"params": {"board_name": "银行", "idx_type": "行业板块"}, "provider": "tushare"},
                 )
 
@@ -300,7 +300,7 @@ class TestInvokeTool:
             return_value=mock_cls,
         ):
             resp = client.post(
-                "/api/tools/tool_get_daily_kline_history",
+                "/api/tools/tool_get_kline_daily_history",
                 json={
                     "params": {
                         "symbol": "000001",
@@ -323,7 +323,7 @@ class TestInvokeTool:
 
     def test_invoke_direct_provider_rejects_unregistered_provider(self, client):
         resp = client.post(
-            "/api/tools/tool_get_daily_kline_history",
+            "/api/tools/tool_get_kline_daily_history",
             json={
                 "params": {
                     "symbol": "000001",

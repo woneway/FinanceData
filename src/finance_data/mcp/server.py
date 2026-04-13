@@ -42,7 +42,7 @@ def _to_json(result) -> str:
 
 
 @mcp.tool()
-async def tool_get_stock_info_history(symbol: str) -> str:
+async def tool_get_stock_info_snapshot(symbol: str) -> str:
     """
     获取个股基本信息。
 
@@ -64,7 +64,7 @@ async def tool_get_stock_info_history(symbol: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_daily_kline_history(
+async def tool_get_kline_daily_history(
     symbol: str,
     start: str = "20240101",
     end: str = "",
@@ -96,7 +96,7 @@ async def tool_get_daily_kline_history(
 
 
 @mcp.tool()
-async def tool_get_weekly_kline_history(
+async def tool_get_kline_weekly_history(
     symbol: str,
     start: str = "20240101",
     end: str = "",
@@ -128,7 +128,7 @@ async def tool_get_weekly_kline_history(
 
 
 @mcp.tool()
-async def tool_get_monthly_kline_history(
+async def tool_get_kline_monthly_history(
     symbol: str,
     start: str = "20240101",
     end: str = "",
@@ -160,7 +160,7 @@ async def tool_get_monthly_kline_history(
 
 
 @mcp.tool()
-async def tool_get_realtime_quote(symbol: str) -> str:
+async def tool_get_quote_realtime(symbol: str) -> str:
     """
     获取股票实时行情（含 20 分钟缓存）。
 
@@ -208,7 +208,7 @@ async def tool_get_index_quote_realtime(symbol: str = "000001.SH") -> str:
 
 
 @mcp.tool()
-async def tool_get_index_history(
+async def tool_get_index_kline_history(
     symbol: str = "000001.SH",
     start: str = "20240101",
     end: str = "",
@@ -238,7 +238,7 @@ async def tool_get_index_history(
 
 
 @mcp.tool()
-async def tool_get_board_index(
+async def tool_get_board_index_history(
     idx_type: str = "行业板块",
     trade_date: str = "",
     start_date: str = "",
@@ -331,7 +331,7 @@ async def tool_get_dividend_history(symbol: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_stock_capital_flow_realtime(symbol: str) -> str:
+async def tool_get_capital_flow_realtime(symbol: str) -> str:
     """
     获取个股资金流向（主力净流入等）。
 
@@ -374,7 +374,7 @@ async def tool_get_trade_calendar_history(start: str, end: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_lhb_detail(
+async def tool_get_lhb_detail_history(
     start_date: str,
     end_date: str,
 ) -> str:
@@ -406,7 +406,7 @@ async def tool_get_lhb_detail(
 
 
 @mcp.tool()
-async def tool_get_lhb_stock_stat(
+async def tool_get_lhb_stock_stat_history(
     period: str = "近一月",
 ) -> str:
     """
@@ -431,7 +431,7 @@ async def tool_get_lhb_stock_stat(
 
 
 @mcp.tool()
-async def tool_get_lhb_active_traders(
+async def tool_get_lhb_active_traders_history(
     start_date: str = "",
     end_date: str = "",
 ) -> str:
@@ -458,7 +458,7 @@ async def tool_get_lhb_active_traders(
 
 
 @mcp.tool()
-async def tool_get_lhb_trader_stat(
+async def tool_get_lhb_trader_stat_history(
     period: str = "近一月",
 ) -> str:
     """
@@ -483,7 +483,7 @@ async def tool_get_lhb_trader_stat(
 
 
 @mcp.tool()
-async def tool_get_lhb_stock_detail(
+async def tool_get_lhb_stock_detail_daily(
     symbol: str = "",
     date: str = "",
     flag: str = "买入",
@@ -511,7 +511,7 @@ async def tool_get_lhb_stock_detail(
 
 
 @mcp.tool()
-async def tool_get_north_stock_hold(
+async def tool_get_north_hold_daily(
     market: str = "沪股通",
     indicator: str = "5日排行",
     symbol: str = "",
@@ -547,7 +547,7 @@ async def tool_get_north_stock_hold(
 
 
 @mcp.tool()
-async def tool_get_margin(
+async def tool_get_margin_history(
     trade_date: str = "",
     start_date: str = "",
     end_date: str = "",
@@ -586,7 +586,7 @@ async def tool_get_margin(
 
 
 @mcp.tool()
-async def tool_get_margin_detail(
+async def tool_get_margin_detail_history(
     trade_date: str = "",
     start_date: str = "",
     end_date: str = "",
@@ -648,7 +648,7 @@ async def tool_get_market_stats_realtime() -> str:
 
 
 @mcp.tool()
-async def tool_get_zt_pool(date: str) -> str:
+async def tool_get_zt_pool_daily(date: str) -> str:
     """
     获取涨停股池（首板/连板检测）。
 
@@ -672,7 +672,7 @@ async def tool_get_zt_pool(date: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_strong_stocks(date: str) -> str:
+async def tool_get_strong_stocks_daily(date: str) -> str:
     """
     获取强势股池（60日新高/量比放大的龙头股）。
 
@@ -696,7 +696,7 @@ async def tool_get_strong_stocks(date: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_previous_zt(date: str) -> str:
+async def tool_get_previous_zt_daily(date: str) -> str:
     """
     获取昨日涨停今日数据（低吸检测：昨日涨停股的今日表现）。
 
@@ -719,7 +719,7 @@ async def tool_get_previous_zt(date: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_zbgc_pool(date: str) -> str:
+async def tool_get_zbgc_pool_daily(date: str) -> str:
     """
     获取炸板股池（今日冲板后开板，补充低吸候选）。
 
@@ -742,7 +742,7 @@ async def tool_get_zbgc_pool(date: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_market_north_capital() -> str:
+async def tool_get_north_capital_snapshot() -> str:
     """
     获取北向资金日频资金流（沪股通+深股通）。
 
@@ -765,7 +765,7 @@ async def tool_get_market_north_capital() -> str:
 
 
 @mcp.tool()
-async def tool_get_suspend(date: str) -> str:
+async def tool_get_suspend_daily(date: str) -> str:
     """
     获取停牌股票信息。
 
@@ -787,7 +787,7 @@ async def tool_get_suspend(date: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_board_member(
+async def tool_get_board_member_history(
     board_name: str,
     idx_type: str = "行业板块",
     trade_date: str = "",
@@ -816,7 +816,7 @@ async def tool_get_board_member(
 
 
 @mcp.tool()
-async def tool_get_board_daily(
+async def tool_get_board_kline_history(
     board_name: str,
     idx_type: str = "行业板块",
     trade_date: str = "",
@@ -845,7 +845,7 @@ async def tool_get_board_daily(
 
 
 @mcp.tool()
-async def tool_get_hot_rank() -> str:
+async def tool_get_hot_rank_realtime() -> str:
     """
     获取热股排行（东财人气榜）。
 
@@ -867,7 +867,7 @@ async def tool_get_hot_rank() -> str:
 
 
 @mcp.tool()
-async def tool_get_ths_hot(
+async def tool_get_ths_hot_daily(
     trade_date: str = "",
 ) -> str:
     """
@@ -884,7 +884,7 @@ async def tool_get_ths_hot(
 
 
 @mcp.tool()
-async def tool_get_lhb_inst_detail(
+async def tool_get_lhb_inst_detail_history(
     start_date: str,
     end_date: str,
 ) -> str:
@@ -911,7 +911,7 @@ async def tool_get_lhb_inst_detail(
 
 
 @mcp.tool()
-async def tool_get_daily_basic(symbol: str) -> str:
+async def tool_get_daily_basic_realtime(symbol: str) -> str:
     """
     获取个股日频基本面指标（PE/PB/市值/换手率/量比）。
 
@@ -934,7 +934,7 @@ async def tool_get_daily_basic(symbol: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_limit_price(symbol: str) -> str:
+async def tool_get_limit_price_realtime(symbol: str) -> str:
     """
     获取个股涨跌停价格。
 
