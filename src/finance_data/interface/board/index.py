@@ -24,7 +24,7 @@ class BoardIndexRow:
     level: Optional[str]
     leading_stock: str
     leading_stock_code: str
-    pct_change: float
+    pct_chg: float
     leading_pct: float
     total_mv: float
     turnover_rate: float
@@ -40,7 +40,7 @@ class BoardIndexRow:
             "level": self.level,
             "leading_stock": self.leading_stock,
             "leading_stock_code": self.leading_stock_code,
-            "pct_change": self.pct_change,
+            "pct_chg": self.pct_chg,
             "leading_pct": self.leading_pct,
             "total_mv": self.total_mv,
             "turnover_rate": self.turnover_rate,

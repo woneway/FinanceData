@@ -27,7 +27,7 @@ class BoardDailyRow:
     low: float
     close: float
     change: float
-    pct_change: float
+    pct_chg: float
     volume: float
     amount: float
     swing: float
@@ -45,7 +45,7 @@ class BoardDailyRow:
             "low": self.low,
             "close": self.close,
             "change": self.change,
-            "pct_change": self.pct_change,
+            "pct_chg": self.pct_chg,
             "volume": self.volume,
             "amount": self.amount,
             "swing": self.swing,

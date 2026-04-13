@@ -247,10 +247,9 @@ def test_empty_raises():
 | `tool_get_daily_kline_history` | kline | 个股历史日线行情，tushare+akshare(腾讯) |
 | `tool_get_weekly_kline_history` | kline | 个股历史周线行情（每日更新），tushare |
 | `tool_get_monthly_kline_history` | kline | 个股历史月线行情（每日更新），tushare |
-| `tool_get_realtime_quote` | realtime | 实时行情（含 20 分钟缓存），tushare+xueqiu |
-| `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare(新浪)+tushare+xueqiu |
-| `tool_get_index_history` | index | 大盘指数历史 K线，akshare(新浪)+tushare+xueqiu |
-| `tool_get_sector_rank_realtime` | sector | 行业板块涨跌排名，akshare(同花顺) |
+| `tool_get_realtime_quote` | realtime | 实时行情（含 20 分钟缓存），xueqiu |
+| `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare(新浪)+xueqiu |
+| `tool_get_index_history` | index | 大盘指数历史 K线，tushare+xueqiu |
 | `tool_get_board_index` | board | 东财板块索引/快照（行业/概念/地域），tushare |
 | `tool_get_board_member` | board | 东财板块成分股列表，tushare |
 | `tool_get_board_daily` | board | 东财板块日行情，tushare |
@@ -287,6 +286,7 @@ def test_empty_raises():
 | `tool_get_earnings_forecast_history` | 依赖东财 stock_yjyg_em，无 provider 实现 |
 | `tool_get_sector_capital_flow` | push2.eastmoney.com 域名不可达 |
 | `tool_get_sector_list` | push2.eastmoney.com 域名不可达（stock_board_industry_name_em） |
+| `tool_get_sector_rank_realtime` | 已被 tool_get_board_index (tushare dc_index) 替代 |
 | `tool_get_sector_member` | 已被 tool_get_board_member (tushare dc_member) 替代 |
 | `tool_get_sector_history` | 已被 tool_get_board_daily (tushare dc_daily) 替代 |
 

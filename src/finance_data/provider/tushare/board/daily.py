@@ -80,7 +80,7 @@ class TushareBoardDaily:
                 low=_flt(row.get("low")),
                 close=_flt(row.get("close")),
                 change=_flt(row.get("change")),
-                pct_change=_flt(row.get("pct_change")),
+                pct_chg=_flt(row.get("pct_change")),
                 volume=_flt(row.get("vol")),
                 amount=_flt(row.get("amount")),
                 swing=_flt(row.get("swing")),

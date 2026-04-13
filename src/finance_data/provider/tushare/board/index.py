@@ -75,7 +75,7 @@ class TushareBoardIndex:
                 level=_opt_str(row.get("level")),
                 leading_stock=str(row.get("leading", "")),
                 leading_stock_code=str(row.get("leading_code", "")),
-                pct_change=_flt(row.get("pct_change")),
+                pct_chg=_flt(row.get("pct_change")),
                 leading_pct=_flt(row.get("leading_pct")),
                 total_mv=_flt(row.get("total_mv")),
                 turnover_rate=_flt(row.get("turnover_rate")),

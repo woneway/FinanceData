@@ -247,7 +247,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
                 _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
-            return_fields=("board_code", "board_name", "idx_type", "trade_date", "pct_change", "leading_stock"),
+            return_fields=("board_code", "board_name", "idx_type", "trade_date", "pct_chg", "leading_stock"),
             service=_service("finance_data.service.board", "board_index", "get_board_index"),
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.board.index:TushareBoardIndex", "get_board_index", available_if="tushare_token"),
@@ -607,7 +607,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
                 _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
-            return_fields=("board_code", "board_name", "idx_type", "trade_date", "open", "close", "pct_change"),
+            return_fields=("board_code", "board_name", "idx_type", "trade_date", "open", "close", "pct_chg"),
             service=_service("finance_data.service.board", "board_daily", "get_board_daily"),
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.board.daily:TushareBoardDaily", "get_board_daily", available_if="tushare_token"),
