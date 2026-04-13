@@ -65,7 +65,9 @@ def _extract_value(arr) -> float | None:
 class XueqiuFinancialSummary:
     """雪球财务摘要 provider（无需登录 cookie）"""
 
-    def get_financial_summary_history(self, symbol: str) -> DataResult:
+    def get_financial_summary_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         xq_symbol = _to_xueqiu_symbol(symbol)
         session = get_session()
 
@@ -86,10 +88,16 @@ class XueqiuFinancialSummary:
                 "xueqiu", "indicator", f"无有效财务数据: {symbol}", "data"
             )
 
+        dicts = [r.to_dict() for r in rows]
+        if start_date or end_date:
+            dicts = [d for d in dicts if
+                     (not start_date or d.get("period", "") >= start_date) and
+                     (not end_date or d.get("period", "") <= end_date)]
+
         return DataResult(
-            data=[r.to_dict() for r in rows],
+            data=dicts,
             source="xueqiu",
-            meta={"rows": len(rows), "symbol": symbol},
+            meta={"rows": len(dicts), "symbol": symbol},
         )
 
     def _request(

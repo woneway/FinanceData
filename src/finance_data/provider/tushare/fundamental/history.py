@@ -20,13 +20,20 @@ def _opt(val):
 
 
 class TushareFinancialSummary:
-    def get_financial_summary_history(self, symbol: str) -> DataResult:
+    def get_financial_summary_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         pro = get_pro()
         ts_code = _ts_code(symbol)
+        date_kwargs: dict[str, str] = {}
+        if start_date:
+            date_kwargs["start_date"] = start_date
+        if end_date:
+            date_kwargs["end_date"] = end_date
         try:
-            df_income = pro.income(ts_code=ts_code, fields="end_date,total_revenue,n_income")
+            df_income = pro.income(ts_code=ts_code, fields="end_date,total_revenue,n_income", **date_kwargs)
             df_fina = pro.fina_indicator(ts_code=ts_code,
-                                         fields="end_date,roe,grossprofit_margin,n_cashflow_act")
+                                         fields="end_date,roe,grossprofit_margin,n_cashflow_act", **date_kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "income/fina_indicator", str(e), "network") from e
         except Exception as e:

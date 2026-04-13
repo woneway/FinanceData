@@ -12,14 +12,21 @@ def _ts_code(symbol: str) -> str:
 
 
 class TushareChipHistory:
-    def get_chip_distribution_history(self, symbol: str) -> DataResult:
+    def get_chip_distribution_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         pro = get_pro()
         ts_code = _ts_code(symbol)
+        kwargs: dict[str, str] = {
+            "ts_code": ts_code,
+            "fields": "ts_code,trade_date,weight_avg,winner_rate,cost_5pct,cost_95pct",
+        }
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
-            df = pro.cyq_perf(
-                ts_code=ts_code,
-                fields="ts_code,trade_date,weight_avg,winner_rate,cost_5pct,cost_95pct",
-            )
+            df = pro.cyq_perf(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "cyq_perf", str(e), "network") from e
         except Exception as e:

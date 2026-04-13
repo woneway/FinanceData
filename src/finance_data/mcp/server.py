@@ -264,45 +264,44 @@ async def tool_get_board_index_history(
 
 
 @mcp.tool()
-async def tool_get_chip_distribution_history(symbol: str) -> str:
+async def tool_get_chip_distribution_history(
+    symbol: str,
+    start_date: str = "",
+    end_date: str = "",
+) -> str:
     """
     获取个股筹码分布（获利比例、平均成本、集中度）。
 
     数据源: akshare 优先，tushare fallback
     实时性: 收盘后更新（T+1_16:00）
-    历史查询: 不支持
-
-    Args:
-        symbol: 股票代码，如 "000001"
-
-    Returns:
-        JSON 列表，包含 date、cost_profit_ratio(获利比例)、avg_cost(平均成本)、concentration(集中度)
+    历史查询: 支持（start_date/end_date 日期范围）
     """
     try:
-        result = chip_history.get_chip_distribution_history(symbol)
+        result = chip_history.get_chip_distribution_history(
+            symbol, start_date=start_date, end_date=end_date,
+        )
         return _to_json(result)
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
-async def tool_get_financial_summary_history(symbol: str) -> str:
+async def tool_get_financial_summary_history(
+    symbol: str,
+    start_date: str = "",
+    end_date: str = "",
+) -> str:
     """
     获取个股财务摘要（营收、净利润、ROE、毛利率）。
 
     数据源: akshare 优先，tushare fallback
     实时性: 季度披露（T+1_17:00 后）
-    历史查询: 支持（1990年至今）
-
-    Args:
-        symbol: 股票代码，如 "000001"
-
-    Returns:
-        JSON 列表，包含 period(报告期YYYYMMDD)、revenue(营收元)、net_profit(净利润元)、
-        roe(净资产收益率%)、gross_margin(毛利率%)、cash_flow(经营现金流元)
+    历史查询: 支持（start_date/end_date 按报告期筛选）
     """
     try:
-        result = financial_summary.get_financial_summary_history(symbol)
+        result = financial_summary.get_financial_summary_history(
+            symbol, start_date=start_date, end_date=end_date,
+        )
         return _to_json(result)
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)

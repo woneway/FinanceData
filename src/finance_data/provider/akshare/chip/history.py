@@ -12,7 +12,9 @@ _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
 
 class AkshareChipHistory:
-    def get_chip_distribution_history(self, symbol: str) -> DataResult:
+    def get_chip_distribution_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         try:
             df = ak.stock_cyq_em(symbol=symbol, adjust="")
         except _NETWORK_ERRORS as e:
@@ -22,6 +24,14 @@ class AkshareChipHistory:
 
         if df is None or df.empty:
             raise DataFetchError("akshare", "stock_cyq_em", f"无数据: {symbol}", "data")
+
+        if start_date or end_date:
+            df["_date_str"] = df["日期"].astype(str).str.replace("-", "")
+            if start_date:
+                df = df[df["_date_str"] >= start_date]
+            if end_date:
+                df = df[df["_date_str"] <= end_date]
+            df = df.drop(columns=["_date_str"])
 
         rows = [ChipDistribution(
             symbol=symbol,

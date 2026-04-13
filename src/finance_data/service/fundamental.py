@@ -17,10 +17,14 @@ class _FinancialSummaryDispatcher:
     def __init__(self, providers: list[FinancialSummaryProtocol]):
         self._providers = providers
 
-    def get_financial_summary_history(self, symbol: str) -> DataResult:
+    def get_financial_summary_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_financial_summary_history(symbol)
+                return p.get_financial_summary_history(
+                    symbol, start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning(f"{type(p).__name__} 失败: {e}")
         raise DataFetchError("all", "get_financial_summary_history", "所有数据源均失败", "data")

@@ -6,7 +6,9 @@ from finance_data.interface.types import DataResult
 
 
 class ChipHistoryProtocol(Protocol):
-    def get_chip_distribution_history(self, symbol: str) -> DataResult: ...
+    def get_chip_distribution_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult: ...
 
 
 @dataclass

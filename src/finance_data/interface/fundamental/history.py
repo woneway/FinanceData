@@ -6,7 +6,9 @@ from finance_data.interface.types import DataResult
 
 
 class FinancialSummaryProtocol(Protocol):
-    def get_financial_summary_history(self, symbol: str) -> DataResult: ...
+    def get_financial_summary_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult: ...
 
 
 class DividendProtocol(Protocol):

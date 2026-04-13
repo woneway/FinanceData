@@ -52,7 +52,9 @@ def _recent_quarters(n: int = 5) -> list[str]:
 
 
 class AkshareFinancialSummary:
-    def get_financial_summary_history(self, symbol: str) -> DataResult:
+    def get_financial_summary_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         try:
             with _no_proxy():
                 df = ak.stock_financial_abstract(symbol=symbol)
@@ -86,6 +88,11 @@ class AkshareFinancialSummary:
                 gross_margin=_opt(gm_row[date_col] if gm_row is not None else None),
                 cash_flow=_opt(cf_row[date_col] if cf_row is not None else None),
             ).to_dict())
+
+        if start_date or end_date:
+            rows = [r for r in rows if
+                    (not start_date or r.get("period", "") >= start_date) and
+                    (not end_date or r.get("period", "") <= end_date)]
 
         return DataResult(data=rows, source="akshare", meta={"rows": len(rows), "symbol": symbol})
 

@@ -7,6 +7,9 @@ from finance_data.interface.lhb.history import (
     LhbEntry, LhbStockStat, LhbActiveTrader, LhbTraderStat, LhbStockDetail,
 )
 from finance_data.interface.types import DataResult, DataFetchError
+from finance_data.provider.akshare._proxy import ensure_eastmoney_no_proxy
+
+ensure_eastmoney_no_proxy()
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 _VALID_PERIODS = {"近一月", "近三月", "近六月", "近一年"}

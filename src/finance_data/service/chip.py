@@ -12,10 +12,14 @@ class _ChipHistoryDispatcher:
     def __init__(self, providers: list[ChipHistoryProtocol]):
         self._providers = providers
 
-    def get_chip_distribution_history(self, symbol: str) -> DataResult:
+    def get_chip_distribution_history(
+        self, symbol: str, start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_chip_distribution_history(symbol)
+                return p.get_chip_distribution_history(
+                    symbol, start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning(f"{type(p).__name__} 失败: {e}")
         raise DataFetchError("all", "get_chip_distribution_history", "所有数据源均失败", "data")

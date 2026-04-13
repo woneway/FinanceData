@@ -269,6 +269,8 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             domain="fundamental",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260101"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("date", "cost_profit_ratio", "avg_cost", "concentration"),
             service=_service("finance_data.service.chip", "chip_history", "get_chip_distribution_history"),
@@ -286,6 +288,8 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             domain="fundamental",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD（报告期）", example="20240101"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD（报告期）", example="20251231"),
             ),
             return_fields=("period", "revenue", "net_profit", "roe", "gross_margin"),
             service=_service("finance_data.service.fundamental", "financial_summary", "get_financial_summary_history"),
