@@ -2,6 +2,33 @@
 
 金融数据服务，支持 MCP（AI Agent）和 Python library 两种接入方式。
 
+## Python Library 使用
+
+```python
+from finance_data import FinanceData
+
+fd = FinanceData(tushare_token="xxx", tushare_api_url="http://...")
+
+# 日线行情 → DataFrame
+df = fd.kline_daily("000001", start="20260401", end="20260410").to_dataframe()
+
+# 板块成分
+members = fd.board_member("银行").to_dataframe()
+
+# 实时行情
+quote = fd.quote("000001")
+print(quote.data[0]["price"])
+
+# 异常处理
+from finance_data import DataFetchError
+try:
+    fd.capital_flow("000001")
+except DataFetchError as e:
+    print(f"source={e.source}, kind={e.kind}")
+```
+
+token 也可通过环境变量 `TUSHARE_TOKEN` / `TUSHARE_API_URL` 设置，不传参时自动读取。
+
 ## 环境变量
 
 - `TUSHARE_TOKEN`：tushare API token（tushare 接口必须）
@@ -33,13 +60,17 @@ python3 -m venv .venv
 ### 四层分离（Domain-first）
 
 ```
-mcp/server.py → service/<domain>.py → provider/<source>/<domain>/ → interface/<domain>/
-   (薄封装)        (Dispatcher)          (数据源实现)                (Protocol + Model)
+client.py ─────→ service/<domain>.py → provider/<source>/<domain>/ → interface/<domain>/
+(Python API)        (Dispatcher)          (数据源实现)                (Protocol + Model)
+mcp/server.py ─→
+(MCP 薄封装)
 ```
 
 ```
 src/finance_data/
-├── interface/          # 协议层：Protocol + dataclass models
+├── __init__.py         # 导出 FinanceData / DataResult / DataFetchError
+├── client.py           # 统一 Python API 入口（FinanceData 类）
+├── interface/          # 协议层：Protocol + dataclass models（含 to_dataframe()）
 │   └── <domain>/       #   每个领域一个目录
 │       └── history.py  #   Protocol 定义 + dataclass（含 to_dict()）
 ├── provider/           # 数据源实现（akshare/tushare/xueqiu/tencent）
@@ -114,9 +145,23 @@ def _build_kline_history():
 | Service 实例 | `snake_case`（模块级） | `kline_history = _build_kline_history()` |
 | Interface Protocol | `{Entity}{Type}Protocol` | `KlineHistoryProtocol`, `RealtimeQuoteProtocol` |
 | Interface Model | `{Entity}{Type}` (dataclass) | `KlineBar`, `RealtimeQuote`, `IndexBar` |
-| MCP Tool | `tool_{action}_{entity}_{scope}` | `tool_get_kline_history`, `tool_get_realtime_quote` |
+| MCP Tool | `tool_{action}_{entity}_{scope}` | `tool_get_kline_daily_history`, `tool_get_quote_realtime` |
+| Client 方法 | `{entity}_{sub}`（简洁） | `fd.kline_daily()`, `fd.quote()`, `fd.board_member()` |
 | 文件名 | `provider/{source}/{domain}/{type}.py` | `provider/tushare/kline/history.py` |
 | 测试文件 | `test_{source}.py` 或 `test_{source}_{specific}.py` | `test_akshare.py`, `test_akshare_lhb_sina.py` |
+
+### Scope 分类（4 种）
+
+| scope | 含义 | 参数特征 | 示例 |
+|-------|------|---------|------|
+| `history` | 支持日期范围查询 | start_date/end_date | kline_daily, lhb_detail, margin |
+| `realtime` | 盘中实时 T+0 | 无日期参数 | quote, market_stats, hot_rank |
+| `daily` | 日频快照，仅单日 | date/trade_date | zt_pool, suspend, ths_hot |
+| `snapshot` | 按 symbol 查全量 | 仅 symbol | stock_info, north_capital |
+
+### Domain 分类（12 个）
+
+stock, kline, quote, index, board, fundamental, lhb, pool, north_flow, margin, market, cashflow
 
 ### 数据单位（统一标准）
 
