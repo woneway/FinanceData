@@ -340,9 +340,6 @@ def test_empty_raises():
 | `tool_get_sector_rank_realtime` | 已被 tool_get_board_index_history 替代 |
 | `tool_get_sector_member` | 已被 tool_get_board_member_history 替代 |
 | `tool_get_sector_history` | 已被 tool_get_board_kline_history 替代 |
-| `tool_get_daily_basic_realtime` | 已合并入 tool_get_quote_realtime |
-| `tool_get_limit_price_realtime` | 已合并入 tool_get_quote_realtime |
-| `tool_get_limit_list_daily` | 已更名为 tool_get_limit_list_history（支持日期范围） |
 
 ## MCP 配置
 
