@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from finance_data.dashboard.metrics import MetricsStore
-from finance_data.dashboard.models import HealthResult
+from finance_data.dashboard.models import ConsistencyResult, FieldDiff, HealthResult
 from finance_data.interface.types import DataResult
 
 
@@ -179,6 +179,26 @@ class TestMetrics:
         data = resp.json()
         assert len(data) == 1
         assert data[0]["tool"] == "tool_a"
+
+    def test_latest_consistency_filters_single_provider_tools(self, client, tmp_metrics):
+        tmp_metrics.record_consistency(ConsistencyResult(
+            tool="tool_get_margin_history",
+            providers_compared=["tushare", "akshare"],
+            status="error",
+            record_counts={"tushare": 3, "akshare": 2},
+            diffs=[
+                FieldDiff(
+                    field="rzche",
+                    level="error",
+                    detail="值不一致",
+                    values={"tushare": 1, "akshare": 0},
+                )
+            ],
+        ))
+
+        resp = client.get("/api/consistency/latest")
+        assert resp.status_code == 200
+        assert all(c["tool"] != "tool_get_margin_history" for c in resp.json())
 
 
 class TestInvokeTool:

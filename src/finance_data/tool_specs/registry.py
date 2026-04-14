@@ -290,7 +290,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start_date", required=False, default="", description="开始日期 YYYYMMDD（报告期）", example="20240101"),
                 _param("end_date", required=False, default="", description="结束日期 YYYYMMDD（报告期）", example="20251231"),
             ),
-            return_fields=("period", "revenue", "net_profit", "roe", "gross_margin"),
+            return_fields=("symbol", "period", "revenue", "net_profit", "roe"),
             service=_service("finance_data.service.fundamental", "financial_summary", "get_financial_summary_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.fundamental.history:AkshareFinancialSummary", "get_financial_summary_history"),
@@ -298,7 +298,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _provider("xueqiu", "finance_data.provider.xueqiu.fundamental.history:XueqiuFinancialSummary", "get_financial_summary_history", available_if="xueqiu_cookie"),
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("period",)),
-            metadata=_meta(entity="stock", scope="quarterly", data_freshness="quarterly", update_timing="quarterly", supports_history=True, history_start="19900101", source="both", source_priority="akshare", api_name="stock_financial_analysis_indicator", limitations=("财报季披露，延迟较大",), primary_key="period", examples=({"symbol": "000001"},)),
+            metadata=_meta(entity="stock", scope="quarterly", data_freshness="quarterly", update_timing="quarterly", supports_history=True, history_start="19900101", source="multi", source_priority="akshare", api_name="stock_financial_abstract,income/fina_indicator,indicator.json", limitations=("财报季披露，延迟较大",), primary_key="period", examples=({"symbol": "000001"},)),
             display_name="财务摘要",
         ),
         ToolSpec(
@@ -316,7 +316,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _provider("xueqiu", "finance_data.provider.xueqiu.fundamental.history:XueqiuDividend", "get_dividend_history", available_if="xueqiu_cookie"),
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("ex_date",)),
-            metadata=_meta(entity="stock", scope="historical", data_freshness="historical", update_timing="quarterly", supports_history=True, source="both", source_priority="akshare", api_name="stock分红", primary_key="ex_date", examples=({"symbol": "000001"},)),
+            metadata=_meta(entity="stock", scope="historical", data_freshness="historical", update_timing="quarterly", supports_history=True, source="multi", source_priority="akshare", api_name="stock_fhps_detail_ths,dividend,bonus.json", primary_key="ex_date", examples=({"symbol": "000001"},)),
             display_name="分红记录",
         ),
         ToolSpec(

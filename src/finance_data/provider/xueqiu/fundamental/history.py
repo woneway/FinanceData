@@ -108,7 +108,7 @@ class XueqiuFinancialSummary:
                 _INDICATOR_URL,
                 params={
                     "symbol": xq_symbol,
-                    "type": "Q4",
+                    "type": "all",
                     "is_detail": "true",
                     "count": "20",
                 },

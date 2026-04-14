@@ -299,9 +299,9 @@ async def tool_get_financial_summary_history(
     end_date: str = "",
 ) -> str:
     """
-    获取个股财务摘要（营收、净利润、ROE、毛利率）。
+    获取个股财务摘要（营收、净利润、ROE）。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: akshare 优先，tushare fallback，xueqiu 第三源
     实时性: 季度披露（T+1_17:00 后）
     历史查询: 支持（start_date/end_date 按报告期筛选）
     """
@@ -319,7 +319,7 @@ async def tool_get_dividend_history(symbol: str) -> str:
     """
     获取个股历史分红记录。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: akshare 优先，tushare fallback，xueqiu 第三源
     实时性: 季度披露（T+1_17:00 后）
     历史查询: 支持
 

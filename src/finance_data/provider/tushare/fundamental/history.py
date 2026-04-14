@@ -25,16 +25,11 @@ class TushareFinancialSummary:
     ) -> DataResult:
         pro = get_pro()
         ts_code = _ts_code(symbol)
-        date_kwargs: dict[str, str] = {}
-        if start_date:
-            date_kwargs["start_date"] = start_date
-        if end_date:
-            date_kwargs["end_date"] = end_date
         try:
-            df_income = pro.income(ts_code=ts_code, fields="end_date,total_revenue,n_income", **date_kwargs)
+            df_income = pro.income(ts_code=ts_code, fields="end_date,total_revenue,n_income,report_type")
             df_fina = pro.fina_indicator(ts_code=ts_code,
-                                         fields="end_date,roe_waa,grossprofit_margin", **date_kwargs)
-            df_cf = pro.cashflow(ts_code=ts_code, fields="end_date,n_cashflow_act", **date_kwargs)
+                                         fields="end_date,roe_waa,grossprofit_margin")
+            df_cf = pro.cashflow(ts_code=ts_code, fields="end_date,n_cashflow_act,report_type")
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "income/fina_indicator", str(e), "network") from e
         except Exception as e:
@@ -44,6 +39,28 @@ class TushareFinancialSummary:
 
         if df_income is None or df_income.empty:
             raise DataFetchError("tushare", "income", f"无数据: {symbol}", "data")
+
+        import pandas as pd
+
+        def _latest_by_period(df: pd.DataFrame, limit: int | None = None) -> pd.DataFrame:
+            if df is None or df.empty:
+                return pd.DataFrame()
+            if "report_type" in df.columns:
+                report_type = df["report_type"].astype(str)
+                filtered = df[report_type.eq("1")]
+                if not filtered.empty:
+                    df = filtered
+            df = df.drop_duplicates(subset="end_date", keep="first")
+            df = df.sort_values(by="end_date", ascending=False)
+            if limit:
+                df = df.head(limit)
+            return df
+
+        df_income = _latest_by_period(df_income, limit=20)
+        if df_income.empty:
+            raise DataFetchError("tushare", "income", f"无有效数据: {symbol}", "data")
+        df_fina = _latest_by_period(df_fina)
+        df_cf = _latest_by_period(df_cf)
 
         fina_map: dict[str, object] = {}
         if df_fina is not None and not df_fina.empty:
@@ -68,6 +85,11 @@ class TushareFinancialSummary:
                 cash_flow=cf_map.get(period),
             ).to_dict())
 
+        if start_date or end_date:
+            rows = [r for r in rows if
+                    (not start_date or r.get("period", "") >= start_date) and
+                    (not end_date or r.get("period", "") <= end_date)]
+
         return DataResult(data=rows, source="tushare", meta={"rows": len(rows), "symbol": symbol})
 
 
@@ -76,7 +98,7 @@ class TushareDividend:
         pro = get_pro()
         ts_code = _ts_code(symbol)
         try:
-            df = pro.dividend(ts_code=ts_code, fields="ex_date,cash_div,record_date")
+            df = pro.dividend(ts_code=ts_code, fields="ex_date,cash_div_tax,record_date")
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "dividend", str(e), "network") from e
         except Exception as e:
@@ -92,7 +114,7 @@ class TushareDividend:
         for _, r in df.iterrows():
             if pd.isna(r.get("ex_date")):
                 continue
-            per_share = float(r.get("cash_div", 0) or 0)
+            per_share = float(r.get("cash_div_tax", 0) or 0)
             if per_share <= 0:
                 continue
             rec_raw = r.get("record_date")

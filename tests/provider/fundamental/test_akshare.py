@@ -36,6 +36,8 @@ def test_get_financial_summary_fields(mock_financial_df):
     assert row["period"] == "20231231"
     assert row["roe"] == 11.2
     assert row["revenue"] == 1.8e11
+    assert "gross_margin" not in row
+    assert "cash_flow" not in row
 
 
 @pytest.fixture

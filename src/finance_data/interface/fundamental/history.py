@@ -32,8 +32,7 @@ class FinancialSummary:
     def to_dict(self) -> Dict[str, Any]:
         return {"symbol": self.symbol, "period": self.period,
                 "revenue": self.revenue, "net_profit": self.net_profit,
-                "roe": self.roe, "gross_margin": self.gross_margin,
-                "cash_flow": self.cash_flow}
+                "roe": self.roe}
 
 
 @dataclass

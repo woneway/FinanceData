@@ -195,6 +195,11 @@ class MetricsStore:
         ).fetchall()
         results = []
         for r in rows:
+            from finance_data.tool_specs import get_tool_spec
+
+            spec = get_tool_spec(r["tool"])
+            if spec is None or len(spec.providers) < 2:
+                continue
             results.append(ConsistencyResult(
                 tool=r["tool"],
                 status=r["status"],
