@@ -33,7 +33,8 @@ class TushareFinancialSummary:
         try:
             df_income = pro.income(ts_code=ts_code, fields="end_date,total_revenue,n_income", **date_kwargs)
             df_fina = pro.fina_indicator(ts_code=ts_code,
-                                         fields="end_date,roe,grossprofit_margin,n_cashflow_act", **date_kwargs)
+                                         fields="end_date,roe_waa,grossprofit_margin", **date_kwargs)
+            df_cf = pro.cashflow(ts_code=ts_code, fields="end_date,n_cashflow_act", **date_kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "income/fina_indicator", str(e), "network") from e
         except Exception as e:
@@ -44,10 +45,15 @@ class TushareFinancialSummary:
         if df_income is None or df_income.empty:
             raise DataFetchError("tushare", "income", f"无数据: {symbol}", "data")
 
-        fina_map = {}
+        fina_map: dict[str, object] = {}
         if df_fina is not None and not df_fina.empty:
             for _, r in df_fina.iterrows():
                 fina_map[str(r.get("end_date", ""))] = r
+
+        cf_map: dict[str, float | None] = {}
+        if df_cf is not None and not df_cf.empty:
+            for _, r in df_cf.iterrows():
+                cf_map[str(r.get("end_date", ""))] = _opt(r.get("n_cashflow_act"))
 
         rows = []
         for _, r in df_income.iterrows():
@@ -57,9 +63,9 @@ class TushareFinancialSummary:
                 symbol=symbol, period=period.replace("-", ""),
                 revenue=_opt(r.get("total_revenue")),
                 net_profit=_opt(r.get("n_income")),
-                roe=_opt(fi.get("roe")) if fi is not None else None,
+                roe=_opt(fi.get("roe_waa")) if fi is not None else None,
                 gross_margin=_opt(fi.get("grossprofit_margin")) if fi is not None else None,
-                cash_flow=_opt(fi.get("n_cashflow_act")) if fi is not None else None,
+                cash_flow=cf_map.get(period),
             ).to_dict())
 
         return DataResult(data=rows, source="tushare", meta={"rows": len(rows), "symbol": symbol})

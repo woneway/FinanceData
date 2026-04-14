@@ -142,7 +142,7 @@ class XueqiuFinancialSummary:
             net_profit=_extract_value(item.get("net_profit_atsopc")),
             roe=_extract_value(item.get("avg_roe")),
             gross_margin=_extract_value(item.get("gross_selling_rate")),
-            cash_flow=_extract_value(item.get("operate_cash_flow_ps")),
+            cash_flow=None,  # indicator API 仅有每股值，无总额
         )
 
 

@@ -20,18 +20,27 @@ def mock_income_df():
 @pytest.fixture
 def mock_fina_df():
     return pd.DataFrame([{
-        "end_date": "20231231", "roe": 11.2, "grossprofit_margin": 28.5, "n_cashflow_act": 5.2e10,
+        "end_date": "20231231", "roe_waa": 11.2, "grossprofit_margin": 28.5,
     }])
 
 
-def test_get_financial_summary_returns_data_result(mock_pro, mock_income_df, mock_fina_df):
+@pytest.fixture
+def mock_cf_df():
+    return pd.DataFrame([{
+        "end_date": "20231231", "n_cashflow_act": 5.2e10,
+    }])
+
+
+def test_get_financial_summary_returns_data_result(mock_pro, mock_income_df, mock_fina_df, mock_cf_df):
     mock_pro.income.return_value = mock_income_df
     mock_pro.fina_indicator.return_value = mock_fina_df
+    mock_pro.cashflow.return_value = mock_cf_df
     with patch("finance_data.provider.tushare.fundamental.history.get_pro", return_value=mock_pro):
         result = TushareFinancialSummary().get_financial_summary_history("000001")
     assert isinstance(result, DataResult)
     assert result.source == "tushare"
     assert result.data[0]["roe"] == 11.2
+    assert result.data[0]["cash_flow"] == 5.2e10
 
 
 def test_get_financial_summary_empty_raises(mock_pro):
