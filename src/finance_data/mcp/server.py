@@ -275,7 +275,7 @@ async def tool_get_chip_distribution_history(
     """
     获取个股筹码分布（获利比例、平均成本、集中度）。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: tushare
     实时性: 收盘后更新（T+1_16:00）
     历史查询: 支持（start_date/end_date 日期范围）
     """
@@ -968,11 +968,25 @@ async def tool_get_limit_list_daily(
 
     数据源: tushare(limit_list_ths)
     实时性: 日频（T+1_16:00）
-    历史查询: 支持按交易日
+    历史查询: 支持（20231101至今）
 
     Args:
         trade_date: 交易日期 YYYYMMDD
         limit_type: 涨停池/连扳池/炸板池/跌停池/冲刺涨停
+
+    Returns:
+        JSON 列表，每条记录包含：symbol(代码)、name(名称)、price(收盘价元)、
+        pct_chg(涨跌幅%)、limit_type(板单类别)、open_num(打开次数)、
+        lu_desc(涨停原因)、tag(涨停标签)、status(涨停状态)、
+        limit_order(封单量元)、limit_amount(封单额元)、turnover_rate(换手率%)、
+        limit_up_suc_rate(近一年封板率)、first_lu_time(首次涨停时间)、
+        last_lu_time(最后涨停时间)、first_ld_time(首次跌停时间)、
+        last_ld_time(最后跌停时间)、lu_limit_order(最大封单元)、
+        turnover(成交额元)、sum_float(总市值亿元)、free_float(实际流通元)、
+        rise_rate(涨速)、market_type(股票类型HS/GEM/STAR)
+
+    Note:
+        first_lu_time/last_lu_time 仅涨停池有值；first_ld_time/last_ld_time 仅跌停池有值。
     """
     try:
         return _to_json(limit_list.get_limit_list(trade_date=trade_date, limit_type=limit_type))

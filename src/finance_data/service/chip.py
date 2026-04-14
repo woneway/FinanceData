@@ -1,6 +1,5 @@
 """筹码分布 service - 统一对外入口"""
 import logging
-import os
 
 from finance_data.interface.chip.history import ChipHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
@@ -26,11 +25,8 @@ class _ChipHistoryDispatcher:
 
 
 def _build_chip_history() -> _ChipHistoryDispatcher:
-    from finance_data.provider.akshare.chip.history import AkshareChipHistory
-    providers: list[ChipHistoryProtocol] = [AkshareChipHistory()]
-    if os.getenv("TUSHARE_TOKEN"):
-        from finance_data.provider.tushare.chip.history import TushareChipHistory
-        providers.append(TushareChipHistory())
+    from finance_data.provider.tushare.chip.history import TushareChipHistory
+    providers: list[ChipHistoryProtocol] = [TushareChipHistory()]
     return _ChipHistoryDispatcher(providers=providers)
 
 

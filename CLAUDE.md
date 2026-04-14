@@ -300,7 +300,7 @@ def test_empty_raises():
 | `tool_get_board_index_history` | board | 东财板块索引/快照（行业/概念/地域），tushare |
 | `tool_get_board_member_history` | board | 东财板块成分股列表，tushare |
 | `tool_get_board_kline_history` | board | 东财板块日行情，tushare |
-| `tool_get_chip_distribution_history` | fundamental | 个股筹码分布（获利比例、成本、集中度），akshare(东财)+tushare |
+| `tool_get_chip_distribution_history` | fundamental | 个股筹码分布（获利比例、成本、集中度），tushare |
 | `tool_get_financial_summary_history` | fundamental | 财务摘要（营收、净利润、ROE、毛利率），akshare(新浪)+tushare+xueqiu |
 | `tool_get_dividend_history` | fundamental | 历史分红记录，akshare(同花顺)+tushare+xueqiu |
 | `tool_get_lhb_detail_history` | lhb | 龙虎榜每日上榜详情（按日期范围），akshare(东财)+tushare |

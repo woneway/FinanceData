@@ -272,14 +272,13 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260101"),
                 _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
-            return_fields=("date", "cost_profit_ratio", "avg_cost", "concentration"),
+            return_fields=("symbol", "date", "avg_cost", "concentration", "cost_profit_ratio", "cost_90", "cost_10"),
             service=_service("finance_data.service.chip", "chip_history", "get_chip_distribution_history"),
             providers=(
-                _provider("akshare", "finance_data.provider.akshare.chip.history:AkshareChipHistory", "get_chip_distribution_history"),
                 _provider("tushare", "finance_data.provider.tushare.chip.history:TushareChipHistory", "get_chip_distribution_history", available_if="tushare_token"),
             ),
             probe=_probe({"symbol": "000001"}, required_fields=("date",)),
-            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="both", source_priority="akshare", api_name="stock_gpzy_plate_em", limitations=("筹码数据基于历史交易计算",), examples=({"symbol": "000001"},)),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, source="tushare", source_priority="tushare", api_name="cyq_perf", limitations=("筹码数据基于历史交易计算", "concentration 字段不可用"),  examples=({"symbol": "000001"},)),
             display_name="筹码分布",
         ),
         ToolSpec(
@@ -736,7 +735,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
                 _param("limit_type", required=False, default="涨停池", description="榜单类型", example="涨停池", choices=(("涨停池", "涨停池"), ("连扳池", "连扳池"), ("炸板池", "炸板池"), ("跌停池", "跌停池"), ("冲刺涨停", "冲刺涨停"))),
             ),
-            return_fields=("symbol", "name", "pct_chg", "lu_desc", "tag", "status", "limit_amount"),
+            return_fields=("symbol", "name", "pct_chg", "lu_desc", "tag", "status", "limit_amount", "first_lu_time", "last_lu_time", "turnover", "sum_float", "free_float", "lu_limit_order", "market_type"),
             service=_service("finance_data.service.pool", "limit_list", "get_limit_list"),
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.pool.limit_list:TushareLimitList", "get_limit_list", available_if="tushare_token"),

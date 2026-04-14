@@ -42,7 +42,7 @@ class TushareChipHistory:
             date=str(r.get("trade_date", "")).replace("-", ""),
             avg_cost=float(r.get("weight_avg", 0) or 0),
             concentration=None,
-            profit_ratio=float(r.get("winner_rate", 0) or 0),
+            profit_ratio=float(r.get("winner_rate", 0) or 0) / 100,
             cost_90=float(r.get("cost_95pct", 0) or 0),
             cost_10=float(r.get("cost_5pct", 0) or 0),
         ).to_dict() for _, r in df.iterrows()]
