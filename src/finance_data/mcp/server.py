@@ -364,7 +364,7 @@ async def tool_get_trade_calendar_history(start: str, end: str) -> str:
     """
     获取交易日历（is_open=true 为交易日）。
 
-    数据源: tushare 优先，akshare fallback
+    数据源: tushare 优先，akshare(新浪) fallback，baostock 兜底
     实时性: T+1_17:00 后更新
     历史查询: 支持（1990年至今）
 
@@ -373,10 +373,13 @@ async def tool_get_trade_calendar_history(start: str, end: str) -> str:
         end: 结束日期 YYYYMMDD
 
     Returns:
-        JSON 列表，每条包含 cal_date(YYYYMMDD)、is_open(0/1)、pretrade_date
+        JSON 列表，每条包含：date(日期YYYYMMDD)、is_open(是否交易日)
     """
-    result = trade_calendar.get_trade_calendar_history(start, end)
-    return _to_json(result)
+    try:
+        result = trade_calendar.get_trade_calendar_history(start, end)
+        return _to_json(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()

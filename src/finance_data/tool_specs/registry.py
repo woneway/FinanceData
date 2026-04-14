@@ -343,15 +343,15 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start", required=True, description="开始日期 YYYYMMDD", example="20240301"),
                 _param("end", required=True, description="结束日期 YYYYMMDD", example="20240401"),
             ),
-            return_fields=("cal_date", "is_open", "pretrade_date"),
+            return_fields=("date", "is_open"),
             service=_service("finance_data.service.calendar", "trade_calendar", "get_trade_calendar_history"),
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.calendar.history:TushareTradeCalendar", "get_trade_calendar_history", available_if="tushare_token"),
                 _provider("akshare", "finance_data.provider.akshare.calendar.history:AkshareTradeCalendar", "get_trade_calendar_history"),
                 _provider("baostock", "finance_data.provider.baostock.calendar.history:BaostockTradeCalendar", "get_trade_calendar_history"),
             ),
-            probe=_probe({"start": "$RECENT-30", "end": "$RECENT"}, required_fields=("cal_date",)),
-            metadata=_meta(entity="market", scope="historical", data_freshness="historical", update_timing="T+1_17:00", supports_history=True, history_start="19900101", source="both", source_priority="tushare", api_name="trade_cal", primary_key="cal_date", examples=({"start": "20240101", "end": "20240401"},)),
+            probe=_probe({"start": "$RECENT-30", "end": "$RECENT"}, required_fields=("date",)),
+            metadata=_meta(entity="market", scope="historical", data_freshness="historical", update_timing="T+1_17:00", supports_history=True, history_start="19900101", source="both", source_priority="tushare", api_name="trade_cal", primary_key="date", examples=({"start": "20240101", "end": "20240401"},)),
             display_name="交易日历",
         ),
         ToolSpec(
