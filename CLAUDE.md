@@ -284,7 +284,7 @@ def test_empty_raises():
 8. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 9. **更新本文件**：更新下方接口列表
 
-## 当前接口（42 个）
+## 当前接口（40 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -292,9 +292,7 @@ def test_empty_raises():
 | `tool_get_kline_daily_history` | kline | 个股历史日线行情，tushare+akshare(腾讯) |
 | `tool_get_kline_weekly_history` | kline | 个股历史周线行情（每日更新），tushare |
 | `tool_get_kline_monthly_history` | kline | 个股历史月线行情（每日更新），tushare |
-| `tool_get_quote_realtime` | quote | 实时行情（含 20 分钟缓存），xueqiu |
-| `tool_get_daily_basic_realtime` | quote | 日频基本面（PE/PB/市值/换手率/量比），tencent(腾讯API) |
-| `tool_get_limit_price_realtime` | quote | 涨跌停价格，tencent(腾讯API) |
+| `tool_get_quote_realtime` | quote | 实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价），xueqiu+tencent |
 | `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare(新浪)+xueqiu |
 | `tool_get_index_kline_history` | index | 大盘指数历史 K线，tushare+xueqiu |
 | `tool_get_board_index_history` | board | 东财板块索引/快照（行业/概念/地域），tushare |
@@ -342,6 +340,9 @@ def test_empty_raises():
 | `tool_get_sector_rank_realtime` | 已被 tool_get_board_index_history 替代 |
 | `tool_get_sector_member` | 已被 tool_get_board_member_history 替代 |
 | `tool_get_sector_history` | 已被 tool_get_board_kline_history 替代 |
+| `tool_get_daily_basic_realtime` | 已合并入 tool_get_quote_realtime |
+| `tool_get_limit_price_realtime` | 已合并入 tool_get_quote_realtime |
+| `tool_get_limit_list_daily` | 已更名为 tool_get_limit_list_history（支持日期范围） |
 
 ## MCP 配置
 

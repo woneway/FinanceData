@@ -93,16 +93,8 @@ class FinanceData:
     # ------------------------------------------------------------------
 
     def quote(self, symbol: str) -> DataResult:
-        """获取个股实时行情"""
+        """获取个股实时行情（含量比/流通市值/涨跌停价）"""
         return self._get_service("realtime", "realtime_quote").get_realtime_quote(symbol)
-
-    def daily_basic(self, symbol: str) -> DataResult:
-        """获取个股日频指标（PE/PB/市值/换手率/量比）"""
-        return self._get_service("daily_basic", "daily_basic").get_daily_basic(symbol)
-
-    def limit_price(self, symbol: str) -> DataResult:
-        """获取个股涨跌停价格"""
-        return self._get_service("limit_price", "limit_price").get_limit_price(symbol)
 
     # ------------------------------------------------------------------
     # index — 指数数据

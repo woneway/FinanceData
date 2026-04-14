@@ -22,9 +22,14 @@ class RealtimeQuote:
     pb: Optional[float]
     turnover_rate: Optional[float]
     timestamp: str  # ISO 8601
+    circ_market_cap: Optional[float] = None
+    volume_ratio: Optional[float] = None
+    limit_up: Optional[float] = None
+    limit_down: Optional[float] = None
+    prev_close: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d: Dict[str, Any] = {
             "symbol": self.symbol, "name": self.name,
             "price": self.price, "pct_chg": self.pct_chg,
             "volume": self.volume, "amount": self.amount,
@@ -32,3 +37,8 @@ class RealtimeQuote:
             "pb": self.pb, "turnover_rate": self.turnover_rate,
             "timestamp": self.timestamp,
         }
+        for key in ("circ_market_cap", "volume_ratio", "limit_up", "limit_down", "prev_close"):
+            val = getattr(self, key)
+            if val is not None:
+                d[key] = val
+        return d

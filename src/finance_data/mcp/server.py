@@ -24,8 +24,6 @@ from finance_data.service.lhb import (
 from finance_data.service.pool import zt_pool, strong_stocks, previous_zt, zbgc_pool
 from finance_data.service.north_flow import north_flow, north_stock_hold
 from finance_data.service.margin import margin, margin_detail
-from finance_data.service.daily_basic import daily_basic
-from finance_data.service.limit_price import limit_price
 from finance_data.service.suspend import suspend
 from finance_data.service.hot_rank import hot_rank, ths_hot
 from finance_data.service.pool import limit_list, kpl_list, limit_step
@@ -165,9 +163,9 @@ async def tool_get_kline_monthly_history(
 @mcp.tool()
 async def tool_get_quote_realtime(symbol: str) -> str:
     """
-    获取股票实时行情（含 20 分钟缓存）。
+    获取股票实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价）。
 
-    数据源: xueqiu（盘中实时价格）
+    数据源: xueqiu(实时价格) + tencent(量比/流通市值/涨跌停价)
     实时性: 盘中实时（T+0）
     历史查询: 不支持
     缓存: 有（20 分钟）
@@ -176,9 +174,15 @@ async def tool_get_quote_realtime(symbol: str) -> str:
         symbol: 股票代码，如 "000001"
 
     Returns:
-        JSON 列表，每条包含 symbol、name、price(元)、pct_chg(%)、
-        volume(股)、amount(元)、market_cap(元)、pe、pb、
-        turnover_rate(%)、timestamp(ISO 8601)
+        JSON 列表，每条包含：symbol(代码)、name(名称)、price(当前价元)、
+        pct_chg(涨跌幅%)、volume(成交量股)、amount(成交额元)、
+        market_cap(总市值元)、pe(市盈率)、pb(市净率)、
+        turnover_rate(换手率%)、timestamp(ISO 8601)、
+        circ_market_cap(流通市值元)、volume_ratio(量比)、
+        limit_up(涨停价元)、limit_down(跌停价元)、prev_close(昨收价元)
+
+    Note:
+        腾讯补充字段为 best-effort，失败时仅返回雪球核心字段。
     """
     try:
         result = realtime_quote.get_realtime_quote(symbol)
@@ -911,51 +915,6 @@ async def tool_get_lhb_inst_detail_history(
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
-
-@mcp.tool()
-async def tool_get_daily_basic_realtime(symbol: str) -> str:
-    """
-    获取个股日频基本面指标（PE/PB/市值/换手率/量比）。
-
-    数据源: tencent（腾讯实时行情API，65ms延迟）
-    实时性: 盘中实时（T+0）
-    历史查询: 不支持
-
-    Args:
-        symbol: 股票代码，如 "000001"
-
-    Returns:
-        JSON 列表，每条包含：symbol(代码)、name(名称)、date(YYYYMMDD)、
-        pe(市盈率)、pb(市净率)、market_cap(总市值元)、circ_market_cap(流通市值元)、
-        turnover_rate(换手率%)、volume_ratio(量比)
-    """
-    try:
-        return _to_json(daily_basic.get_daily_basic(symbol))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
-
-
-@mcp.tool()
-async def tool_get_limit_price_realtime(symbol: str) -> str:
-    """
-    获取个股涨跌停价格。
-
-    数据源: tencent（腾讯实时行情API）
-    实时性: 盘中实时（T+0）
-    历史查询: 不支持
-
-    Args:
-        symbol: 股票代码，如 "000001"
-
-    Returns:
-        JSON 列表，每条包含：symbol(代码)、name(名称)、date(YYYYMMDD)、
-        limit_up(涨停价元)、limit_down(跌停价元)、prev_close(昨收价元)、
-        current(当前价元)
-    """
-    try:
-        return _to_json(limit_price.get_limit_price(symbol))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()

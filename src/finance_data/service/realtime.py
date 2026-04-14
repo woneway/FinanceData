@@ -1,6 +1,8 @@
-"""实时行情 service - 统一对外入口（含 TTL 缓存）"""
+"""实时行情 service - 统一对外入口（含 TTL 缓存）
+
+雪球提供核心行情，腾讯补充 circ_market_cap/volume_ratio/limit_up/limit_down/prev_close。
+"""
 import logging
-import os
 
 from cachetools import TTLCache
 
@@ -8,8 +10,23 @@ from finance_data.interface.realtime.realtime import RealtimeQuoteProtocol
 from finance_data.interface.types import DataFetchError, DataResult
 logger = logging.getLogger(__name__)
 
-# 实时行情缓存：最多 512 支股票，20 分钟 TTL
 _quote_cache: TTLCache = TTLCache(maxsize=512, ttl=1200)
+
+
+def _enrich_with_tencent(result: DataResult, symbol: str) -> DataResult:
+    """用腾讯 API 补充雪球缺少的字段（best-effort，失败不影响主流程）"""
+    try:
+        from finance_data.provider.tencent.client import fetch_quote
+        tq = fetch_quote(symbol)
+        for row in result.data:
+            row["circ_market_cap"] = tq.get("circ_market_cap")
+            row["volume_ratio"] = tq.get("volume_ratio")
+            row["limit_up"] = tq.get("limit_up")
+            row["limit_down"] = tq.get("limit_down")
+            row["prev_close"] = tq.get("prev_close")
+    except Exception as e:
+        logger.debug(f"腾讯补充字段失败（不影响主流程）: {e}")
+    return result
 
 
 class _RealtimeQuoteDispatcher:
@@ -25,6 +42,7 @@ class _RealtimeQuoteDispatcher:
         for p in self._providers:
             try:
                 result = p.get_realtime_quote(symbol)
+                result = _enrich_with_tencent(result, symbol)
                 _quote_cache[cache_key] = result
                 return result
             except DataFetchError as e:
@@ -33,9 +51,6 @@ class _RealtimeQuoteDispatcher:
 
 
 def _build_realtime_quote() -> _RealtimeQuoteDispatcher:
-    # 实时行情仅使用 xueqiu（真正的盘中实时价格，无需 token/cookie）
-    # tushare 已移除：pro.daily(limit=1) 返回的是收盘价，不是实时行情
-    # akshare 已禁用：东财源不可用，新浪源太慢
     from finance_data.provider.xueqiu.realtime.realtime import XueqiuRealtimeQuote
     return _RealtimeQuoteDispatcher(providers=[XueqiuRealtimeQuote()])
 

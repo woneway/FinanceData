@@ -194,12 +194,12 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
         ),
         ToolSpec(
             name="tool_get_quote_realtime",
-            description="获取股票实时行情",
+            description="获取股票实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价）",
             domain="quote",
             params=(
                 _param("symbol", required=True, description="股票代码", example="000001"),
             ),
-            return_fields=("symbol", "name", "price", "pct_chg", "volume", "amount", "market_cap", "pe", "pb", "turnover_rate", "timestamp"),
+            return_fields=("symbol", "name", "price", "pct_chg", "volume", "amount", "market_cap", "pe", "pb", "turnover_rate", "timestamp", "circ_market_cap", "volume_ratio", "limit_up", "limit_down", "prev_close"),
             service=_service("finance_data.service.realtime", "realtime_quote", "get_realtime_quote"),
             providers=(
                 _provider("xueqiu", "finance_data.provider.xueqiu.realtime.realtime:XueqiuRealtimeQuote", "get_realtime_quote"),
@@ -694,38 +694,6 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             probe=_probe({"start_date": "$RECENT-7", "end_date": "$RECENT"}, required_fields=("symbol", "date")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20200101", source="akshare", source_priority="akshare", api_name="stock_lhb_jgmmtj_em", primary_key="symbol"),
             display_name="机构明细",
-        ),
-        ToolSpec(
-            name="tool_get_daily_basic_realtime",
-            description="获取个股日频基本面指标（PE/PB/市值/换手率/量比）",
-            domain="quote",
-            params=(
-                _param("symbol", required=True, description="股票代码", example="000001"),
-            ),
-            return_fields=("symbol", "name", "date", "pe", "pb", "market_cap", "turnover_rate", "volume_ratio"),
-            service=_service("finance_data.service.daily_basic", "daily_basic", "get_daily_basic"),
-            providers=(
-                _provider("tencent", "finance_data.provider.tencent.daily_basic:TencentDailyBasic", "get_daily_basic"),
-            ),
-            probe=_probe({"symbol": "000001"}, required_fields=("symbol", "date")),
-            metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="tencent", source_priority="tencent", api_name="qt.gtimg.cn", primary_key="symbol"),
-            display_name="日频指标",
-        ),
-        ToolSpec(
-            name="tool_get_limit_price_realtime",
-            description="获取个股涨跌停价格",
-            domain="quote",
-            params=(
-                _param("symbol", required=True, description="股票代码", example="000001"),
-            ),
-            return_fields=("symbol", "name", "date", "limit_up", "limit_down", "prev_close", "current"),
-            service=_service("finance_data.service.limit_price", "limit_price", "get_limit_price"),
-            providers=(
-                _provider("tencent", "finance_data.provider.tencent.limit_price:TencentLimitPrice", "get_limit_price"),
-            ),
-            probe=_probe({"symbol": "000001"}, required_fields=("symbol", "limit_up", "limit_down")),
-            metadata=_meta(entity="stock", scope="realtime", data_freshness="realtime", update_timing="T+0", supports_history=False, source="tencent", source_priority="tencent", api_name="qt.gtimg.cn", primary_key="symbol"),
-            display_name="涨跌停价",
         ),
         ToolSpec(
             name="tool_get_limit_list_history",
