@@ -40,7 +40,7 @@ type TimeRange = "1" | "6" | "24" | "168"
 const DOMAIN_LABELS: Record<string, string> = {
   stock: "个股信息",
   kline: "K线数据",
-  realtime: "实时行情",
+  quote: "实时行情",
   index: "指数数据",
   board: "板块数据",
   chip: "筹码分布",
