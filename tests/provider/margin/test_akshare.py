@@ -68,6 +68,10 @@ def test_get_margin_szse_converts_yi_to_yuan(mock_sse_df, mock_szse_df):
     szse = next(r for r in result.data if r["exchange"] == "SZSE")
     # 7077.67 亿元 -> 707767000000 元
     assert abs(szse["rzye"] - 7077.67 * 1e8) < 1
+    # 0.28 亿 -> 28000000
+    assert abs(szse["rqmcl"] - 0.28 * 1e8) < 1
+    # 24.34 亿 -> 2434000000
+    assert abs(szse["rqyl"] - 24.34 * 1e8) < 1
 
 
 def test_get_margin_network_error():

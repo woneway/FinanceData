@@ -4,9 +4,6 @@ from finance_data.interface.types import DataResult, DataFetchError
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
-_EXCHANGE_MAP = {"SSE": "上交所", "SZSE": "深交所", "BSE": "北交所"}
-
-
 class TushareMargin:
     def get_margin_history(
         self,
@@ -36,11 +33,9 @@ class TushareMargin:
 
         rows = []
         for _, row in df.iterrows():
-            exchange_raw = str(row.get("exchange_id", ""))
-            exchange = _EXCHANGE_MAP.get(exchange_raw, exchange_raw)
             rows.append(MarginSummary(
                 date=str(row.get("trade_date", "")).replace("-", ""),
-                exchange=exchange,
+                exchange=str(row.get("exchange_id", "")),
                 rzye=float(row.get("rzye", 0) or 0),
                 rzmre=float(row.get("rzmre", 0) or 0),
                 rzche=float(row.get("rzche", 0) or 0),

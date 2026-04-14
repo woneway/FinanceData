@@ -101,9 +101,9 @@ class AkshareMargin:
                         rzmre=_yi_to_yuan(row.get("融资买入额")),
                         rzche=0,
                         rqye=_yi_to_yuan(row.get("融券余额")),
-                        rqmcl=_safe_float(row.get("融券卖出量")),
+                        rqmcl=_yi_to_yuan(row.get("融券卖出量")),
                         rzrqye=_yi_to_yuan(row.get("融资融券余额")),
-                        rqyl=_safe_float(row.get("融券余量")),
+                        rqyl=_yi_to_yuan(row.get("融券余量")),
                     ).to_dict())
 
         if not rows:

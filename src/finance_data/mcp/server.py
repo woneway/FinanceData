@@ -568,7 +568,7 @@ async def tool_get_margin_history(
     """
     获取融资融券汇总数据（按交易所）。
 
-    数据源: tushare 优先，akshare fallback
+    数据源: tushare
     实时性: 收盘后更新（T+1_17:00）
     历史查询: 支持（2010年至今）
 
@@ -581,10 +581,10 @@ async def tool_get_margin_history(
     Returns:
         JSON 列表，每条包含：date(YYYYMMDD)、exchange(SSE上交所/SZSE深交所/BSE北交所)、
         rzye(融资余额元)、rzmre(融资买入额元)、rzche(融资偿还额元)、
-        rqye(融券余额元)、rqmcl(融券卖出量)、rzrqye(融资融券余额元)、rqyl(融券余量)
+        rqye(融券余额元)、rqmcl(融券卖出量股)、rzrqye(融资融券余额元)、rqyl(融券余量股)
 
     Note:
-        akshare 只支持单日查询；tushare 支持日期范围。
+        仅 tushare 源，支持日期范围+交易所过滤。
     """
     try:
         return _to_json(margin.get_margin_history(

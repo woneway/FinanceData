@@ -49,7 +49,7 @@ def test_get_margin_fields(mock_margin_df):
         )
     row = result.data[0]
     assert row["date"] == "20240301"
-    assert row["exchange"] == "上交所"
+    assert row["exchange"] == "SSE"
     assert row["rzye"] == 7.6e11
     assert row["rzche"] == 4.7e10
 

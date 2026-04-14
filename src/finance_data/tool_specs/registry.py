@@ -537,10 +537,9 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             service=_service("finance_data.service.margin", "margin", "get_margin_history"),
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.margin.history:TushareMargin", "get_margin_history", available_if="tushare_token"),
-                _provider("akshare", "finance_data.provider.akshare.margin.history:AkshareMargin", "get_margin_history"),
             ),
             probe=_probe({"trade_date": "$RECENT", "start_date": "", "end_date": "", "exchange_id": ""}, required_fields=("date",)),
-            metadata=_meta(entity="market", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20100101", source="both", source_priority="tushare", api_name="margin", limitations=("akshare SSE rzche 始终为 0（数据源不提供融资偿还额）",), primary_key="date"),
+            metadata=_meta(entity="market", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20100101", source="tushare", source_priority="tushare", api_name="margin", primary_key="date"),
             display_name="两融汇总",
         ),
         ToolSpec(
