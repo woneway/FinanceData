@@ -728,12 +728,14 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="涨跌停价",
         ),
         ToolSpec(
-            name="tool_get_limit_list_daily",
-            description="获取同花顺涨跌停榜单",
+            name="tool_get_limit_list_history",
+            description="获取同花顺涨跌停榜单（支持日期范围）",
             domain="pool",
             params=(
-                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+                _param("trade_date", required=False, description="交易日期 YYYYMMDD（与 start_date/end_date 二选一）", example="20260410"),
                 _param("limit_type", required=False, default="涨停池", description="榜单类型", example="涨停池", choices=(("涨停池", "涨停池"), ("连扳池", "连扳池"), ("炸板池", "炸板池"), ("跌停池", "跌停池"), ("冲刺涨停", "冲刺涨停"))),
+                _param("start_date", required=False, description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("symbol", "name", "pct_chg", "lu_desc", "tag", "status", "limit_amount", "first_lu_time", "last_lu_time", "turnover", "sum_float", "free_float", "lu_limit_order", "market_type"),
             service=_service("finance_data.service.pool", "limit_list", "get_limit_list"),
@@ -741,7 +743,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _provider("tushare", "finance_data.provider.tushare.pool.limit_list:TushareLimitList", "get_limit_list", available_if="tushare_token"),
             ),
             probe=_probe({"trade_date": "$RECENT", "limit_type": "涨停池"}, required_fields=("symbol", "name")),
-            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20231101", source="tushare", source_priority="tushare", api_name="limit_list_ths", primary_key="symbol"),
+            metadata=_meta(entity="stock", scope="history", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20231101", source="tushare", source_priority="tushare", api_name="limit_list_ths", primary_key="symbol"),
             display_name="涨跌停榜单",
         ),
         ToolSpec(

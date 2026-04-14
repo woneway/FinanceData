@@ -6,7 +6,13 @@ from finance_data.interface.types import DataResult
 
 
 class LimitListProtocol(Protocol):
-    def get_limit_list(self, trade_date: str, limit_type: str = "涨停池") -> DataResult: ...
+    def get_limit_list(
+        self,
+        trade_date: str = "",
+        limit_type: str = "涨停池",
+        start_date: str = "",
+        end_date: str = "",
+    ) -> DataResult: ...
 
 
 @dataclass
@@ -25,9 +31,19 @@ class LimitListEntry:
     limit_amount: Optional[float]
     turnover_rate: Optional[float]
     limit_up_suc_rate: Optional[float]
+    first_lu_time: Optional[str] = None
+    last_lu_time: Optional[str] = None
+    first_ld_time: Optional[str] = None
+    last_ld_time: Optional[str] = None
+    lu_limit_order: Optional[float] = None
+    turnover: Optional[float] = None
+    sum_float: Optional[float] = None
+    free_float: Optional[float] = None
+    rise_rate: Optional[float] = None
+    market_type: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d: Dict[str, Any] = {
             "symbol": self.symbol,
             "name": self.name,
             "trade_date": self.trade_date,
@@ -43,3 +59,12 @@ class LimitListEntry:
             "turnover_rate": self.turnover_rate,
             "limit_up_suc_rate": self.limit_up_suc_rate,
         }
+        for key in (
+            "first_lu_time", "last_lu_time", "first_ld_time", "last_ld_time",
+            "lu_limit_order", "turnover", "sum_float", "free_float",
+            "rise_rate", "market_type",
+        ):
+            val = getattr(self, key)
+            if val is not None:
+                d[key] = val
+        return d

@@ -69,10 +69,19 @@ class _LimitListDispatcher:
     def __init__(self, providers: list):
         self._providers = providers
 
-    def get_limit_list(self, trade_date: str, limit_type: str = "涨停池") -> DataResult:
+    def get_limit_list(
+        self,
+        trade_date: str = "",
+        limit_type: str = "涨停池",
+        start_date: str = "",
+        end_date: str = "",
+    ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_limit_list(trade_date=trade_date, limit_type=limit_type)
+                return p.get_limit_list(
+                    trade_date=trade_date, limit_type=limit_type,
+                    start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning(f"{type(p).__name__} 失败: {e}")
         raise DataFetchError("all", "get_limit_list", "所有数据源均失败", "data")

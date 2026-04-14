@@ -29,11 +29,41 @@ def _opt_int(val):
         return 0
 
 
+def _opt_str(val):
+    if val is None or (isinstance(val, float) and val != val):
+        return None
+    s = str(val).strip()
+    return s if s else None
+
+
+_FIELDS = ",".join([
+    "trade_date", "ts_code", "name", "price", "pct_chg", "open_num",
+    "lu_desc", "limit_type", "tag", "status",
+    "first_lu_time", "last_lu_time", "first_ld_time", "last_ld_time",
+    "limit_order", "limit_amount", "lu_limit_order", "limit_up_suc_rate",
+    "turnover_rate", "turnover", "free_float", "sum_float",
+    "rise_rate", "market_type",
+])
+
+
 class TushareLimitList:
-    def get_limit_list(self, trade_date: str, limit_type: str = "涨停池") -> DataResult:
+    def get_limit_list(
+        self,
+        trade_date: str = "",
+        limit_type: str = "涨停池",
+        start_date: str = "",
+        end_date: str = "",
+    ) -> DataResult:
         pro = get_pro()
+        kwargs: dict = {"limit_type": limit_type, "fields": _FIELDS}
+        if trade_date:
+            kwargs["trade_date"] = trade_date
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
-            df = pro.limit_list_ths(trade_date=trade_date, limit_type=limit_type)
+            df = pro.limit_list_ths(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "limit_list_ths", str(e), "network") from e
         except Exception as e:
@@ -60,6 +90,16 @@ class TushareLimitList:
                 limit_amount=_opt_flt(row.get("limit_amount")),
                 turnover_rate=_opt_flt(row.get("turnover_rate")),
                 limit_up_suc_rate=_opt_flt(row.get("limit_up_suc_rate")),
+                first_lu_time=_opt_str(row.get("first_lu_time")),
+                last_lu_time=_opt_str(row.get("last_lu_time")),
+                first_ld_time=_opt_str(row.get("first_ld_time")),
+                last_ld_time=_opt_str(row.get("last_ld_time")),
+                lu_limit_order=_opt_flt(row.get("lu_limit_order")),
+                turnover=_opt_flt(row.get("turnover")),
+                sum_float=_opt_flt(row.get("sum_float")),
+                free_float=_opt_flt(row.get("free_float")),
+                rise_rate=_opt_flt(row.get("rise_rate")),
+                market_type=_opt_str(row.get("market_type")),
             ).to_dict()
             for _, row in df.iterrows()
         ]

@@ -959,20 +959,24 @@ async def tool_get_limit_price_realtime(symbol: str) -> str:
 
 
 @mcp.tool()
-async def tool_get_limit_list_daily(
-    trade_date: str,
+async def tool_get_limit_list_history(
+    trade_date: str = "",
     limit_type: str = "涨停池",
+    start_date: str = "",
+    end_date: str = "",
 ) -> str:
     """
-    获取同花顺涨跌停榜单。
+    获取同花顺涨跌停榜单，支持日期范围查询。
 
     数据源: tushare(limit_list_ths)
-    实时性: 日频（T+1_16:00）
+    实时性: 收盘后更新（T+1_16:00）
     历史查询: 支持（20231101至今）
 
     Args:
-        trade_date: 交易日期 YYYYMMDD
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
         limit_type: 涨停池/连扳池/炸板池/跌停池/冲刺涨停
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
 
     Returns:
         JSON 列表，每条记录包含：symbol(代码)、name(名称)、price(收盘价元)、
@@ -987,9 +991,13 @@ async def tool_get_limit_list_daily(
 
     Note:
         first_lu_time/last_lu_time 仅涨停池有值；first_ld_time/last_ld_time 仅跌停池有值。
+        单次最大4000条，跨多日查询时注意限量。
     """
     try:
-        return _to_json(limit_list.get_limit_list(trade_date=trade_date, limit_type=limit_type))
+        return _to_json(limit_list.get_limit_list(
+            trade_date=trade_date, limit_type=limit_type,
+            start_date=start_date, end_date=end_date,
+        ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 

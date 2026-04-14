@@ -315,7 +315,7 @@ def test_empty_raises():
 | `tool_get_strong_stocks_daily` | pool | 强势股池（新高/量比），akshare(东财) |
 | `tool_get_previous_zt_daily` | pool | 昨日涨停今日表现，akshare(东财) |
 | `tool_get_zbgc_pool_daily` | pool | 炸板股池（冲板后开板），akshare(东财) |
-| `tool_get_limit_list_daily` | pool | 同花顺涨跌停榜单（涨停/连扳/炸板/跌停/冲刺），tushare |
+| `tool_get_limit_list_history` | pool | 同花顺涨跌停榜单（涨停/连扳/炸板/跌停/冲刺，支持日期范围），tushare |
 | `tool_get_kpl_list_daily` | pool | 开盘啦榜单（涨停/跌停/炸板/自然涨停/竞价），tushare |
 | `tool_get_limit_step_daily` | pool | 涨停连板天梯，tushare |
 | `tool_get_north_capital_snapshot` | north_flow | 北向资金日频资金流（沪深股通），akshare(东财) |

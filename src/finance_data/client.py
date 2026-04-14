@@ -233,10 +233,17 @@ class FinanceData:
         """获取炸板股池"""
         return self._get_service("pool", "zbgc_pool").get_zbgc_pool_history(date)
 
-    def limit_list(self, trade_date: str, limit_type: str = "涨停池") -> DataResult:
+    def limit_list(
+        self,
+        trade_date: str = "",
+        limit_type: str = "涨停池",
+        start_date: str = "",
+        end_date: str = "",
+    ) -> DataResult:
         """获取同花顺涨跌停榜单（涨停池/连扳池/炸板池/跌停池/冲刺涨停）"""
         return self._get_service("pool", "limit_list").get_limit_list(
             trade_date=trade_date, limit_type=limit_type,
+            start_date=start_date, end_date=end_date,
         )
 
     def kpl_list(self, trade_date: str, tag: str = "涨停") -> DataResult:
