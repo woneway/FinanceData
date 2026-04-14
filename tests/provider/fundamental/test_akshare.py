@@ -58,6 +58,21 @@ def test_get_dividend_fields(mock_dividend_df):
     assert row["record_date"] == "20231214"
 
 
+def test_get_dividend_complex_plan():
+    """含送转股的分红方案应正确解析派息金额"""
+    df = pd.DataFrame([
+        {"A股除权除息日": "2024-07-10", "分红方案说明": "10送3股转2股派5元", "A股股权登记日": "2024-07-09"},
+        {"A股除权除息日": "2024-01-15", "分红方案说明": "10送5股转5股", "A股股权登记日": "2024-01-12"},
+        {"A股除权除息日": pd.NaT, "分红方案说明": "不分配不转增", "A股股权登记日": pd.NaT},
+    ])
+    with patch("finance_data.provider.akshare.fundamental.history.ak.stock_fhps_detail_ths",
+               return_value=df):
+        result = AkshareDividend().get_dividend_history("000001")
+    assert len(result.data) == 1
+    assert result.data[0]["per_share"] == 0.5
+    assert result.data[0]["ex_date"] == "20240710"
+
+
 def test_get_financial_summary_network_error():
     with patch("finance_data.provider.akshare.fundamental.history.ak.stock_financial_abstract",
                side_effect=ConnectionError("timeout")):

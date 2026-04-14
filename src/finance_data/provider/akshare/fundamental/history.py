@@ -98,12 +98,14 @@ class AkshareFinancialSummary:
 
 
 def _parse_per_share_dividend(desc: str) -> float:
-    """从分红方案说明中提取每股分红金额，如 '10派5元' → 0.5"""
+    """从分红方案说明中提取每股分红金额，如 '10送3股派5元' → 0.5"""
     import re
-    m = re.search(r"(\d+)派(\d+(?:\.\d+)?)元?", str(desc))
-    if m:
-        base = float(m.group(1))
-        amount = float(m.group(2))
+    s = str(desc)
+    base_m = re.match(r"(\d+)", s)
+    cash_m = re.search(r"派([\d.]+)元?", s)
+    if base_m and cash_m:
+        base = float(base_m.group(1))
+        amount = float(cash_m.group(1))
         return round(amount / base, 4) if base > 0 else 0.0
     return 0.0
 
@@ -121,12 +123,22 @@ class AkshareDividend:
         if df is None or df.empty:
             raise DataFetchError("akshare", "stock_fhps_detail_ths", f"无数据: {symbol}", "data")
 
-        rows = [DividendRecord(
-            symbol=symbol,
-            ex_date=str(r.get("A股除权除息日", "")).replace("-", ""),
-            per_share=_parse_per_share_dividend(r.get("分红方案说明", "")),
-            record_date=str(r.get("A股股权登记日", "")).replace("-", ""),
-        ).to_dict() for _, r in df.iterrows()]
+        import pandas as pd
+        rows = []
+        for _, r in df.iterrows():
+            ex_raw = r.get("A股除权除息日")
+            if pd.isna(ex_raw):
+                continue
+            ex_date = str(ex_raw).replace("-", "")
+            per_share = _parse_per_share_dividend(r.get("分红方案说明", ""))
+            if per_share <= 0:
+                continue
+            rec_raw = r.get("A股股权登记日")
+            record_date = "" if pd.isna(rec_raw) else str(rec_raw).replace("-", "")
+            rows.append(DividendRecord(
+                symbol=symbol, ex_date=ex_date,
+                per_share=per_share, record_date=record_date,
+            ).to_dict())
 
         return DataResult(data=rows, source="akshare",
                           meta={"rows": len(rows), "symbol": symbol, "upstream": "ths"})

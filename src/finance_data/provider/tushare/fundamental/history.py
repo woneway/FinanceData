@@ -87,11 +87,21 @@ class TushareDividend:
         if df is None or df.empty:
             raise DataFetchError("tushare", "dividend", f"无数据: {symbol}", "data")
 
-        rows = [DividendRecord(
-            symbol=symbol,
-            ex_date=str(r.get("ex_date", "")).replace("-", ""),
-            per_share=float(r.get("cash_div", 0) or 0),
-            record_date=str(r.get("record_date", "")).replace("-", ""),
-        ).to_dict() for _, r in df.iterrows()]
+        import pandas as pd
+        rows = []
+        for _, r in df.iterrows():
+            if pd.isna(r.get("ex_date")):
+                continue
+            per_share = float(r.get("cash_div", 0) or 0)
+            if per_share <= 0:
+                continue
+            rec_raw = r.get("record_date")
+            record_date = "" if pd.isna(rec_raw) else str(rec_raw).replace("-", "")
+            rows.append(DividendRecord(
+                symbol=symbol,
+                ex_date=str(r["ex_date"]).replace("-", ""),
+                per_share=per_share,
+                record_date=record_date,
+            ).to_dict())
 
         return DataResult(data=rows, source="tushare", meta={"rows": len(rows), "symbol": symbol})

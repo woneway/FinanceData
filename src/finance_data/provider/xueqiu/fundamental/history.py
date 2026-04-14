@@ -150,7 +150,8 @@ class XueqiuFinancialSummary:
 # 分红记录
 # ---------------------------------------------------------------------------
 
-_DIVIDEND_RE = re.compile(r"(\d+)派([\d.]+)元")
+_DIVIDEND_BASE_RE = re.compile(r"^(\d+)")
+_DIVIDEND_CASH_RE = re.compile(r"派([\d.]+)元?")
 
 
 class XueqiuDividend:
@@ -214,17 +215,21 @@ class XueqiuDividend:
         record_date = _ms_to_date(item.get("equity_date"))
 
         plan = str(item.get("plan_explain", ""))
-        m = _DIVIDEND_RE.search(plan)
-        if m:
-            base = float(m.group(1))
-            amount = float(m.group(2))
-            per_share = amount / base if base > 0 else 0.0
+        base_m = _DIVIDEND_BASE_RE.match(plan)
+        cash_m = _DIVIDEND_CASH_RE.search(plan)
+        if base_m and cash_m:
+            base = float(base_m.group(1))
+            amount = float(cash_m.group(1))
+            per_share = round(amount / base, 4) if base > 0 else 0.0
         else:
             per_share = 0.0
+
+        if per_share <= 0:
+            return None
 
         return DividendRecord(
             symbol=symbol,
             ex_date=ex_date,
-            per_share=round(per_share, 4),
+            per_share=per_share,
             record_date=record_date,
         )
