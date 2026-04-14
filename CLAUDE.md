@@ -145,7 +145,7 @@ def _build_kline_history():
 | Service 实例 | `snake_case`（模块级） | `kline_history = _build_kline_history()` |
 | Interface Protocol | `{Entity}{Type}Protocol` | `KlineHistoryProtocol`, `RealtimeQuoteProtocol` |
 | Interface Model | `{Entity}{Type}` (dataclass) | `KlineBar`, `RealtimeQuote`, `IndexBar` |
-| MCP Tool | `tool_{action}_{entity}_{scope}` | `tool_get_kline_daily_history`, `tool_get_quote_realtime` |
+| MCP Tool | `tool_{action}_{entity}_{scope}` | `tool_get_kline_daily_history`, `tool_get_stock_quote_realtime` |
 | Client 方法 | `{entity}_{sub}`（简洁） | `fd.kline_daily()`, `fd.quote()`, `fd.board_member()` |
 | 文件名 | `provider/{source}/{domain}/{type}.py` | `provider/tushare/kline/history.py` |
 | 测试文件 | `test_{source}.py` 或 `test_{source}_{specific}.py` | `test_akshare.py`, `test_akshare_lhb_sina.py` |
@@ -292,7 +292,7 @@ def test_empty_raises():
 | `tool_get_kline_daily_history` | kline | 个股历史日线行情，tushare+akshare(腾讯) |
 | `tool_get_kline_weekly_history` | kline | 个股历史周线行情（每日更新），tushare |
 | `tool_get_kline_monthly_history` | kline | 个股历史月线行情（每日更新），tushare |
-| `tool_get_quote_realtime` | quote | 实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价），xueqiu+tencent |
+| `tool_get_stock_quote_realtime` | quote | 实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价），xueqiu+tencent |
 | `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare(新浪)+xueqiu |
 | `tool_get_index_kline_history` | index | 大盘指数历史 K线，tushare+xueqiu |
 | `tool_get_board_index_history` | board | 东财板块索引/快照（行业/概念/地域），tushare |

@@ -4,7 +4,7 @@ from finance_data.provider.metadata.registry import TOOL_REGISTRY
 
 def test_realtime_api_name_matches_actual():
     """realtime 实际用 xueqiu quotec.json"""
-    meta = TOOL_REGISTRY["tool_get_quote_realtime"]
+    meta = TOOL_REGISTRY["tool_get_stock_quote_realtime"]
     assert meta.api_name == "quotec.json", \
         f"实际用 xueqiu quotec.json，registry 写了 {meta.api_name}"
 

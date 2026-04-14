@@ -93,7 +93,7 @@ class TestGetProviders:
 class TestHealthProbes:
     def test_health_all_returns_sse(self, client):
         mock_result = HealthResult(
-            tool="tool_get_quote_realtime",
+            tool="tool_get_stock_quote_realtime",
             provider="akshare",
             status="ok",
             response_time_ms=150.0,
@@ -111,7 +111,7 @@ class TestHealthProbes:
             data_lines = [l for l in lines if l.startswith("data: ")]
             assert len(data_lines) >= 2  # result + [DONE]
             first = json.loads(data_lines[0].removeprefix("data: "))
-            assert first["tool"] == "tool_get_quote_realtime"
+            assert first["tool"] == "tool_get_stock_quote_realtime"
             assert first["status"] == "ok"
             assert data_lines[-1] == "data: [DONE]"
 
@@ -201,7 +201,7 @@ class TestInvokeTool:
 
         with patch("importlib.import_module", return_value=mock_module):
             resp = client.post(
-                "/api/tools/tool_get_quote_realtime",
+                "/api/tools/tool_get_stock_quote_realtime",
                 json={"params": {"symbol": "000001"}},
             )
             data = resp.json()
@@ -239,7 +239,7 @@ class TestInvokeTool:
 
         with patch("importlib.import_module", return_value=mock_module):
             resp = client.post(
-                "/api/tools/tool_get_quote_realtime",
+                "/api/tools/tool_get_stock_quote_realtime",
                 json={"params": {"symbol": "000001"}},
             )
             data = resp.json()

@@ -13,13 +13,21 @@ class TushareNorthStockHold:
         indicator: str = "5日排行",
         symbol: str = "",
         trade_date: str = "",
+        start_date: str = "",
+        end_date: str = "",
     ) -> DataResult:
         pro = get_pro()
+        kwargs: dict = {}
+        if symbol:
+            kwargs["ts_code"] = symbol
+        if trade_date:
+            kwargs["trade_date"] = trade_date
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
-            df = pro.hk_hold(
-                ts_code=symbol,
-                trade_date=trade_date,
-            )
+            df = pro.hk_hold(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "hk_hold", str(e), "network") from e
         except Exception as e:

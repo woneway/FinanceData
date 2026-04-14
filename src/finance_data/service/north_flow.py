@@ -27,11 +27,16 @@ class _NorthStockHoldDispatcher:
         self._providers = providers
 
     def get_north_stock_hold_history(
-        self, market: str, indicator: str, symbol: str, trade_date: str
+        self, market: str = "沪股通", indicator: str = "5日排行",
+        symbol: str = "", trade_date: str = "",
+        start_date: str = "", end_date: str = "",
     ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_north_stock_hold_history(market, indicator, symbol, trade_date)
+                return p.get_north_stock_hold_history(
+                    market, indicator, symbol, trade_date,
+                    start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning(f"{type(p).__name__} 失败: {e}")
         raise DataFetchError("all", "get_north_stock_hold_history", "所有数据源均失败", "data")

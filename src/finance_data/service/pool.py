@@ -99,10 +99,16 @@ class _KplListDispatcher:
     def __init__(self, providers: list):
         self._providers = providers
 
-    def get_kpl_list(self, trade_date: str, tag: str = "涨停") -> DataResult:
+    def get_kpl_list(
+        self, trade_date: str = "", tag: str = "涨停",
+        start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_kpl_list(trade_date=trade_date, tag=tag)
+                return p.get_kpl_list(
+                    trade_date=trade_date, tag=tag,
+                    start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning(f"{type(p).__name__} 失败: {e}")
         raise DataFetchError("all", "get_kpl_list", "所有数据源均失败", "data")
@@ -112,10 +118,14 @@ class _LimitStepDispatcher:
     def __init__(self, providers: list):
         self._providers = providers
 
-    def get_limit_step(self, trade_date: str) -> DataResult:
+    def get_limit_step(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_limit_step(trade_date=trade_date)
+                return p.get_limit_step(
+                    trade_date=trade_date, start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning(f"{type(p).__name__} 失败: {e}")
         raise DataFetchError("all", "get_limit_step", "所有数据源均失败", "data")

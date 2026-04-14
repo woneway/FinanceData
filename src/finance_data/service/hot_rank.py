@@ -26,10 +26,14 @@ class _ThsHotDispatcher:
     def __init__(self, providers: list[ThsHotProtocol]):
         self._providers = providers
 
-    def get_ths_hot(self, trade_date: str = "") -> DataResult:
+    def get_ths_hot(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_ths_hot(trade_date=trade_date)
+                return p.get_ths_hot(
+                    trade_date=trade_date, start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning(f"{type(p).__name__} 失败: {e}")
         raise DataFetchError("all", "get_ths_hot", "所有数据源均失败", "data")

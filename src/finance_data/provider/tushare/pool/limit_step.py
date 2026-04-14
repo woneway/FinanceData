@@ -7,10 +7,19 @@ _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
 
 class TushareLimitStep:
-    def get_limit_step(self, trade_date: str) -> DataResult:
+    def get_limit_step(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         pro = get_pro()
+        kwargs: dict = {}
+        if trade_date:
+            kwargs["trade_date"] = trade_date
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
-            df = pro.limit_step(trade_date=trade_date)
+            df = pro.limit_step(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "limit_step", str(e), "network") from e
         except Exception as e:

@@ -131,7 +131,7 @@ section("3. realtime — 实时行情")
 # akshare realtime 已禁用（东财源不可用，新浪源太慢）
 print("  [tushare] get_realtime_quote (000001)...")
 from finance_data.provider.tushare.realtime.realtime import TushareRealtimeQuote
-run("tool_get_quote_realtime", "tushare",
+run("tool_get_stock_quote_realtime", "tushare",
     TushareRealtimeQuote().get_realtime_quote, "000001")
 
 
@@ -307,7 +307,7 @@ lines = [
 tool_seq = [
     "tool_get_stock_info",
     "tool_get_kline",
-    "tool_get_quote_realtime",
+    "tool_get_stock_quote_realtime",
     "tool_get_index_quote",
     "tool_get_index_kline_history",
     "tool_get_board_index_history",

@@ -161,7 +161,7 @@ async def tool_get_kline_monthly_history(
 
 
 @mcp.tool()
-async def tool_get_quote_realtime(symbol: str) -> str:
+async def tool_get_stock_quote_realtime(symbol: str) -> str:
     """
     获取股票实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价）。
 
@@ -517,24 +517,28 @@ async def tool_get_lhb_stock_detail_daily(
 
 
 @mcp.tool()
-async def tool_get_north_hold_daily(
+async def tool_get_north_hold_history(
     market: str = "沪股通",
     indicator: str = "5日排行",
     symbol: str = "",
     trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
 ) -> str:
     """
-    获取北向资金持股明细（选股参考）。
+    获取北向资金持股明细，支持日期范围查询。
 
     数据源: akshare 优先，tushare fallback
     实时性: 非实时，收盘后约 15:30 更新
-    历史查询: akshare 支持，tushare 自 2024年8月20日起改为季度披露
+    历史查询: 支持（start_date/end_date，tushare 专用）
 
     Args:
         market: choice of {"沪股通", "深股通"}（akshare 专用）
         indicator: choice of {"5日排行", "10日排行", "月排行", "季排行", "年排行"}（akshare 专用）
         symbol: 股票代码（tushare 专用，如 "600000"）
-        trade_date: 交易日期 YYYYMMDD（tushare 专用，如 "20240301"）
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD（tushare 专用）
+        end_date: 结束日期 YYYYMMDD（tushare 专用）
 
     Returns:
         JSON 列表，每条包含：symbol、name、date、close_price、pct_chg、
@@ -546,7 +550,8 @@ async def tool_get_north_hold_daily(
     """
     try:
         return _to_json(north_stock_hold.get_north_stock_hold_history(
-            market=market, indicator=indicator, symbol=symbol, trade_date=trade_date
+            market=market, indicator=indicator, symbol=symbol,
+            trade_date=trade_date, start_date=start_date, end_date=end_date,
         ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
@@ -873,18 +878,27 @@ async def tool_get_hot_rank_realtime() -> str:
 
 
 @mcp.tool()
-async def tool_get_ths_hot_daily(
+async def tool_get_ths_hot_history(
     trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
 ) -> str:
     """
-    获取同花顺热股排行。
+    获取同花顺热股排行，支持日期范围查询。
 
     数据源: tushare(ths_hot)
     实时性: 日频（每半小时更新，取最新一期）
-    历史查询: 支持按交易日
+    历史查询: 支持（start_date/end_date）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
     """
     try:
-        return _to_json(ths_hot.get_ths_hot(trade_date=trade_date))
+        return _to_json(ths_hot.get_ths_hot(
+            trade_date=trade_date, start_date=start_date, end_date=end_date,
+        ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
@@ -999,68 +1013,100 @@ async def tool_get_hm_detail_history(
 
 
 @mcp.tool()
-async def tool_get_auction_daily(trade_date: str) -> str:
+async def tool_get_auction_history(
+    trade_date: str = "", start_date: str = "", end_date: str = "",
+) -> str:
     """
-    获取开盘集合竞价成交数据。
+    获取开盘集合竞价成交数据，支持日期范围查询。
 
     数据源: tushare(stk_auction)
     实时性: 日频（盘前更新）
-    历史查询: 支持按交易日
+    历史查询: 支持（start_date/end_date）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
     """
     try:
-        return _to_json(auction.get_auction(trade_date=trade_date))
+        return _to_json(auction.get_auction(
+            trade_date=trade_date, start_date=start_date, end_date=end_date,
+        ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
-async def tool_get_kpl_list_daily(
-    trade_date: str,
-    tag: str = "涨停",
+async def tool_get_kpl_list_history(
+    trade_date: str = "", tag: str = "涨停",
+    start_date: str = "", end_date: str = "",
 ) -> str:
     """
-    获取开盘啦榜单数据。
+    获取开盘啦榜单数据，支持日期范围查询。
 
     数据源: tushare(kpl_list)
     实时性: 日频
-    历史查询: 支持按交易日
+    历史查询: 支持（start_date/end_date）
 
     Args:
-        trade_date: 交易日期 YYYYMMDD
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
         tag: 涨停/跌停/炸板/自然涨停/竞价
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
     """
     try:
-        return _to_json(kpl_list.get_kpl_list(trade_date=trade_date, tag=tag))
+        return _to_json(kpl_list.get_kpl_list(
+            trade_date=trade_date, tag=tag,
+            start_date=start_date, end_date=end_date,
+        ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
-async def tool_get_limit_step_daily(trade_date: str) -> str:
+async def tool_get_limit_step_history(
+    trade_date: str = "", start_date: str = "", end_date: str = "",
+) -> str:
     """
-    获取涨停连板天梯。
+    获取涨停连板天梯，支持日期范围查询。
 
     数据源: tushare(limit_step)
     实时性: 日频
-    历史查询: 支持按交易日
+    历史查询: 支持（start_date/end_date）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
     """
     try:
-        return _to_json(limit_step.get_limit_step(trade_date=trade_date))
+        return _to_json(limit_step.get_limit_step(
+            trade_date=trade_date, start_date=start_date, end_date=end_date,
+        ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
-async def tool_get_auction_close_daily(trade_date: str) -> str:
+async def tool_get_auction_close_history(
+    trade_date: str = "", start_date: str = "", end_date: str = "",
+) -> str:
     """
-    获取收盘集合竞价成交数据。
+    获取收盘集合竞价成交数据，支持日期范围查询。
 
     数据源: tushare(stk_auction_c)
     实时性: 日频
-    历史查询: 支持按交易日
+    历史查询: 支持（start_date/end_date）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
     """
     try:
-        return _to_json(auction_close.get_auction_close(trade_date=trade_date))
+        return _to_json(auction_close.get_auction_close(
+            trade_date=trade_date, start_date=start_date, end_date=end_date,
+        ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 

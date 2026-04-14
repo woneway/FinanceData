@@ -37,10 +37,10 @@ def test_monthly_kline_mcp_returns_error_json():
 
 
 def test_realtime_mcp_returns_error_json():
-    from finance_data.mcp.server import tool_get_quote_realtime
+    from finance_data.mcp.server import tool_get_stock_quote_realtime
     with patch("finance_data.mcp.server.realtime_quote") as mock:
         mock.get_realtime_quote.side_effect = DataFetchError("test", "fn", "boom", "data")
-        result = _run(tool_get_quote_realtime("000001"))
+        result = _run(tool_get_stock_quote_realtime("000001"))
     parsed = json.loads(result)
     assert "error" in parsed
 

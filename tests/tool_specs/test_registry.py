@@ -15,7 +15,7 @@ def test_toolspec_registry_matches_metadata_registry():
 
 
 def test_realtime_quote_toolspec_has_expected_service_and_providers():
-    spec = get_tool_spec("tool_get_quote_realtime")
+    spec = get_tool_spec("tool_get_stock_quote_realtime")
     assert spec is not None
     assert spec.service.module_path == "finance_data.service.realtime"
     assert spec.service.object_name == "realtime_quote"

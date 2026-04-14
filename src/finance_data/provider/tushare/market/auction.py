@@ -23,10 +23,19 @@ def _opt_flt(val):
 
 
 class TushareAuction:
-    def get_auction(self, trade_date: str) -> DataResult:
+    def get_auction(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         pro = get_pro()
+        kwargs: dict = {}
+        if trade_date:
+            kwargs["trade_date"] = trade_date
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
-            df = pro.stk_auction(trade_date=trade_date)
+            df = pro.stk_auction(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "stk_auction", str(e), "network") from e
         except Exception as e:

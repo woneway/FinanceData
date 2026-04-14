@@ -109,7 +109,7 @@ def test_invoke_via_service():
     )
     with patch("finance_data.service.realtime.realtime_quote") as mock_svc:
         mock_svc.get_realtime_quote.return_value = mock_result
-        result = runner.invoke(main, ["invoke", "tool_get_quote_realtime", "-p", "symbol=000001"])
+        result = runner.invoke(main, ["invoke", "tool_get_stock_quote_realtime", "-p", "symbol=000001"])
     assert result.exit_code == 0
     assert "000001" in result.output
 
@@ -121,10 +121,10 @@ def test_invoke_json():
     )
     with patch("finance_data.service.realtime.realtime_quote") as mock_svc:
         mock_svc.get_realtime_quote.return_value = mock_result
-        result = runner.invoke(main, ["invoke", "tool_get_quote_realtime", "-p", "symbol=000001", "--json"])
+        result = runner.invoke(main, ["invoke", "tool_get_stock_quote_realtime", "-p", "symbol=000001", "--json"])
     assert result.exit_code == 0
     data = json.loads(result.output)
-    assert data["tool"] == "tool_get_quote_realtime"
+    assert data["tool"] == "tool_get_stock_quote_realtime"
     assert len(data["data"]) == 1
 
 
@@ -147,7 +147,7 @@ def test_invoke_kline_symbol_only_applies_defaults():
 
 
 def test_invoke_missing_required_param():
-    result = runner.invoke(main, ["invoke", "tool_get_quote_realtime"])
+    result = runner.invoke(main, ["invoke", "tool_get_stock_quote_realtime"])
     assert result.exit_code == 1
     assert "missing required param" in result.output
 
@@ -159,7 +159,7 @@ def test_invoke_unknown_tool():
 
 
 def test_invoke_bad_param_format():
-    result = runner.invoke(main, ["invoke", "tool_get_quote_realtime", "-p", "no_equals"])
+    result = runner.invoke(main, ["invoke", "tool_get_stock_quote_realtime", "-p", "no_equals"])
     assert result.exit_code == 1
     assert "key=value" in result.output
 

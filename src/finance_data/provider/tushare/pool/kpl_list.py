@@ -23,10 +23,20 @@ def _opt_flt(val):
 
 
 class TushareKplList:
-    def get_kpl_list(self, trade_date: str, tag: str = "涨停") -> DataResult:
+    def get_kpl_list(
+        self, trade_date: str = "", tag: str = "涨停",
+        start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         pro = get_pro()
+        kwargs: dict = {"tag": tag}
+        if trade_date:
+            kwargs["trade_date"] = trade_date
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
-            df = pro.kpl_list(trade_date=trade_date, tag=tag)
+            df = pro.kpl_list(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "kpl_list", str(e), "network") from e
         except Exception as e:

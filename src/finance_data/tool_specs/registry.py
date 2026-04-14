@@ -193,7 +193,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="月线行情",
         ),
         ToolSpec(
-            name="tool_get_quote_realtime",
+            name="tool_get_stock_quote_realtime",
             description="获取股票实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价）",
             domain="quote",
             params=(
@@ -504,7 +504,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="炸板股池",
         ),
         ToolSpec(
-            name="tool_get_north_hold_daily",
+            name="tool_get_north_hold_history",
             description="获取北向资金持股明细",
             domain="north_flow",
             params=(
@@ -512,6 +512,8 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("indicator", required=False, default="5日排行", description="榜单指标", example="5日排行"),
                 _param("symbol", required=False, default="", description="股票代码", example="600519"),
                 _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20240408"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("symbol", "name", "date", "hold_volume", "hold_market_cap"),
             service=_service("finance_data.service.north_flow", "north_stock_hold", "get_north_stock_hold_history"),
@@ -663,11 +665,13 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="东财人气榜",
         ),
         ToolSpec(
-            name="tool_get_ths_hot_daily",
+            name="tool_get_ths_hot_history",
             description="获取同花顺热股排行",
             domain="market",
             params=(
                 _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("rank", "symbol", "name", "pct_chg", "current_price", "hot", "concept"),
             service=_service("finance_data.service.hot_rank", "ths_hot", "get_ths_hot"),
@@ -700,10 +704,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             description="获取同花顺涨跌停榜单（支持日期范围）",
             domain="pool",
             params=(
-                _param("trade_date", required=False, description="交易日期 YYYYMMDD（与 start_date/end_date 二选一）", example="20260410"),
+                _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD（与 start_date/end_date 二选一）", example="20260410"),
                 _param("limit_type", required=False, default="涨停池", description="榜单类型", example="涨停池", choices=(("涨停池", "涨停池"), ("连扳池", "连扳池"), ("炸板池", "炸板池"), ("跌停池", "跌停池"), ("冲刺涨停", "冲刺涨停"))),
-                _param("start_date", required=False, description="开始日期 YYYYMMDD", example="20260401"),
-                _param("end_date", required=False, description="结束日期 YYYYMMDD", example="20260410"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("symbol", "name", "pct_chg", "lu_desc", "tag", "status", "limit_amount", "first_lu_time", "last_lu_time", "turnover", "sum_float", "free_float", "lu_limit_order", "market_type"),
             service=_service("finance_data.service.pool", "limit_list", "get_limit_list"),
@@ -748,11 +752,13 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="游资明细",
         ),
         ToolSpec(
-            name="tool_get_auction_daily",
+            name="tool_get_auction_history",
             description="获取开盘集合竞价成交数据",
             domain="market",
             params=(
-                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+                _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("symbol", "trade_date", "price", "volume", "amount", "pre_close", "volume_ratio"),
             service=_service("finance_data.service.market", "auction", "get_auction"),
@@ -764,12 +770,14 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="开盘竞价",
         ),
         ToolSpec(
-            name="tool_get_kpl_list_daily",
+            name="tool_get_kpl_list_history",
             description="获取开盘啦榜单数据",
             domain="pool",
             params=(
-                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+                _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
                 _param("tag", required=False, default="涨停", description="榜单类型", example="涨停", choices=(("涨停", "涨停"), ("跌停", "跌停"), ("炸板", "炸板"), ("自然涨停", "自然涨停"), ("竞价", "竞价"))),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("symbol", "name", "pct_chg", "tag", "theme", "status", "lu_desc"),
             service=_service("finance_data.service.pool", "kpl_list", "get_kpl_list"),
@@ -781,11 +789,13 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="开盘啦榜单",
         ),
         ToolSpec(
-            name="tool_get_limit_step_daily",
+            name="tool_get_limit_step_history",
             description="获取涨停连板天梯",
             domain="pool",
             params=(
-                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+                _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("symbol", "name", "trade_date", "nums"),
             service=_service("finance_data.service.pool", "limit_step", "get_limit_step"),
@@ -797,11 +807,13 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             display_name="连板天梯",
         ),
         ToolSpec(
-            name="tool_get_auction_close_daily",
+            name="tool_get_auction_close_history",
             description="获取收盘集合竞价成交数据",
             domain="market",
             params=(
-                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260410"),
+                _param("trade_date", required=False, default="", description="交易日期 YYYYMMDD", example="20260410"),
+                _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
+                _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
             return_fields=("symbol", "trade_date", "close", "volume", "amount", "vwap"),
             service=_service("finance_data.service.market", "auction_close", "get_auction_close"),

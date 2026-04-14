@@ -10,7 +10,7 @@
 | 1 | `tool_get_stock_info` | tushare | ❌ FAIL | 0 | 0.04 | [auth] 您的token不对，请确认。 |
 | 2 | `tool_get_kline` | akshare | ❌ FAIL | 0 | 0.00 | [network] HTTPSConnectionPool(host='web.ifzq.gtimg.cn', port=443): Max retries exceeded with url: /other/klineweb/klineWeb/weekTrends?code=sz000001&type=qfq&_var=trend_qfq&r=0.3506048543943414 (Caused by ProxyError('Unable to connect to proxy', NewConnectionError("HTTPSConnection(host='127.0.0.1', port=7892): Failed to establish a new connection: [Errno 61] Connection refused"))) |
 | 3 | `tool_get_kline` | tushare | ❌ FAIL | 0 | 0.03 | [auth] 您的token不对，请确认。 |
-| 4 | `tool_get_quote_realtime` | tushare | ❌ FAIL | 0 | 0.03 | [auth] 您的token不对，请确认。 |
+| 4 | `tool_get_stock_quote_realtime` | tushare | ❌ FAIL | 0 | 0.03 | [auth] 您的token不对，请确认。 |
 | 5 | `tool_get_index_quote` | akshare | ❌ FAIL | 0 | 0.00 | [network] HTTPConnectionPool(host='127.0.0.1', port=7892): Max retries exceeded with url: http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeStockCountSimple?node=hs_s (Caused by ProxyError('Unable to connect to proxy', NewConnectionError("HTTPConnection(host='127.0.0.1', port=7892): Failed to establish a new connection: [Errno 61] Connection refused"))) |
 | 6 | `tool_get_index_quote` | tushare | ❌ FAIL | 0 | 0.03 | [auth] 您的token不对，请确认。 |
 | 7 | `tool_get_index_kline_history` | akshare | ❌ FAIL | 0 | 0.00 | [network] HTTPSConnectionPool(host='finance.sina.com.cn', port=443): Max retries exceeded with url: /realstock/company/sh000001/hisdata/klc_kl.js?d=2020_2_4 (Caused by ProxyError('Unable to connect to proxy', NewConnectionError("HTTPSConnection(host='127.0.0.1', port=7892): Failed to establish a new connection: [Errno 61] Connection refused"))) |
@@ -41,7 +41,7 @@
 ### `tool_get_kline` (tushare)
 - 错误：`[auth] 您的token不对，请确认。`
 
-### `tool_get_quote_realtime` (tushare)
+### `tool_get_stock_quote_realtime` (tushare)
 - 错误：`[auth] 您的token不对，请确认。`
 
 ### `tool_get_index_quote` (akshare)

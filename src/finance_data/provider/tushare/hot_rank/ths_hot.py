@@ -31,11 +31,17 @@ def _classify_error(exc: Exception) -> DataFetchError:
 
 
 class TushareThsHot:
-    def get_ths_hot(self, trade_date: str = "") -> DataResult:
+    def get_ths_hot(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+    ) -> DataResult:
         pro = get_pro()
         kwargs: dict[str, str] = {}
         if trade_date:
             kwargs["trade_date"] = trade_date
+        if start_date:
+            kwargs["start_date"] = start_date
+        if end_date:
+            kwargs["end_date"] = end_date
         try:
             df = pro.ths_hot(**kwargs)
         except _NETWORK_ERRORS as e:
