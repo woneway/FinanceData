@@ -286,10 +286,10 @@ class FinanceData:
         """获取北向资金日频资金流"""
         return self._get_service("north_flow", "north_flow").get_north_flow_history()
 
-    def north_hold(self, market: str = "沪股通", **kwargs) -> DataResult:
+    def north_hold(self, symbol: str = "", **kwargs) -> DataResult:
         """获取北向资金持股明细"""
         return self._get_service("north_flow", "north_stock_hold").get_north_stock_hold_history(
-            market=market, **kwargs,
+            symbol=symbol, **kwargs,
         )
 
     # ------------------------------------------------------------------

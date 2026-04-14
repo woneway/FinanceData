@@ -90,7 +90,7 @@ const TOOL_LABELS: Record<string, string> = {
   tool_get_previous_zt: "昨日涨停",
   tool_get_zbgc_pool: "炸板股池",
   tool_get_market_north_capital: "北向资金流",
-  tool_get_north_stock_hold: "北向持股",
+  tool_get_north_hold_history: "北向持股",
   tool_get_margin: "两融汇总",
   tool_get_margin_detail: "两融明细",
 }

@@ -317,7 +317,7 @@ def test_empty_raises():
 | `tool_get_kpl_list_daily` | pool | 开盘啦榜单（涨停/跌停/炸板/自然涨停/竞价），tushare |
 | `tool_get_limit_step_daily` | pool | 涨停连板天梯，tushare |
 | `tool_get_north_capital_snapshot` | north_flow | 北向资金日频资金流（沪深股通），akshare(东财) |
-| `tool_get_north_hold_daily` | north_flow | 北向资金持股明细，akshare(东财)+tushare |
+| `tool_get_north_hold_history` | north_flow | 北向资金持股明细（支持日期范围），tushare |
 | `tool_get_margin_history` | margin | 融资融券汇总（按交易所），tushare+akshare(交易所) |
 | `tool_get_margin_detail_history` | margin | 融资融券个股明细，tushare+akshare(上交所)+xueqiu |
 | `tool_get_capital_flow_realtime` | cashflow | 个股资金流向（主力净流入），xueqiu |

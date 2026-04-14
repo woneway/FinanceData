@@ -16,8 +16,8 @@ def test_margin_detail_has_rqye_limitation():
     assert "rqye" in notes, f"margin_detail 应标注融券数据缺失，got: {meta.limitations}"
 
 
-def test_north_stock_hold_has_tushare_zero_fields():
-    """北向持股应标注 tushare 多字段为 0"""
-    meta = TOOL_REGISTRY["tool_get_north_hold_daily"]
+def test_north_stock_hold_has_quarterly_limitation():
+    """北向持股应标注交易所改为季度披露"""
+    meta = TOOL_REGISTRY["tool_get_north_hold_history"]
     notes = " ".join(meta.limitations or [])
-    assert "close_price" in notes, f"north_stock_hold 应标注 tushare 零值字段，got: {meta.limitations}"
+    assert "季度" in notes, f"north_stock_hold 应标注季度披露限制，got: {meta.limitations}"

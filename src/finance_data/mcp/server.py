@@ -521,40 +521,38 @@ async def tool_get_lhb_stock_detail_daily(
 
 @mcp.tool()
 async def tool_get_north_hold_history(
-    market: str = "沪股通",
-    indicator: str = "5日排行",
     symbol: str = "",
     trade_date: str = "",
     start_date: str = "",
     end_date: str = "",
+    exchange: str = "",
 ) -> str:
     """
     获取北向资金持股明细，支持日期范围查询。
 
-    数据源: akshare 优先，tushare fallback
-    实时性: 非实时，收盘后约 15:30 更新
-    历史查询: 支持（start_date/end_date，tushare 专用）
+    数据源: tushare(hk_hold)
+    实时性: 非实时，收盘后更新
+    历史查询: 支持（start_date/end_date）
 
     Args:
-        market: choice of {"沪股通", "深股通"}（akshare 专用）
-        indicator: choice of {"5日排行", "10日排行", "月排行", "季排行", "年排行"}（akshare 专用）
-        symbol: 股票代码（tushare 专用，如 "600000"）
+        symbol: 股票代码，如 "600519.SH"
         trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
-        start_date: 开始日期 YYYYMMDD（tushare 专用）
-        end_date: 结束日期 YYYYMMDD（tushare 专用）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
+        exchange: 市场筛选，如 "沪股通"、"深股通"、"SH"、"SZ"
 
     Returns:
-        JSON 列表，每条包含：symbol、name、date、close_price、pct_chg、
-        hold_volume(持股数量股)、hold_market_cap(持股市值元)、hold_float_ratio(%),
-        hold_total_ratio(%)、increase_5d_volume、increase_5d_cap 等（akshare 特有）
+        JSON 列表，每条包含：symbol(代码)、name(名称)、date(日期)、
+        hold_volume(持股数量股)、hold_ratio(持股占比%)、exchange(市场)
 
     Note:
-        tushare hk_hold 自2024年8月20日起交易所停止发布日度数据，改为季度披露。
+        交易所自2024年8月20日起停止发布日度数据，改为季度披露。
     """
     try:
         return _to_json(north_stock_hold.get_north_stock_hold_history(
-            market=market, indicator=indicator, symbol=symbol,
-            trade_date=trade_date, start_date=start_date, end_date=end_date,
+            symbol=symbol, trade_date=trade_date,
+            start_date=start_date, end_date=end_date,
+            exchange=exchange,
         ))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)

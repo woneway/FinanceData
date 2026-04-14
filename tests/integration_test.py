@@ -240,12 +240,11 @@ run("tool_get_lhb_detail_history", "tushare",
 
 section("15. north_flow — 北向持股明细")
 
-# akshare 北向持股已禁用（依赖东财 stock_hsgt_hold_stock_em）
-print("  [tushare] get_north_stock_hold (600519 20250320)...")
+print("  [tushare] get_north_stock_hold (600519.SH 20240815)...")
 from finance_data.provider.tushare.north_flow.history import TushareNorthStockHold
-run("tool_get_north_hold_daily", "tushare",
+run("tool_get_north_hold_history", "tushare",
     TushareNorthStockHold().get_north_stock_hold_history,
-    symbol="600519", trade_date="20250320")
+    symbol="600519.SH", trade_date="20240815")
 
 
 section("16. margin — 融资融券汇总")
@@ -317,7 +316,7 @@ tool_seq = [
     "tool_get_trade_calendar",
     "tool_get_market_stats_realtime",
     "tool_get_lhb_detail_history",
-    "tool_get_north_hold_daily",
+    "tool_get_north_hold_history",
     "tool_get_margin_history",
     "tool_get_margin_detail_history",
 ]

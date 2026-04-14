@@ -5,16 +5,17 @@ from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
+_MARKET_TO_EXCHANGE = {"沪股通": "SH", "深股通": "SZ"}
+
 
 class TushareNorthStockHold:
     def get_north_stock_hold_history(
         self,
-        market: str = "沪股通",
-        indicator: str = "5日排行",
         symbol: str = "",
         trade_date: str = "",
         start_date: str = "",
         end_date: str = "",
+        exchange: str = "",
     ) -> DataResult:
         pro = get_pro()
         kwargs: dict = {}
@@ -26,6 +27,8 @@ class TushareNorthStockHold:
             kwargs["start_date"] = start_date
         if end_date:
             kwargs["end_date"] = end_date
+        if exchange:
+            kwargs["exchange"] = _MARKET_TO_EXCHANGE.get(exchange, exchange)
         try:
             df = pro.hk_hold(**kwargs)
         except _NETWORK_ERRORS as e:
@@ -47,12 +50,9 @@ class TushareNorthStockHold:
                 symbol=sym,
                 name=str(row.get("name", "") or ""),
                 date=str(row.get("trade_date", "")).replace("-", ""),
-                close_price=0,
-                pct_change=0,
                 hold_volume=float(row.get("vol", 0) or 0),
-                hold_market_cap=0,
-                hold_float_ratio=float(row.get("ratio", 0) or 0),
-                hold_total_ratio=0,
+                hold_ratio=float(row.get("ratio", 0) or 0),
+                exchange=str(row.get("exchange", "") or ""),
             ).to_dict())
 
         return DataResult(data=rows, source="tushare",
