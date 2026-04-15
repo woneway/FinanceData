@@ -6,10 +6,6 @@ from finance_data.interface.types import DataResult, DataFetchError
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
-_WAN = 10_000
-_YI = 1e8
-
-
 def _flt(val, default: float = 0.0) -> float:
     try:
         v = float(val)
@@ -58,16 +54,16 @@ class TushareLhbDetail:
                     name=str(r.get("name", "")),
                     date=_date(r.get("trade_date", "")),
                     close=_flt(r.get("close")),
-                    pct_change=_flt(r.get("pct_chg")),
-                    lhb_net_buy=_flt(r.get("net_amount")) * _WAN,
-                    lhb_buy=_flt(r.get("l_buy")) * _WAN,
-                    lhb_sell=_flt(r.get("l_sell")) * _WAN,
-                    lhb_amount=_flt(r.get("l_amount")) * _WAN,
-                    market_amount=_flt(r.get("amount")) * _WAN,
+                    pct_chg=_flt(r.get("pct_change", r.get("pct_chg"))),
+                    lhb_net_buy=_flt(r.get("net_amount")),
+                    lhb_buy=_flt(r.get("l_buy")),
+                    lhb_sell=_flt(r.get("l_sell")),
+                    lhb_amount=_flt(r.get("l_amount")),
+                    market_amount=_flt(r.get("amount")),
                     net_rate=_flt(r.get("net_rate")),
                     amount_rate=_flt(r.get("amount_rate")),
                     turnover_rate=_flt(r.get("turnover_rate")),
-                    float_value=_flt(r.get("float_values")) * _YI,
+                    float_value=_flt(r.get("float_values")),
                     reason=str(r.get("reason", "")),
                 ).to_dict())
 

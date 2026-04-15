@@ -85,7 +85,7 @@ class AkshareLhbDetail:
             name=str(r.get("名称", "")),
             date=_date(r.get("上榜日", "")),
             close=_flt(r.get("收盘价")),
-            pct_change=_flt(r.get("涨跌幅")),
+            pct_chg=_flt(r.get("涨跌幅")),
             lhb_net_buy=_flt(r.get("龙虎榜净买额")),
             lhb_buy=_flt(r.get("龙虎榜买入额")),
             lhb_sell=_flt(r.get("龙虎榜卖出额")),

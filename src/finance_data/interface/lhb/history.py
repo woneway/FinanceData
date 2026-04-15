@@ -36,7 +36,7 @@ class LhbEntry:
     name: str
     date: str
     close: float
-    pct_change: float
+    pct_chg: float
     lhb_net_buy: float
     lhb_buy: float
     lhb_sell: float
@@ -51,7 +51,7 @@ class LhbEntry:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol, "name": self.name, "date": self.date,
-            "close": self.close, "pct_change": self.pct_change,
+            "close": self.close, "pct_chg": self.pct_chg,
             "lhb_net_buy": self.lhb_net_buy, "lhb_buy": self.lhb_buy,
             "lhb_sell": self.lhb_sell, "lhb_amount": self.lhb_amount,
             "market_amount": self.market_amount,

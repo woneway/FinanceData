@@ -9,14 +9,14 @@ def test_tushare_lhb_date_range_queries_multiple_days():
 
     df1 = pd.DataFrame([{
         "ts_code": "000001.SZ", "name": "平安银行", "trade_date": "20260323",
-        "close": 10.0, "pct_chg": 1.0, "net_amount": 1.0, "l_buy": 2.0,
+        "close": 10.0, "pct_change": 1.0, "net_amount": 1.0, "l_buy": 2.0,
         "l_sell": 1.0, "l_amount": 3.0, "amount": 100.0,
         "net_rate": 0.5, "amount_rate": 0.3, "turnover_rate": 5.0,
         "float_values": 10.0, "reason": "涨幅偏离",
     }])
     df2 = pd.DataFrame([{
         "ts_code": "600519.SH", "name": "贵州茅台", "trade_date": "20260324",
-        "close": 1800.0, "pct_chg": 2.0, "net_amount": 5.0, "l_buy": 8.0,
+        "close": 1800.0, "pct_change": 2.0, "net_amount": 5.0, "l_buy": 8.0,
         "l_sell": 3.0, "l_amount": 11.0, "amount": 500.0,
         "net_rate": 1.0, "amount_rate": 0.8, "turnover_rate": 3.0,
         "float_values": 200.0, "reason": "涨幅偏离",
@@ -44,7 +44,7 @@ def test_tushare_lhb_single_date_works():
 
     df1 = pd.DataFrame([{
         "ts_code": "000001.SZ", "name": "平安银行", "trade_date": "20260323",
-        "close": 10.0, "pct_chg": 1.0, "net_amount": 1.0, "l_buy": 2.0,
+        "close": 10.0, "pct_change": 1.0, "net_amount": 1.0, "l_buy": 2.0,
         "l_sell": 1.0, "l_amount": 3.0, "amount": 100.0,
         "net_rate": 0.5, "amount_rate": 0.3, "turnover_rate": 5.0,
         "float_values": 10.0, "reason": "涨幅偏离",
