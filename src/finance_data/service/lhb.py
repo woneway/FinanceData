@@ -1,6 +1,6 @@
 """龙虎榜 service - 统一对外入口
 
-- lhb_detail: akshare(东财)
+- lhb_detail: akshare(东财) -> tushare
 - lhb_stock_stat, lhb_active_traders, lhb_trader_stat, lhb_stock_detail: akshare 新浪源
 """
 import logging
@@ -83,7 +83,11 @@ class _LhbStockDetailDispatcher:
 
 def _build_lhb_detail() -> _LhbDetailDispatcher:
     from finance_data.provider.akshare.lhb.history import AkshareLhbDetail
-    return _LhbDetailDispatcher(providers=[AkshareLhbDetail()])
+    providers: list[LhbDetailProtocol] = [AkshareLhbDetail()]
+    if os.getenv("TUSHARE_TOKEN"):
+        from finance_data.provider.tushare.lhb.history import TushareLhbDetail
+        providers.append(TushareLhbDetail())
+    return _LhbDetailDispatcher(providers=providers)
 
 
 def _build_lhb_stock_stat() -> _LhbStockStatDispatcher:

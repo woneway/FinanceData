@@ -366,9 +366,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             service=_service("finance_data.service.lhb", "lhb_detail", "get_lhb_detail_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.lhb.history:AkshareLhbDetail", "get_lhb_detail_history"),
+                _provider("tushare", "finance_data.provider.tushare.lhb.history:TushareLhbDetail", "get_lhb_detail_history", available_if="tushare_token"),
             ),
-            probe=_probe({"start_date": "$RECENT-7", "end_date": "$RECENT"}, required_fields=("date", "symbol")),
-            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20200101", source="akshare", source_priority="akshare", api_name="stock_lhb_detail_em", primary_key="date", examples=({"start_date": "20240401", "end_date": "20240409"},)),
+            probe=_probe({"start_date": "20260401", "end_date": "20260401"}, required_fields=("date", "symbol")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20200101", source="both", source_priority="akshare", api_name="stock_lhb_detail_em,top_list", primary_key="date,symbol,reason", examples=({"start_date": "20260401", "end_date": "20260401"},)),
             display_name="龙虎榜详情",
         ),
         ToolSpec(

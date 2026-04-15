@@ -394,7 +394,7 @@ async def tool_get_lhb_detail_history(
     """
     获取龙虎榜每日上榜详情。
 
-    数据源: akshare(东财)
+    数据源: akshare(东财) 优先，tushare fallback
     实时性: 收盘后更新（T+1_17:00）
     历史查询: 支持（2020年至今）
 
@@ -410,7 +410,7 @@ async def tool_get_lhb_detail_history(
         turnover_rate(换手率%)、float_value(流通市值元)、reason(上榜原因)
 
     Note:
-        akshare 支持完整日期范围查询。
+        akshare 支持完整日期范围查询；tushare 按交易日逐日查询。
     """
     try:
         return _to_json(lhb_detail.get_lhb_detail_history(start_date, end_date))

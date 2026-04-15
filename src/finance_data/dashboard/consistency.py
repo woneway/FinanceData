@@ -91,13 +91,18 @@ def _match_rows(
     if all(len(rows) == 1 for rows in provider_data.values()):
         return {"row_0": {p: rows[0] for p, rows in provider_data.items()}}
 
-    # 多行：按 primary_key 索引
+    key_fields = [f.strip() for f in primary_key.split(",") if f.strip()]
+    if not key_fields:
+        key_fields = [primary_key]
+
+    # 多行：按 primary_key 索引，支持逗号分隔的复合主键。
     indexed: Dict[str, Dict[str, Dict[str, Any]]] = {}
     for provider, rows in provider_data.items():
         for row in rows:
-            key_val = str(row.get(primary_key, ""))
-            if not key_val:
+            key_parts = [str(row.get(field, "")) for field in key_fields]
+            if any(not part for part in key_parts):
                 continue
+            key_val = "|".join(key_parts)
             indexed.setdefault(key_val, {})[provider] = row
 
     # 仅保留所有 provider 都有的行
