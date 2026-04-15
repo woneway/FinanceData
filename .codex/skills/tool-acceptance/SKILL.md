@@ -48,6 +48,7 @@ description: 在 FinanceData 中验收单个接口或 tool 时使用。适用于
   2. 调用原始接口
   3. 再判断 provider 或 service 哪层有问题
 - 不能只根据项目代码推断上游语义。
+- **必须真实调用原始 API 并 `print(df.columns.tolist())`，逐字段比对 provider 代码中的 `r.get("xxx")`。禁止凭文档描述假设字段名。**
 - `CLI`、`HTTP API`、`MCP`、`Web 前端` 都属于正式验收项。
 - `Web` 验收必须看页面渲染结果，不能只看接口 200。
 - 要明确区分：
