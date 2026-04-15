@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+from pathlib import Path
 from typing import Any
 
 from finance_data.tool_specs.adapters import list_tool_specs
@@ -93,6 +94,33 @@ def validate_probe_params_against_mcp() -> dict[str, list[str]]:
     return errors
 
 
+def validate_mcp_tools_use_toolspec_dispatch() -> dict[str, list[str]]:
+    errors: dict[str, list[str]] = {}
+    server = importlib.import_module("finance_data.mcp.server")
+
+    for spec in list_tool_specs():
+        fn = getattr(server, spec.name, None)
+        if fn is None:
+            errors[spec.name] = ["mcp function missing"]
+            continue
+
+        tool_errors: list[str] = []
+        try:
+            source = inspect.getsource(fn)
+        except OSError as exc:
+            tool_errors.append(f"mcp source unavailable: {exc}")
+        else:
+            if "_invoke_tool_json" not in source:
+                tool_errors.append("mcp function does not use ToolSpec dispatch helper")
+            if spec.name not in source:
+                tool_errors.append("mcp function does not dispatch its registered tool name")
+
+        if tool_errors:
+            errors[spec.name] = tool_errors
+
+    return errors
+
+
 def validate_dashboard_tools_api_against_registry() -> dict[str, list[str]]:
     errors: dict[str, list[str]] = {}
     from fastapi.testclient import TestClient
@@ -154,10 +182,44 @@ def validate_dashboard_tools_api_against_registry() -> dict[str, list[str]]:
     return errors
 
 
+def validate_frontend_uses_dashboard_tool_contract() -> dict[str, list[str]]:
+    errors: dict[str, list[str]] = {}
+    root = Path(__file__).resolve().parents[3]
+    frontend_files = {
+        "ToolInvoke": root / "frontend" / "src" / "pages" / "ToolInvoke.tsx",
+        "HealthCheck": root / "frontend" / "src" / "pages" / "HealthCheck.tsx",
+    }
+    forbidden_patterns = {
+        "TOOL_LABELS": "local tool label table",
+        "PARAM_LABELS": "local param label table",
+        "PARAM_PLACEHOLDERS": "local param placeholder table",
+        "tool_get_daily_kline_history": "tool-specific default logic",
+        "tool_get_weekly_kline_history": "tool-specific default logic",
+        "tool_get_monthly_kline_history": "tool-specific default logic",
+    }
+
+    for label, path in frontend_files.items():
+        if not path.exists():
+            errors[label] = [f"frontend file missing: {path}"]
+            continue
+        text = path.read_text(encoding="utf-8")
+        file_errors = [
+            f"frontend maintains {reason}: {pattern}"
+            for pattern, reason in forbidden_patterns.items()
+            if pattern in text
+        ]
+        if file_errors:
+            errors[label] = file_errors
+
+    return errors
+
+
 def validate_registry_consistency() -> dict[str, Any]:
     return {
         "tool_specs": validate_tool_specs(),
         "service_targets": validate_service_targets(),
         "probe_params": validate_probe_params_against_mcp(),
+        "mcp_dispatch": validate_mcp_tools_use_toolspec_dispatch(),
         "dashboard_api": validate_dashboard_tools_api_against_registry(),
+        "frontend_contract": validate_frontend_uses_dashboard_tool_contract(),
     }

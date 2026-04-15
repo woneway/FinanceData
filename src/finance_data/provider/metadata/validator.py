@@ -80,7 +80,7 @@ class Validator:
 
         # 6. 校验 ToolSpec 对齐
         results.extend(self._validate_toolspec_signature_alignment())
-        results.extend(self._validate_toolspec_service_alignment())
+        results.extend(self._validate_toolspec_dispatch_alignment())
 
         return results
 
@@ -231,8 +231,8 @@ class Validator:
 
         return results
 
-    def _validate_toolspec_service_alignment(self) -> List[ValidationResult]:
-        """校验 MCP 函数实现引用的 service target 与 ToolSpec 一致。"""
+    def _validate_toolspec_dispatch_alignment(self) -> List[ValidationResult]:
+        """校验 MCP 函数实现通过 ToolSpec dispatch 进入 service target。"""
         results = []
 
         for name, fn in self.tool_functions.items():
@@ -241,11 +241,20 @@ class Validator:
                 results.append(ValidationResult(False, "ToolSpec service target 缺失", name))
                 continue
 
-            names = set(fn.__code__.co_names)
-            if target.object_name not in names or target.method_name not in names:
+            try:
+                source = inspect.getsource(fn)
+            except OSError as exc:
                 results.append(ValidationResult(
                     False,
-                    f"MCP 未引用 ToolSpec service target: {target.object_name}.{target.method_name}",
+                    f"MCP 源码不可读，无法校验 ToolSpec dispatch: {exc}",
+                    name,
+                ))
+                continue
+
+            if "_invoke_tool_json" not in source or name not in source:
+                results.append(ValidationResult(
+                    False,
+                    f"MCP 未通过 ToolSpec dispatch 调用注册工具: {name}",
                     name,
                 ))
 
@@ -314,7 +323,7 @@ def validate_toolspec_registry_consistency() -> List[ValidationResult]:
         ))
 
     results.extend(validator._validate_toolspec_signature_alignment())
-    results.extend(validator._validate_toolspec_service_alignment())
+    results.extend(validator._validate_toolspec_dispatch_alignment())
     return results
 
 

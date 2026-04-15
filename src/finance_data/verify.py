@@ -158,6 +158,8 @@ def run_verify(
 ) -> VerifyReport:
     """Run all verification checks and return a structured report."""
     from finance_data.tool_specs.validators import (
+        validate_frontend_uses_dashboard_tool_contract,
+        validate_mcp_tools_use_toolspec_dispatch,
         validate_probe_params_against_mcp,
         validate_service_targets,
         validate_tool_specs,
@@ -169,6 +171,8 @@ def run_verify(
     results.append(_run_timed("tool_specs", validate_tool_specs))
     results.append(_run_timed("service_targets", validate_service_targets))
     results.append(_run_timed("probe_params", validate_probe_params_against_mcp))
+    results.append(_run_timed("mcp_dispatch", validate_mcp_tools_use_toolspec_dispatch))
+    results.append(_run_timed("frontend_contract", validate_frontend_uses_dashboard_tool_contract))
     results.append(_run_timed("toolspec_registry", validate_toolspec_registry_consistency))
 
     if include_dashboard:

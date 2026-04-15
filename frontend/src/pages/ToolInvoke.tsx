@@ -40,59 +40,8 @@ const DOMAIN_LABELS: Record<string, string> = {
   sector_fund_flow: "板块资金流",
 }
 
-const PARAM_LABELS: Record<string, string> = {
-  symbol: "股票代码",
-  period: "周期",
-  start: "开始日期",
-  end: "结束日期",
-  adj: "复权方式",
-  start_date: "开始日期",
-  end_date: "结束日期",
-  trade_date: "交易日期",
-  exchange_id: "交易所",
-  market: "市场",
-  indicator: "指标",
-  ts_code: "TS 代码",
-  date: "日期",
-  flag: "方向",
-  board_name: "板块名称",
-  idx_type: "板块类型",
-}
-
-const PARAM_PLACEHOLDERS: Record<string, string> = {
-  symbol: "如 000001",
-  period: "如 daily/weekly/monthly/日k",
-  start: "YYYYMMDD",
-  end: "YYYYMMDD",
-  adj: "qfq/hfq/none",
-  start_date: "YYYYMMDD",
-  end_date: "YYYYMMDD",
-  trade_date: "YYYYMMDD",
-  exchange_id: "SSE/SZSE/BSE",
-  market: "沪股通/深股通",
-  indicator: "5日排行/10日排行/近一月",
-  ts_code: "如 000001.SZ",
-  date: "YYYYMMDD",
-  flag: "买入/卖出",
-  board_name: "如 银行/人工智能",
-  idx_type: "行业板块/概念板块/地域板块",
-}
-
 interface ToolInvokeProps {
   tools: ToolInfo[]
-}
-
-function todayYmd() {
-  return new Date().toISOString().slice(0, 10).replaceAll("-", "")
-}
-
-function previousTradingDayYmd() {
-  const date = new Date()
-  date.setDate(date.getDate() - 1)
-  while (date.getDay() === 0 || date.getDay() === 6) {
-    date.setDate(date.getDate() - 1)
-  }
-  return date.toISOString().slice(0, 10).replaceAll("-", "")
 }
 
 export default function ToolInvoke({ tools }: ToolInvokeProps) {
@@ -124,13 +73,6 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
   const paramDefs = selectedToolInfo?.params ?? []
 
   const getDisplayDefault = (paramName: string) => {
-    const klineTools = ["tool_get_daily_kline_history", "tool_get_weekly_kline_history", "tool_get_monthly_kline_history"]
-    if (klineTools.includes(selectedTool) && paramName === "start") {
-      return previousTradingDayYmd()
-    }
-    if (klineTools.includes(selectedTool) && paramName === "end") {
-      return todayYmd()
-    }
     const param = paramDefs.find((p) => p.name === paramName)
     return param?.default == null ? "" : String(param.default)
   }
@@ -344,7 +286,7 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                     {paramDefs.map((p) => (
                       <div key={p.name} className="space-y-1">
                         <label className="text-sm font-medium">
-                          {PARAM_LABELS[p.name] ?? p.name}
+                          {p.name}
                           {p.required ? "" : "（可选）"}
                         </label>
                         {p.choices && p.choices.length > 0 ? (
@@ -373,7 +315,7 @@ export default function ToolInvoke({ tools }: ToolInvokeProps) {
                           </Select>
                         ) : (
                           <Input
-                            placeholder={PARAM_PLACEHOLDERS[p.name] ?? getDisplayDefault(p.name)}
+                            placeholder={getDisplayDefault(p.name)}
                             value={params[p.name] ?? getDisplayDefault(p.name)}
                             onChange={(e) =>
                               setParams((prev) => ({

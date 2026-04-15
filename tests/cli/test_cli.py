@@ -179,6 +179,36 @@ def test_invoke_board_member():
     assert "000001" in result.output
 
 
+def test_invoke_board_member_passes_trade_date():
+    mock_result = _make_data_result(
+        [{"symbol": "000001", "name": "Test", "board_name": "人工智能", "idx_type": "概念板块"}],
+        source="tushare",
+    )
+    with patch("finance_data.service.board.board_member") as mock_svc:
+        mock_svc.get_board_member.return_value = mock_result
+        result = runner.invoke(
+            main,
+            [
+                "invoke",
+                "tool_get_board_member_history",
+                "-p",
+                "board_name=人工智能",
+                "-p",
+                "idx_type=概念板块",
+                "-p",
+                "trade_date=20260414",
+            ],
+        )
+    assert result.exit_code == 0
+    mock_svc.get_board_member.assert_called_once_with(
+        board_name="人工智能",
+        idx_type="概念板块",
+        trade_date="20260414",
+        start_date="",
+        end_date="",
+    )
+
+
 # ------------------------------------------------------------------
 # health
 # ------------------------------------------------------------------

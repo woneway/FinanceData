@@ -1,7 +1,6 @@
 """
 MCP 接入层 - 薄封装，不含业务逻辑
 """
-import datetime
 import json
 import logging
 
@@ -34,6 +33,7 @@ from finance_data.service.daily_basic import daily_basic_market
 from finance_data.service.stk_limit import stk_limit
 from finance_data.service.stock import stock_basic_list
 from finance_data.interface.types import DataFetchError
+from finance_data.tool_specs.invoke import invoke_tool_spec
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("finance-data")
@@ -44,6 +44,13 @@ def _to_json(result) -> str:
         ensure_ascii=False,
         indent=2,
     )
+
+
+def _invoke_tool_json(tool: str, params: dict) -> str:
+    try:
+        return _to_json(invoke_tool_spec(tool, params).result)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
 @mcp.tool()
@@ -62,10 +69,7 @@ async def tool_get_stock_info_snapshot(symbol: str) -> str:
         JSON 格式的个股信息，包含 symbol、name、industry、list_date、
         area、reg_capital(注册资本元)、staff_num(员工数) 等
     """
-    try:
-        return _to_json(stock_history.get_stock_info_history(symbol))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_stock_info_snapshot", {"symbol": symbol})
 
 
 @mcp.tool()
@@ -91,13 +95,10 @@ async def tool_get_kline_daily_history(
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume(股)、amount(元)、pct_chg(%)
     """
-    if not end:
-        end = datetime.date.today().strftime("%Y%m%d")
-    try:
-        result = daily_kline_history.get_daily_kline_history(symbol, start=start, end=end, adj=adj)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_kline_daily_history",
+        {"symbol": symbol, "start": start, "end": end, "adj": adj},
+    )
 
 
 @mcp.tool()
@@ -123,13 +124,10 @@ async def tool_get_kline_weekly_history(
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume(股)、amount(元)、pct_chg(%)
     """
-    if not end:
-        end = datetime.date.today().strftime("%Y%m%d")
-    try:
-        result = weekly_kline_history.get_weekly_kline_history(symbol, start=start, end=end, adj=adj)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_kline_weekly_history",
+        {"symbol": symbol, "start": start, "end": end, "adj": adj},
+    )
 
 
 @mcp.tool()
@@ -155,13 +153,10 @@ async def tool_get_kline_monthly_history(
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume(股)、amount(元)、pct_chg(%)
     """
-    if not end:
-        end = datetime.date.today().strftime("%Y%m%d")
-    try:
-        result = monthly_kline_history.get_monthly_kline_history(symbol, start=start, end=end, adj=adj)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_kline_monthly_history",
+        {"symbol": symbol, "start": start, "end": end, "adj": adj},
+    )
 
 
 @mcp.tool()
@@ -188,11 +183,7 @@ async def tool_get_stock_quote_realtime(symbol: str) -> str:
     Note:
         腾讯补充字段为 best-effort，失败时仅返回雪球核心字段。
     """
-    try:
-        result = realtime_quote.get_realtime_quote(symbol)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_stock_quote_realtime", {"symbol": symbol})
 
 
 @mcp.tool()
@@ -211,11 +202,7 @@ async def tool_get_index_quote_realtime(symbol: str = "000001.SH") -> str:
         JSON 列表，每条包含 symbol、name、price(点)、pct_chg(%)、
         volume(股)、amount(元)、timestamp(ISO 8601)
     """
-    try:
-        result = index_quote.get_index_quote_realtime(symbol)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_index_quote_realtime", {"symbol": symbol})
 
 
 @mcp.tool()
@@ -239,13 +226,10 @@ async def tool_get_index_kline_history(
     Returns:
         JSON 列表，每条包含 date、open、high、low、close、volume、amount、pct_chg
     """
-    if not end:
-        end = datetime.date.today().strftime("%Y%m%d")
-    try:
-        result = index_history.get_index_history(symbol, start=start, end=end)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_index_kline_history",
+        {"symbol": symbol, "start": start, "end": end},
+    )
 
 
 @mcp.tool()
@@ -262,16 +246,15 @@ async def tool_get_board_index_history(
     实时性: 日频
     历史查询: 支持（trade_date 单日快照，或 start_date/end_date 日期范围）
     """
-    try:
-        result = board_index.get_board_index(
-            idx_type=idx_type,
-            trade_date=trade_date,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_board_index_history",
+        {
+            "idx_type": idx_type,
+            "trade_date": trade_date,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )
 
 
 @mcp.tool()
@@ -287,13 +270,10 @@ async def tool_get_chip_distribution_history(
     实时性: 收盘后更新（T+1_16:00）
     历史查询: 支持（start_date/end_date 日期范围）
     """
-    try:
-        result = chip_history.get_chip_distribution_history(
-            symbol, start_date=start_date, end_date=end_date,
-        )
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_chip_distribution_history",
+        {"symbol": symbol, "start_date": start_date, "end_date": end_date},
+    )
 
 
 @mcp.tool()
@@ -309,13 +289,10 @@ async def tool_get_financial_summary_history(
     实时性: 季度披露（T+1_17:00 后）
     历史查询: 支持（start_date/end_date 按报告期筛选）
     """
-    try:
-        result = financial_summary.get_financial_summary_history(
-            symbol, start_date=start_date, end_date=end_date,
-        )
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_financial_summary_history",
+        {"symbol": symbol, "start_date": start_date, "end_date": end_date},
+    )
 
 
 @mcp.tool()
@@ -333,11 +310,7 @@ async def tool_get_dividend_history(symbol: str) -> str:
     Returns:
         JSON 列表，包含 ex_date(除权除息日)、per_share(每股分红元)、record_date(股权登记日)
     """
-    try:
-        result = dividend.get_dividend_history(symbol)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_dividend_history", {"symbol": symbol})
 
 
 @mcp.tool()
@@ -356,11 +329,7 @@ async def tool_get_capital_flow_realtime(symbol: str) -> str:
         JSON 列表，包含 date、net_inflow(主力净流入元)、main_net_inflow(主力净流入元)、
         super_large_net_inflow(超大单净流入元)、net_inflow_pct/main_net_inflow_pct/super_large_net_inflow_pct(占比%)
     """
-    try:
-        result = stock_capital_flow.get_stock_capital_flow_realtime(symbol)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_capital_flow_realtime", {"symbol": symbol})
 
 
 @mcp.tool()
@@ -379,11 +348,7 @@ async def tool_get_trade_calendar_history(start: str, end: str) -> str:
     Returns:
         JSON 列表，每条包含：date(日期YYYYMMDD)、is_open(是否交易日)
     """
-    try:
-        result = trade_calendar.get_trade_calendar_history(start, end)
-        return _to_json(result)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_trade_calendar_history", {"start": start, "end": end})
 
 
 @mcp.tool()
@@ -412,10 +377,10 @@ async def tool_get_lhb_detail_history(
     Note:
         akshare 支持完整日期范围查询；tushare 按交易日逐日查询。
     """
-    try:
-        return _to_json(lhb_detail.get_lhb_detail_history(start_date, end_date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_lhb_detail_history",
+        {"start_date": start_date, "end_date": end_date},
+    )
 
 
 @mcp.tool()
@@ -437,10 +402,7 @@ async def tool_get_lhb_stock_stat_history(
         lhb_net_buy(净买额万元)、lhb_buy(累计买入万元)、lhb_sell(累计卖出万元)、
         lhb_amount(龙虎榜总成交万元)、inst_buy_times(买入席位数)、inst_sell_times(卖出席位数)
     """
-    try:
-        return _to_json(lhb_stock_stat.get_lhb_stock_stat_history(period))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_lhb_stock_stat_history", {"period": period})
 
 
 @mcp.tool()
@@ -464,10 +426,10 @@ async def tool_get_lhb_active_traders_history(
         buy_amount(累计购买额万元)、sell_amount(累计卖出额万元)、
         net_amount(净额万元)、stocks(买入前三股票)
     """
-    try:
-        return _to_json(lhb_active_traders.get_lhb_active_traders_history(start_date, end_date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_lhb_active_traders_history",
+        {"start_date": start_date, "end_date": end_date},
+    )
 
 
 @mcp.tool()
@@ -489,10 +451,7 @@ async def tool_get_lhb_trader_stat_history(
         lhb_amount(龙虎榜成交金额万元)、buy_amount(买入额万元)、buy_times(买入席位数)、
         sell_amount(卖出额万元)、sell_times(卖出席位数)
     """
-    try:
-        return _to_json(lhb_trader_stat.get_lhb_trader_stat_history(period))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_lhb_trader_stat_history", {"period": period})
 
 
 @mcp.tool()
@@ -517,10 +476,10 @@ async def tool_get_lhb_stock_detail_daily(
         JSON 列表，每条记录包含：symbol(代码)、date(日期)、
         trade_amount(成交额万元)、seat_type(上榜指标/原因)
     """
-    try:
-        return _to_json(lhb_stock_detail.get_lhb_stock_detail_history(symbol, date, flag))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_lhb_stock_detail_daily",
+        {"symbol": symbol, "date": date, "flag": flag},
+    )
 
 
 @mcp.tool()
@@ -552,14 +511,16 @@ async def tool_get_north_hold_history(
     Note:
         交易所自2024年8月20日起停止发布日度数据，改为季度披露。
     """
-    try:
-        return _to_json(north_stock_hold.get_north_stock_hold_history(
-            symbol=symbol, trade_date=trade_date,
-            start_date=start_date, end_date=end_date,
-            exchange=exchange,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_north_hold_history",
+        {
+            "symbol": symbol,
+            "trade_date": trade_date,
+            "start_date": start_date,
+            "end_date": end_date,
+            "exchange": exchange,
+        },
+    )
 
 
 @mcp.tool()
@@ -590,15 +551,15 @@ async def tool_get_margin_history(
     Note:
         仅 tushare 源，支持日期范围+交易所过滤。
     """
-    try:
-        return _to_json(margin.get_margin_history(
-            trade_date=trade_date,
-            start_date=start_date,
-            end_date=end_date,
-            exchange_id=exchange_id,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_margin_history",
+        {
+            "trade_date": trade_date,
+            "start_date": start_date,
+            "end_date": end_date,
+            "exchange_id": exchange_id,
+        },
+    )
 
 
 @mcp.tool()
@@ -630,15 +591,15 @@ async def tool_get_margin_detail_history(
     Note:
         akshare 只支持单日查询；tushare 支持日期范围+个股查询。
     """
-    try:
-        return _to_json(margin_detail.get_margin_detail_history(
-            trade_date=trade_date,
-            start_date=start_date,
-            end_date=end_date,
-            ts_code=ts_code,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_margin_detail_history",
+        {
+            "trade_date": trade_date,
+            "start_date": start_date,
+            "end_date": end_date,
+            "ts_code": ts_code,
+        },
+    )
 
 
 @mcp.tool()
@@ -656,10 +617,7 @@ async def tool_get_market_stats_realtime() -> str:
     Returns:
         JSON 列表，包含 date、up_count、down_count、flat_count、total_count、total_amount
     """
-    try:
-        return _to_json(market_realtime.get_market_stats_realtime())
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_market_stats_realtime", {})
 
 
 
@@ -681,10 +639,7 @@ async def tool_get_zt_pool_daily(date: str) -> str:
         seal_amount(封板资金元)、first_seal_time/last_seal_time(首末封板时间HHMMSS)、
         open_times(炸板次数)、continuous_days(连板数)、industry(行业)
     """
-    try:
-        return _to_json(zt_pool.get_zt_pool_history(date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_zt_pool_daily", {"date": date})
 
 
 @mcp.tool()
@@ -705,10 +660,7 @@ async def tool_get_strong_stocks_daily(date: str) -> str:
         turnover(换手率%)、volume_ratio(量比)、is_new_high(是否创新高)、
         reason(入选理由)、industry(行业)
     """
-    try:
-        return _to_json(strong_stocks.get_strong_stocks_history(date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_strong_stocks_daily", {"date": date})
 
 
 @mcp.tool()
@@ -728,10 +680,7 @@ async def tool_get_previous_zt_daily(date: str) -> str:
         limit_price(昨日涨停价)、amount(今日成交额元)、float_mv/total_mv、turnover、
         prev_seal_time(昨日封板时间HHMMSS)、prev_continuous_days(昨日连板数)、industry
     """
-    try:
-        return _to_json(previous_zt.get_previous_zt_history(date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_previous_zt_daily", {"date": date})
 
 
 @mcp.tool()
@@ -751,10 +700,7 @@ async def tool_get_zbgc_pool_daily(date: str) -> str:
         limit_price(涨停价)、amount(成交额元)、float_mv/total_mv、turnover、
         first_seal_time(首次封板时间)、open_times(炸板次数)、amplitude(振幅%)、industry
     """
-    try:
-        return _to_json(zbgc_pool.get_zbgc_pool_history(date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_zbgc_pool_daily", {"date": date})
 
 
 @mcp.tool()
@@ -774,10 +720,7 @@ async def tool_get_north_capital_snapshot() -> str:
         direction(北向/南向)、net_buy(成交净买额元)、net_inflow(资金净流入元)、
         balance(当日资金余额元)、up_count、flat_count、down_count
     """
-    try:
-        return _to_json(north_flow.get_north_flow_history())
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_north_capital_snapshot", {})
 
 
 @mcp.tool()
@@ -796,10 +739,7 @@ async def tool_get_suspend_daily(date: str) -> str:
         JSON 列表，每条包含：symbol(代码)、name(名称)、
         suspend_date(停牌起始日)、resume_date(复牌日期)、reason(停牌原因)
     """
-    try:
-        return _to_json(suspend.get_suspend_history(date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_suspend_daily", {"date": date})
 
 
 @mcp.tool()
@@ -817,18 +757,16 @@ async def tool_get_board_member_history(
     实时性: 日频
     历史查询: 支持（trade_date 单日成分，或 start_date/end_date 日期范围）
     """
-    try:
-        return _to_json(
-            board_member.get_board_member(
-                board_name=board_name,
-                idx_type=idx_type,
-                trade_date=trade_date,
-                start_date=start_date,
-                end_date=end_date,
-            )
-        )
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_board_member_history",
+        {
+            "board_name": board_name,
+            "idx_type": idx_type,
+            "trade_date": trade_date,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )
 
 
 @mcp.tool()
@@ -846,18 +784,16 @@ async def tool_get_board_kline_history(
     实时性: 日频
     历史查询: 支持
     """
-    try:
-        return _to_json(
-            board_daily.get_board_daily(
-                board_name=board_name,
-                idx_type=idx_type,
-                trade_date=trade_date,
-                start_date=start_date,
-                end_date=end_date,
-            )
-        )
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_board_kline_history",
+        {
+            "board_name": board_name,
+            "idx_type": idx_type,
+            "trade_date": trade_date,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )
 
 
 @mcp.tool()
@@ -876,10 +812,7 @@ async def tool_get_hot_rank_realtime() -> str:
         JSON 列表，每条包含：rank(排名)、symbol(代码)、name(名称)、
         current(最新价)、pct_chg(涨跌幅%)、hot_rank_chg(排名变化)
     """
-    try:
-        return _to_json(hot_rank.get_hot_rank_realtime())
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_hot_rank_realtime", {})
 
 
 @mcp.tool()
@@ -900,12 +833,10 @@ async def tool_get_ths_hot_history(
         start_date: 开始日期 YYYYMMDD
         end_date: 结束日期 YYYYMMDD
     """
-    try:
-        return _to_json(ths_hot.get_ths_hot(
-            trade_date=trade_date, start_date=start_date, end_date=end_date,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_ths_hot_history",
+        {"trade_date": trade_date, "start_date": start_date, "end_date": end_date},
+    )
 
 
 @mcp.tool()
@@ -929,10 +860,10 @@ async def tool_get_lhb_inst_detail_history(
         close(收盘价)、pct_chg(涨跌幅%)、
         inst_buy(机构买入额元)、inst_sell(机构卖出额元)、inst_net(机构净买额元)
     """
-    try:
-        return _to_json(lhb_inst_detail.get_lhb_inst_detail_history(start_date, end_date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_lhb_inst_detail_history",
+        {"start_date": start_date, "end_date": end_date},
+    )
 
 
 
@@ -971,13 +902,15 @@ async def tool_get_limit_list_history(
         first_lu_time/last_lu_time 仅涨停池有值；first_ld_time/last_ld_time 仅跌停池有值。
         单次最大4000条，跨多日查询时注意限量。
     """
-    try:
-        return _to_json(limit_list.get_limit_list(
-            trade_date=trade_date, limit_type=limit_type,
-            start_date=start_date, end_date=end_date,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_limit_list_history",
+        {
+            "trade_date": trade_date,
+            "limit_type": limit_type,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )
 
 
 @mcp.tool()
@@ -988,10 +921,7 @@ async def tool_get_hm_list_snapshot() -> str:
     数据源: tushare(hm_list)
     实时性: 不定期更新
     """
-    try:
-        return _to_json(hm_list.get_hm_list())
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_hm_list_snapshot", {})
 
 
 @mcp.tool()
@@ -1008,13 +938,15 @@ async def tool_get_hm_detail_history(
     实时性: 日频
     历史查询: 支持（trade_date 或 start_date/end_date）
     """
-    try:
-        return _to_json(hm_detail.get_hm_detail(
-            trade_date=trade_date, start_date=start_date,
-            end_date=end_date, hm_name=hm_name,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_hm_detail_history",
+        {
+            "trade_date": trade_date,
+            "start_date": start_date,
+            "end_date": end_date,
+            "hm_name": hm_name,
+        },
+    )
 
 
 @mcp.tool()
@@ -1033,12 +965,10 @@ async def tool_get_auction_history(
         start_date: 开始日期 YYYYMMDD
         end_date: 结束日期 YYYYMMDD
     """
-    try:
-        return _to_json(auction.get_auction(
-            trade_date=trade_date, start_date=start_date, end_date=end_date,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_auction_history",
+        {"trade_date": trade_date, "start_date": start_date, "end_date": end_date},
+    )
 
 
 @mcp.tool()
@@ -1059,13 +989,15 @@ async def tool_get_kpl_list_history(
         start_date: 开始日期 YYYYMMDD
         end_date: 结束日期 YYYYMMDD
     """
-    try:
-        return _to_json(kpl_list.get_kpl_list(
-            trade_date=trade_date, tag=tag,
-            start_date=start_date, end_date=end_date,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_kpl_list_history",
+        {
+            "trade_date": trade_date,
+            "tag": tag,
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+    )
 
 
 @mcp.tool()
@@ -1084,12 +1016,10 @@ async def tool_get_limit_step_history(
         start_date: 开始日期 YYYYMMDD
         end_date: 结束日期 YYYYMMDD
     """
-    try:
-        return _to_json(limit_step.get_limit_step(
-            trade_date=trade_date, start_date=start_date, end_date=end_date,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_limit_step_history",
+        {"trade_date": trade_date, "start_date": start_date, "end_date": end_date},
+    )
 
 
 @mcp.tool()
@@ -1110,10 +1040,7 @@ async def tool_get_daily_market_history(trade_date: str) -> str:
         pre_close(昨收元)、change(涨跌额元)、pct_chg(涨跌幅%)、
         volume(成交量股)、amount(成交额元)
     """
-    try:
-        return _to_json(daily_market.get_daily_market(trade_date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_daily_market_history", {"trade_date": trade_date})
 
 
 @mcp.tool()
@@ -1133,10 +1060,7 @@ async def tool_get_daily_basic_market_history(trade_date: str) -> str:
         turnover_rate(换手率%)、turnover_rate_f(自由流通换手率%)、volume_ratio(量比)、
         pe_ttm(市盈率TTM)、pb(市净率)、total_mv(总市值元)、circ_mv(流通市值元)
     """
-    try:
-        return _to_json(daily_basic_market.get_daily_basic_market(trade_date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_daily_basic_market_history", {"trade_date": trade_date})
 
 
 @mcp.tool()
@@ -1155,10 +1079,7 @@ async def tool_get_stk_limit_daily(trade_date: str) -> str:
         JSON 列表，每条包含：symbol(代码)、trade_date(日期)、
         pre_close(昨收价元)、up_limit(涨停价元)、down_limit(跌停价元)
     """
-    try:
-        return _to_json(stk_limit.get_stk_limit(trade_date))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_stk_limit_daily", {"trade_date": trade_date})
 
 
 @mcp.tool()
@@ -1177,10 +1098,7 @@ async def tool_get_stock_basic_list_snapshot(list_status: str = "L") -> str:
         JSON 列表，每条包含：symbol(代码)、name(名称)、industry(行业)、
         market(主板/创业板/科创板)、list_date(上市日期)、is_st(是否ST)
     """
-    try:
-        return _to_json(stock_basic_list.get_stock_basic_list(list_status))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json("tool_get_stock_basic_list_snapshot", {"list_status": list_status})
 
 
 @mcp.tool()
@@ -1199,12 +1117,10 @@ async def tool_get_auction_close_history(
         start_date: 开始日期 YYYYMMDD
         end_date: 结束日期 YYYYMMDD
     """
-    try:
-        return _to_json(auction_close.get_auction_close(
-            trade_date=trade_date, start_date=start_date, end_date=end_date,
-        ))
-    except Exception as e:
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return _invoke_tool_json(
+        "tool_get_auction_close_history",
+        {"trade_date": trade_date, "start_date": start_date, "end_date": end_date},
+    )
 
 
 # tool_get_sector_capital_flow 已禁用（push2.eastmoney.com 域名不可达）

@@ -129,18 +129,29 @@ src/finance_data/
 │   ├── market/        # 市场统计
 │   ├── lhb/           # 龙虎榜
 │   └── pool/          # 股票池
+├── tool_specs/        # ToolSpec 工具契约注册表
 └── mcp/
-    └── server.py      # MCP 工具注册
+    └── server.py      # MCP 显式 wrapper，执行走 ToolSpec dispatch
 ```
 
 每个领域目录包含：`models.py` + `akshare.py` + `tushare.py`（按需）
 
 ### 新增接口
 
-1. 在 `src/finance_data/provider/<domain>/` 下新建或修改 `akshare.py` / `tushare.py`
-2. 在 `tests/provider/<domain>/` 下添加对应测试
-3. 在 `src/finance_data/mcp/server.py` 注册 MCP tool
-4. 更新 CLAUDE.md 接口列表
+1. 在 `interface/<domain>/` 定义输入输出契约和 protocol
+2. 在 `provider/<source>/<domain>/` 实现数据源适配
+3. 在 `service/<domain>.py` 接入业务 dispatcher/fallback
+4. 在 `src/finance_data/tool_specs/registry.py` 注册 `ToolSpec`
+5. 在 `src/finance_data/mcp/server.py` 增加同名 MCP wrapper，函数体调用统一 ToolSpec dispatch helper
+6. 补充 provider、service、ToolSpec、MCP、CLI、Dashboard API 和必要的前端契约测试
+7. 运行 `finance-data verify --include-dashboard` 验证注册表、MCP、Dashboard API 和前端契约一致性
+
+交付层约定：
+
+- CLI、MCP、Dashboard API 和前端看板都以 `ToolSpec` 作为工具契约来源
+- 默认业务调用最终进入 service，provider 直调仅用于诊断
+- 前端看板不得维护独立工具参数表、provider 表或返回字段表
+- `FinanceData` Python 客户端保留领域 API，直接调用 service
 
 ## License
 

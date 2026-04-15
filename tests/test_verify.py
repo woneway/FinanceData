@@ -13,16 +13,18 @@ def _mock_validators_all_pass():
         patch("finance_data.tool_specs.validators.validate_tool_specs", return_value={}),
         patch("finance_data.tool_specs.validators.validate_service_targets", return_value={}),
         patch("finance_data.tool_specs.validators.validate_probe_params_against_mcp", return_value={}),
+        patch("finance_data.tool_specs.validators.validate_mcp_tools_use_toolspec_dispatch", return_value={}),
+        patch("finance_data.tool_specs.validators.validate_frontend_uses_dashboard_tool_contract", return_value={}),
         patch("finance_data.provider.metadata.validator.validate_toolspec_registry_consistency", return_value=[]),
     )
 
 
 def test_run_verify_all_pass():
-    p1, p2, p3, p4 = _mock_validators_all_pass()
-    with p1, p2, p3, p4:
+    p1, p2, p3, p4, p5, p6 = _mock_validators_all_pass()
+    with p1, p2, p3, p4, p5, p6:
         report = run_verify()
     assert report.passed is True
-    assert len(report.results) == 4
+    assert len(report.results) == 6
     assert all(r.passed for r in report.results)
 
 
@@ -31,8 +33,10 @@ def test_run_verify_with_failures():
                return_value={"tool_x": ["missing description"]})
     p2 = patch("finance_data.tool_specs.validators.validate_service_targets", return_value={})
     p3 = patch("finance_data.tool_specs.validators.validate_probe_params_against_mcp", return_value={})
-    p4 = patch("finance_data.provider.metadata.validator.validate_toolspec_registry_consistency", return_value=[])
-    with p1, p2, p3, p4:
+    p4 = patch("finance_data.tool_specs.validators.validate_mcp_tools_use_toolspec_dispatch", return_value={})
+    p5 = patch("finance_data.tool_specs.validators.validate_frontend_uses_dashboard_tool_contract", return_value={})
+    p6 = patch("finance_data.provider.metadata.validator.validate_toolspec_registry_consistency", return_value=[])
+    with p1, p2, p3, p4, p5, p6:
         report = run_verify()
     assert report.passed is False
     tool_specs_result = report.results[0]
@@ -42,7 +46,7 @@ def test_run_verify_with_failures():
 
 
 def test_run_verify_with_smoke():
-    p1, p2, p3, p4 = _mock_validators_all_pass()
+    p1, p2, p3, p4, p5, p6 = _mock_validators_all_pass()
 
     mock_result = MagicMock()
     mock_result.data = [{"date": "20260409", "open": "1"}]
@@ -54,7 +58,7 @@ def test_run_verify_with_smoke():
             duration_ms=10.0, level="smoke",
         )
 
-    with p1, p2, p3, p4, \
+    with p1, p2, p3, p4, p5, p6, \
          patch("finance_data.verify._run_single_smoke", side_effect=patched_smoke):
         report = run_verify(include_smoke=True)
 
@@ -64,7 +68,7 @@ def test_run_verify_with_smoke():
 
 
 def test_smoke_network_failure_is_warn():
-    p1, p2, p3, p4 = _mock_validators_all_pass()
+    p1, p2, p3, p4, p5, p6 = _mock_validators_all_pass()
 
     def patched_smoke(tool_name):
         return VerifyResult(
@@ -73,7 +77,7 @@ def test_smoke_network_failure_is_warn():
             duration_ms=5.0, level="smoke",
         )
 
-    with p1, p2, p3, p4, \
+    with p1, p2, p3, p4, p5, p6, \
          patch("finance_data.verify._run_single_smoke", side_effect=patched_smoke):
         report = run_verify(include_smoke=True)
 

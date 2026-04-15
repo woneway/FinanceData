@@ -59,42 +59,6 @@ const DOMAIN_LABELS: Record<string, string> = {
   hot_rank: "人气排行",
 }
 
-/** Tool 名称映射：英文 → 中文简称 */
-const TOOL_LABELS: Record<string, string> = {
-  tool_get_stock_info_history: "个股信息",
-  tool_get_kline_history: "K线历史",
-  tool_get_realtime_quote: "实时行情",
-  tool_get_index_quote_realtime: "指数实时",
-  tool_get_index_history: "指数历史",
-  tool_get_board_index: "板块索引",
-  tool_get_board_member: "板块成分",
-  tool_get_board_daily: "板块日线",
-  tool_get_chip_distribution_history: "筹码分布",
-  tool_get_financial_summary_history: "财务摘要",
-  tool_get_dividend_history: "分红记录",
-  tool_get_daily_basic: "日频指标",
-  tool_get_limit_price: "涨跌停价",
-  tool_get_suspend: "停牌信息",
-  tool_get_hot_rank: "热股排行",
-  tool_get_stock_capital_flow_realtime: "资金流向",
-  tool_get_trade_calendar_history: "交易日历",
-  tool_get_market_stats_realtime: "涨跌统计",
-  tool_get_lhb_detail: "龙虎榜详情",
-  tool_get_lhb_inst_detail: "机构明细",
-  tool_get_lhb_stock_stat: "个股统计",
-  tool_get_lhb_active_traders: "活跃游资",
-  tool_get_lhb_trader_stat: "营业部排行",
-  tool_get_lhb_stock_detail: "席位明细",
-  tool_get_zt_pool: "涨停股池",
-  tool_get_strong_stocks: "强势股池",
-  tool_get_previous_zt: "昨日涨停",
-  tool_get_zbgc_pool: "炸板股池",
-  tool_get_market_north_capital: "北向资金流",
-  tool_get_north_hold_history: "北向持股",
-  tool_get_margin: "两融汇总",
-  tool_get_margin_detail: "两融明细",
-}
-
 interface HealthCheckProps {
   tools: ToolInfo[]
 }
@@ -650,7 +614,7 @@ export default function HealthCheck({ tools }: HealthCheckProps) {
                                   className="text-xs cursor-help text-left select-text"
                                   render={<span />}
                                 >
-                                  <span className="font-medium">{TOOL_LABELS[tool.name] ?? tool.description}</span>
+                                  <span className="font-medium">{tool.display_name ?? tool.description}</span>
                                   <span className="text-muted-foreground ml-1 font-mono text-[10px]">{tool.name.replace("tool_get_", "")}</span>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="max-w-xs">

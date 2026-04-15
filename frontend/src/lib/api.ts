@@ -26,6 +26,7 @@ export interface ToolInfo {
   name: string
   description: string
   domain: string
+  display_name?: string
   source: string
   source_priority: string
   providers: string[]

@@ -277,7 +277,7 @@ class TestInvokeTool:
         mock_cls = MagicMock(return_value=mock_instance)
 
         with patch(
-                "finance_data.dashboard.health._import_class",
+                "finance_data.tool_specs.invoke._import_class",
                 return_value=mock_cls,
             ):
             with patch(
@@ -292,7 +292,14 @@ class TestInvokeTool:
             ):
                 resp = client.post(
                     "/api/tools/tool_get_board_member_history",
-                    json={"params": {"board_name": "银行", "idx_type": "行业板块"}, "provider": "tushare"},
+                    json={
+                        "params": {
+                            "board_name": "银行",
+                            "idx_type": "行业板块",
+                            "trade_date": "20260414",
+                        },
+                        "provider": "tushare",
+                    },
                 )
 
         data = resp.json()
@@ -300,7 +307,7 @@ class TestInvokeTool:
         mock_instance.get_board_member.assert_called_once_with(
             board_name="银行",
             idx_type="行业板块",
-            trade_date="",
+            trade_date="20260414",
             start_date="",
             end_date="",
         )
@@ -316,7 +323,7 @@ class TestInvokeTool:
         mock_cls = MagicMock(return_value=mock_instance)
 
         with patch(
-            "finance_data.dashboard.health._import_class",
+            "finance_data.tool_specs.invoke._import_class",
             return_value=mock_cls,
         ):
             resp = client.post(

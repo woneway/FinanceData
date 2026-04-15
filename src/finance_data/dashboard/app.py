@@ -1,7 +1,6 @@
 """FastAPI dashboard application"""
 import logging
 import os
-import time
 from pathlib import Path
 from typing import Optional
 
@@ -20,12 +19,11 @@ from finance_data.dashboard.models import (
     ToolInfo,
 )
 from finance_data.tool_specs import (
-    apply_tool_defaults,
-    get_tool_service_target,
     get_tool_spec,
+    invoke_tool_spec,
     list_tool_specs,
-    normalize_tool_params,
 )
+from finance_data.tool_specs.invoke import ToolInvokeError
 
 logger = logging.getLogger(__name__)
 
@@ -201,56 +199,24 @@ async def invoke_tool(tool_name: str, req: InvokeRequest) -> InvokeResponse:
 
     chosen_provider = req.provider
     try:
-        start = time.monotonic()
-        provider_params = normalize_tool_params(tool_name, apply_tool_defaults(tool_name, req.params))
-
-        if chosen_provider:
-            # Direct provider call — bypass dispatcher
-            from finance_data.dashboard.health import _import_class
-            class_path = None
-            method_name = None
-            for provider in spec.providers:
-                if provider.name == chosen_provider:
-                    class_path = provider.class_path
-                    method_name = provider.method_name
-                    break
-            if not class_path:
-                return InvokeResponse(
-                    tool=tool_name, provider=chosen_provider, status="error",
-                    error=f"provider '{chosen_provider}' not registered for {tool_name}",
-                )
-            cls = _import_class(class_path)
-            instance = cls()
-            method = getattr(instance, method_name)
-            result = method(**provider_params)
-        else:
-            # Dispatcher fallback chain
-            import importlib
-            target = get_tool_service_target(tool_name)
-            if target is None:
-                raise ValueError(f"service target not found for {tool_name}")
-            mod = importlib.import_module(target.module_path)
-            dispatcher = getattr(mod, target.object_name)
-            method = getattr(dispatcher, target.method_name)
-            result = method(**provider_params)
-
-        elapsed = round((time.monotonic() - start) * 1000, 1)
-        actual_provider = chosen_provider or result.source
+        invoked = invoke_tool_spec(tool_name, req.params, provider=chosen_provider)
+        result = invoked.result
+        actual_provider = invoked.provider
         _metrics.record(
             tool=tool_name,
             provider=actual_provider,
             status="ok",
-            response_time_ms=elapsed,
+            response_time_ms=invoked.response_time_ms,
             source="invoke",
         )
         return InvokeResponse(
             tool=tool_name,
             provider=actual_provider,
             status="ok",
-            response_time_ms=elapsed,
+            response_time_ms=invoked.response_time_ms,
             data={"data": result.data, "source": result.source, "meta": result.meta},
         )
-    except Exception as e:
+    except (ToolInvokeError, Exception) as e:
         _metrics.record(
             tool=tool_name,
             provider=chosen_provider or "unknown",

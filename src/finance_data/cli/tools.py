@@ -1,10 +1,8 @@
 """Tool listing, description, invocation, and provider commands."""
 from __future__ import annotations
 
-import importlib
 import json
 import sys
-import time
 from typing import Any
 
 import click
@@ -13,12 +11,11 @@ from rich.panel import Panel
 from rich.table import Table
 
 from finance_data.tool_specs import (
-    apply_tool_defaults,
     get_tool_spec,
-    get_tool_service_target,
+    invoke_tool_spec,
     list_tool_specs,
-    normalize_tool_params,
 )
+from finance_data.tool_specs.invoke import ToolInvokeError
 
 console = Console()
 
@@ -206,49 +203,16 @@ def invoke_cmd(tool: str, param: tuple[str, ...], provider: str | None, as_json:
         k, v = kv.split("=", 1)
         params[k] = v
 
-    # Resolve aliases: if user passed an alias, map it to canonical name
-    for p in spec.params:
-        if p.name not in params:
-            for alias in p.aliases:
-                if alias in params:
-                    params[p.name] = params.pop(alias)
-                    break
-
-    params = apply_tool_defaults(tool, params)
-
-    # Validate required params (after alias resolution)
-    for p in spec.params:
-        if p.required and p.name not in params:
-            click.echo(f"Error: missing required param '{p.name}'", err=True)
-            sys.exit(1)
-
     try:
-        start = time.monotonic()
-        call_params = normalize_tool_params(tool, params)
-
-        if provider:
-            from finance_data.dashboard.health import _import_class
-
-            matched = [(p.class_path, p.method_name) for p in spec.providers if p.name == provider]
-            if not matched:
-                click.echo(f"Error: provider '{provider}' not registered for {tool}", err=True)
-                sys.exit(1)
-            class_path, method_name = matched[0]
-            cls = _import_class(class_path)
-            result = getattr(cls(), method_name)(**call_params)
-        else:
-            target = get_tool_service_target(tool)
-            mod = importlib.import_module(target.module_path)
-            dispatcher = getattr(mod, target.object_name)
-            result = getattr(dispatcher, target.method_name)(**call_params)
-
-        elapsed = round((time.monotonic() - start) * 1000, 1)
+        invoked = invoke_tool_spec(tool, params, provider=provider)
+        result = invoked.result
+        elapsed = invoked.response_time_ms
 
         if as_json:
             click.echo(json.dumps(
                 {
                     "tool": tool,
-                    "provider": provider or result.source,
+                    "provider": invoked.provider,
                     "response_time_ms": elapsed,
                     "data": result.data,
                     "source": result.source,
@@ -275,7 +239,7 @@ def invoke_cmd(tool: str, param: tuple[str, ...], provider: str | None, as_json:
                 console.print(f"  ... showing 50 of {len(result.data)} records")
             console.print(table)
 
-    except Exception as e:
+    except (ToolInvokeError, Exception) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
