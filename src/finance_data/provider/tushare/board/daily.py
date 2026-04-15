@@ -25,8 +25,20 @@ class TushareBoardDaily:
     def __init__(self, index_provider: TushareBoardIndex | None = None):
         self._index_provider = index_provider or TushareBoardIndex()
 
-    def _resolve_board(self, board_name: str, idx_type: str) -> dict:
-        index_result = self._index_provider.get_board_index(idx_type=idx_type)
+    def _resolve_board(
+        self,
+        board_name: str,
+        idx_type: str,
+        trade_date: str = "",
+        start_date: str = "",
+        end_date: str = "",
+    ) -> dict:
+        index_result = self._index_provider.get_board_index(
+            idx_type=idx_type,
+            trade_date=trade_date,
+            start_date=start_date,
+            end_date=end_date,
+        )
         matches = [row for row in index_result.data if row.get("board_name") == board_name]
         if not matches:
             raise DataFetchError(
@@ -45,7 +57,13 @@ class TushareBoardDaily:
         start_date: str = "",
         end_date: str = "",
     ) -> DataResult:
-        board = self._resolve_board(board_name=board_name, idx_type=idx_type)
+        board = self._resolve_board(
+            board_name=board_name,
+            idx_type=idx_type,
+            trade_date=trade_date,
+            start_date=start_date,
+            end_date=end_date,
+        )
         pro = get_pro()
         kwargs = {"ts_code": board["board_code"], "idx_type": idx_type}
         if trade_date:

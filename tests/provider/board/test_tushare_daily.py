@@ -48,3 +48,9 @@ def test_resolves_board_and_returns_daily_rows():
     assert row["board_code"] == "BK1283.DC"
     assert row["board_name"] == "银行"
     assert row["close"] == 1110.0
+    index_provider.get_board_index.assert_called_once_with(
+        idx_type="行业板块",
+        trade_date="",
+        start_date="20260401",
+        end_date="20260410",
+    )
