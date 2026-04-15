@@ -363,3 +363,39 @@ class FinanceData:
     def stock_list(self, list_status: str = "L") -> DataResult:
         """获取全市场股票列表（名称/行业/ST标记）"""
         return self._get_service("stock", "stock_basic_list").get_stock_basic_list(list_status)
+
+    # ------------------------------------------------------------------
+    # technical — 技术因子
+    # ------------------------------------------------------------------
+
+    def stock_factor(
+        self, ts_code: str = "", trade_date: str = "",
+        start_date: str = "", end_date: str = "",
+    ) -> DataResult:
+        """获取股票技术面因子专业版（MA/MACD/KDJ/RSI/BOLL/CCI/估值）"""
+        return self._get_service("technical", "stock_factor").get_stock_factor(
+            ts_code=ts_code, trade_date=trade_date,
+            start_date=start_date, end_date=end_date,
+        )
+
+    # ------------------------------------------------------------------
+    # fund_flow — 资金流向（板块+大盘）
+    # ------------------------------------------------------------------
+
+    def board_moneyflow(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+        ts_code: str = "", content_type: str = "",
+    ) -> DataResult:
+        """获取东财概念及行业板块资金流向"""
+        return self._get_service("fund_flow", "board_moneyflow").get_board_moneyflow(
+            trade_date=trade_date, start_date=start_date, end_date=end_date,
+            ts_code=ts_code, content_type=content_type,
+        )
+
+    def market_moneyflow(
+        self, trade_date: str = "", start_date: str = "", end_date: str = "",
+    ) -> DataResult:
+        """获取大盘资金流向（沪深整体）"""
+        return self._get_service("fund_flow", "market_moneyflow").get_market_moneyflow(
+            trade_date=trade_date, start_date=start_date, end_date=end_date,
+        )

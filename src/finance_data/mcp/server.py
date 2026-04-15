@@ -32,6 +32,8 @@ from finance_data.service.daily_market import daily_market
 from finance_data.service.daily_basic import daily_basic_market
 from finance_data.service.stk_limit import stk_limit
 from finance_data.service.stock import stock_basic_list
+from finance_data.service.technical import stock_factor
+from finance_data.service.fund_flow import board_moneyflow, market_moneyflow
 from finance_data.interface.types import DataFetchError
 from finance_data.tool_specs.invoke import invoke_tool_spec
 
@@ -1120,6 +1122,108 @@ async def tool_get_auction_close_history(
     return _invoke_tool_json(
         "tool_get_auction_close_history",
         {"trade_date": trade_date, "start_date": start_date, "end_date": end_date},
+    )
+
+
+@mcp.tool()
+async def tool_get_stock_factor_pro_history(
+    ts_code: str = "",
+    trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
+) -> str:
+    """
+    获取股票技术面因子专业版（MA/MACD/KDJ/RSI/BOLL/CCI + 估值/量价）。
+
+    数据源: tushare(stk_factor_pro)
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 支持（2005年至今）
+
+    Args:
+        ts_code: 股票代码（tushare格式），如 "000001.SZ"
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
+
+    Returns:
+        JSON 列表，每条包含：trade_date、symbol、close(元)、volume(股)、amount(元)、
+        ma5/10/20/30/60/90/250(不复权)、macd_dif/macd_dea/macd、kdj_k/kdj_d/kdj_j、
+        rsi_6/12/24、boll_upper/mid/lower、cci、pe_ttm、pb、turnover_rate(%)、
+        pct_chg(涨跌幅%)、total_mv(总市值元)、circ_mv(流通市值元)
+
+    Note:
+        需 5000 积分权限，单次最多 10000 条。
+    """
+    return _invoke_tool_json(
+        "tool_get_stock_factor_pro_history",
+        {"ts_code": ts_code, "trade_date": trade_date,
+         "start_date": start_date, "end_date": end_date},
+    )
+
+
+@mcp.tool()
+async def tool_get_dc_board_moneyflow_history(
+    trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    ts_code: str = "",
+    content_type: str = "",
+) -> str:
+    """
+    获取东财概念及行业板块资金流向。
+
+    数据源: tushare(moneyflow_ind_dc)
+    实时性: 收盘后更新（T+1_17:00）
+    历史查询: 支持（2020年至今）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
+        ts_code: 板块代码，如 "BK1032"
+        content_type: 概念/行业/地域
+
+    Returns:
+        JSON 列表，每条包含：trade_date、ts_code(板块代码)、name(板块名)、
+        content_type(概念/行业/地域)、pct_chg(涨跌幅%)、close(收盘点位)、
+        net_amount(主力净流入)、net_amount_rate(净流入占比)、
+        buy_lg_amount(大单买入)、buy_elg_amount(超大单买入)、rank(排名)
+    """
+    return _invoke_tool_json(
+        "tool_get_dc_board_moneyflow_history",
+        {"trade_date": trade_date, "start_date": start_date,
+         "end_date": end_date, "ts_code": ts_code,
+         "content_type": content_type},
+    )
+
+
+@mcp.tool()
+async def tool_get_dc_market_moneyflow_history(
+    trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
+) -> str:
+    """
+    获取大盘资金流向（沪深整体主力/散户资金流向）。
+
+    数据源: tushare(moneyflow_mkt_dc)
+    实时性: 收盘后更新（T+1_17:00）
+    历史查询: 支持（2020年至今）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD（与 start_date/end_date 二选一）
+        start_date: 开始日期 YYYYMMDD
+        end_date: 结束日期 YYYYMMDD
+
+    Returns:
+        JSON 列表，每条包含：trade_date、close_sh(沪指收盘)、pct_change_sh(沪指涨跌%)、
+        close_sz(深指收盘)、pct_change_sz(深指涨跌%)、net_amount(主力净流入)、
+        net_amount_rate(净流入占比)、buy_lg_amount(大单)、buy_elg_amount(超大单)
+    """
+    return _invoke_tool_json(
+        "tool_get_dc_market_moneyflow_history",
+        {"trade_date": trade_date, "start_date": start_date,
+         "end_date": end_date},
     )
 
 

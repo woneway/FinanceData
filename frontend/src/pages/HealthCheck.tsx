@@ -57,6 +57,8 @@ const DOMAIN_LABELS: Record<string, string> = {
   limit_price: "涨跌停价",
   suspend: "停复牌",
   hot_rank: "人气排行",
+  technical: "技术因子",
+  fund_flow: "资金流向",
 }
 
 interface HealthCheckProps {

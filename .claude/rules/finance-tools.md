@@ -13,7 +13,7 @@
 7. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 8. **更新 CLAUDE.md**：更新接口计数
 
-## 当前接口（44 个）
+## 当前接口（47 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -61,6 +61,9 @@
 | `tool_get_daily_market_history` | market | 全市场日线行情 OHLCV（~5000股/日），tushare |
 | `tool_get_daily_basic_market_history` | market | 全市场日频基本面（换手率/量比/PE/PB/市值），tushare |
 | `tool_get_stk_limit_daily` | market | 全市场涨跌停价，tushare |
+| `tool_get_stock_factor_pro_history` | technical | 股票技术面因子专业版（MA/MACD/KDJ/RSI/BOLL/CCI/估值），tushare |
+| `tool_get_dc_board_moneyflow_history` | fund_flow | 东财概念及行业板块资金流向，tushare |
+| `tool_get_dc_market_moneyflow_history` | fund_flow | 大盘资金流向（沪深整体），tushare |
 
 ### 已下线接口
 
