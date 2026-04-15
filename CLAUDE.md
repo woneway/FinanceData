@@ -284,7 +284,7 @@ def test_empty_raises():
 8. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 9. **更新本文件**：更新下方接口列表
 
-## 当前接口（40 个）
+## 当前接口（44 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -325,9 +325,13 @@ def test_empty_raises():
 | `tool_get_trade_calendar_history` | market | 交易日历（is_open 标记），tushare+akshare(新浪) |
 | `tool_get_hot_rank_realtime` | market | 热股排行（东财人气榜），akshare(东财) |
 | `tool_get_ths_hot_daily` | market | 同花顺热股排行（含概念/热度/上榜理由），tushare |
-| `tool_get_suspend_daily` | market | 停牌股票信息，akshare(东财) |
+| `tool_get_suspend_daily` | market | 停牌股票信息，akshare(东财)+tushare |
 | `tool_get_auction_daily` | market | 开盘集合竞价成交（全市场），tushare |
 | `tool_get_auction_close_daily` | market | 收盘集合竞价成交（全市场），tushare |
+| `tool_get_daily_market_history` | market | 全市场日线行情 OHLCV（~5000股/日），tushare |
+| `tool_get_daily_basic_market_history` | market | 全市场日频基本面（换手率/量比/PE/PB/市值），tushare |
+| `tool_get_stk_limit_daily` | market | 全市场涨跌停价，tushare |
+| `tool_get_stock_basic_list_snapshot` | stock | 全市场股票列表（名称/行业/ST标记），tushare |
 
 ### 已下线接口
 

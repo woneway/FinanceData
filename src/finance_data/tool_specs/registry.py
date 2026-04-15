@@ -366,10 +366,9 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             service=_service("finance_data.service.lhb", "lhb_detail", "get_lhb_detail_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.lhb.history:AkshareLhbDetail", "get_lhb_detail_history"),
-                _provider("tushare", "finance_data.provider.tushare.lhb.history:TushareLhbDetail", "get_lhb_detail_history", available_if="tushare_token"),
             ),
             probe=_probe({"start_date": "$RECENT-7", "end_date": "$RECENT"}, required_fields=("date", "symbol")),
-            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20200101", source="both", source_priority="akshare", api_name="stock_lhb_detail_em", primary_key="date", examples=({"start_date": "20240401", "end_date": "20240409"},)),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20200101", source="akshare", source_priority="akshare", api_name="stock_lhb_detail_em", primary_key="date", examples=({"start_date": "20240401", "end_date": "20240409"},)),
             display_name="龙虎榜详情",
         ),
         ToolSpec(
@@ -602,9 +601,10 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             service=_service("finance_data.service.suspend", "suspend", "get_suspend_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.suspend.history:AkshareSuspend", "get_suspend_history"),
+                _provider("tushare", "finance_data.provider.tushare.suspend.history:TushareSuspend", "get_suspend_history", available_if="tushare_token"),
             ),
             probe=_probe({"date": "$RECENT"}, required_fields=("symbol",)),
-            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="akshare", source_priority="akshare", api_name="stock_tfp_em", primary_key="symbol"),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="both", source_priority="akshare", api_name="stock_tfp_em,suspend_d", primary_key="symbol"),
             display_name="停牌信息",
         ),
         ToolSpec(
@@ -820,6 +820,70 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "close")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="stk_auction_c", primary_key="symbol"),
             display_name="收盘竞价",
+        ),
+        ToolSpec(
+            name="tool_get_daily_market_history",
+            description="获取全市场日线行情（OHLCV）",
+            domain="market",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260414"),
+            ),
+            return_fields=("symbol", "trade_date", "open", "high", "low", "close", "pre_close", "change", "pct_chg", "volume", "amount"),
+            service=_service("finance_data.service.daily_market", "daily_market", "get_daily_market"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.daily_market.history:TushareDailyMarket", "get_daily_market", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "close", "volume")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="19900101", source="tushare", source_priority="tushare", api_name="daily", primary_key="symbol"),
+            display_name="全市场日线",
+        ),
+        ToolSpec(
+            name="tool_get_daily_basic_market_history",
+            description="获取全市场日频基本面（换手率/量比/PE/PB/市值）",
+            domain="market",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260414"),
+            ),
+            return_fields=("symbol", "trade_date", "close", "turnover_rate", "turnover_rate_f", "volume_ratio", "pe_ttm", "pb", "total_mv", "circ_mv"),
+            service=_service("finance_data.service.daily_basic", "daily_basic_market", "get_daily_basic_market"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.daily_basic.history:TushareDailyBasicMarket", "get_daily_basic_market", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "turnover_rate")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20040101", source="tushare", source_priority="tushare", api_name="daily_basic", primary_key="symbol"),
+            display_name="全市场基本面",
+        ),
+        ToolSpec(
+            name="tool_get_stk_limit_daily",
+            description="获取全市场涨跌停价",
+            domain="market",
+            params=(
+                _param("trade_date", required=True, description="交易日期 YYYYMMDD", example="20260414"),
+            ),
+            return_fields=("symbol", "trade_date", "pre_close", "up_limit", "down_limit"),
+            service=_service("finance_data.service.stk_limit", "stk_limit", "get_stk_limit"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.stk_limit.history:TushareStkLimit", "get_stk_limit", available_if="tushare_token"),
+            ),
+            probe=_probe({"trade_date": "$RECENT"}, required_fields=("symbol", "up_limit")),
+            metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=True, history_start="20070101", source="tushare", source_priority="tushare", api_name="stk_limit", primary_key="symbol"),
+            display_name="涨跌停价",
+        ),
+        ToolSpec(
+            name="tool_get_stock_basic_list_snapshot",
+            description="获取全市场股票列表（名称/行业/ST标记）",
+            domain="stock",
+            params=(
+                _param("list_status", required=False, default="L", description="上市状态 L=在市 D=退市 P=暂停", example="L", choices=(("L", "在市"), ("D", "退市"), ("P", "暂停上市"))),
+            ),
+            return_fields=("symbol", "name", "industry", "market", "list_date", "is_st"),
+            service=_service("finance_data.service.stock", "stock_basic_list", "get_stock_basic_list"),
+            providers=(
+                _provider("tushare", "finance_data.provider.tushare.stock.basic_list:TushareStockBasicList", "get_stock_basic_list", available_if="tushare_token"),
+            ),
+            probe=_probe({"list_status": "L"}, required_fields=("symbol", "name")),
+            metadata=_meta(entity="stock_info", scope="snapshot", data_freshness="end_of_day", update_timing="T+1_16:00", supports_history=False, source="tushare", source_priority="tushare", api_name="stock_basic", primary_key="symbol"),
+            display_name="股票列表",
         ),
     ]
 )

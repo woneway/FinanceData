@@ -36,3 +36,24 @@ class StockInfo:
 
 class StockHistoryProtocol(Protocol):
     def get_stock_info_history(self, symbol: str) -> DataResult: ...
+
+
+class StockBasicListProtocol(Protocol):
+    def get_stock_basic_list(self, list_status: str = "L") -> DataResult: ...
+
+
+@dataclass
+class StockBasicEntry:
+    symbol: str
+    name: str
+    industry: str
+    market: str
+    list_date: str
+    is_st: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "symbol": self.symbol, "name": self.name,
+            "industry": self.industry, "market": self.market,
+            "list_date": self.list_date, "is_st": self.is_st,
+        }

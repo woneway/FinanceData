@@ -29,6 +29,10 @@ from finance_data.service.hot_rank import hot_rank, ths_hot
 from finance_data.service.pool import limit_list, kpl_list, limit_step
 from finance_data.service.lhb import hm_list, hm_detail
 from finance_data.service.market import auction, auction_close
+from finance_data.service.daily_market import daily_market
+from finance_data.service.daily_basic import daily_basic_market
+from finance_data.service.stk_limit import stk_limit
+from finance_data.service.stock import stock_basic_list
 from finance_data.interface.types import DataFetchError
 
 logger = logging.getLogger(__name__)
@@ -390,7 +394,7 @@ async def tool_get_lhb_detail_history(
     """
     获取龙虎榜每日上榜详情。
 
-    数据源: akshare 优先，tushare fallback
+    数据源: akshare(东财)
     实时性: 收盘后更新（T+1_17:00）
     历史查询: 支持（2020年至今）
 
@@ -406,7 +410,7 @@ async def tool_get_lhb_detail_history(
         turnover_rate(换手率%)、float_value(流通市值元)、reason(上榜原因)
 
     Note:
-        akshare 支持完整日期范围；tushare fallback 仅查询 start_date 单日。
+        akshare 支持完整日期范围查询。
     """
     try:
         return _to_json(lhb_detail.get_lhb_detail_history(start_date, end_date))
@@ -781,7 +785,7 @@ async def tool_get_suspend_daily(date: str) -> str:
     """
     获取停牌股票信息。
 
-    数据源: akshare(东财)
+    数据源: akshare(东财) 优先，tushare(suspend_d) fallback
     实时性: 收盘后更新（T+1_16:00）
     历史查询: 不支持
 
@@ -1084,6 +1088,97 @@ async def tool_get_limit_step_history(
         return _to_json(limit_step.get_limit_step(
             trade_date=trade_date, start_date=start_date, end_date=end_date,
         ))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_daily_market_history(trade_date: str) -> str:
+    """
+    获取全市场日线行情（OHLCV），单日返回约5000只股票。
+
+    数据源: tushare(daily)
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 支持（单日 trade_date）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD，如 "20260414"
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、trade_date(日期)、
+        open(开盘价元)、high(最高价元)、low(最低价元)、close(收盘价元)、
+        pre_close(昨收元)、change(涨跌额元)、pct_chg(涨跌幅%)、
+        volume(成交量股)、amount(成交额元)
+    """
+    try:
+        return _to_json(daily_market.get_daily_market(trade_date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_daily_basic_market_history(trade_date: str) -> str:
+    """
+    获取全市场日频基本面数据（换手率/量比/PE/PB/市值），单日返回约5000只股票。
+
+    数据源: tushare(daily_basic)
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 支持（单日 trade_date）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD，如 "20260414"
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、trade_date(日期)、close(收盘价元)、
+        turnover_rate(换手率%)、turnover_rate_f(自由流通换手率%)、volume_ratio(量比)、
+        pe_ttm(市盈率TTM)、pb(市净率)、total_mv(总市值元)、circ_mv(流通市值元)
+    """
+    try:
+        return _to_json(daily_basic_market.get_daily_basic_market(trade_date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_stk_limit_daily(trade_date: str) -> str:
+    """
+    获取全市场涨跌停价，单日返回约5000~7500只股票（含退市整理期）。
+
+    数据源: tushare(stk_limit)
+    实时性: 收盘后更新（T+1_16:00）
+    历史查询: 支持（单日 trade_date）
+
+    Args:
+        trade_date: 交易日期 YYYYMMDD，如 "20260414"
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、trade_date(日期)、
+        pre_close(昨收价元)、up_limit(涨停价元)、down_limit(跌停价元)
+    """
+    try:
+        return _to_json(stk_limit.get_stk_limit(trade_date))
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+
+@mcp.tool()
+async def tool_get_stock_basic_list_snapshot(list_status: str = "L") -> str:
+    """
+    获取全市场股票列表（名称/行业/市场/ST标记）。
+
+    数据源: tushare(stock_basic)
+    实时性: 低频更新
+    历史查询: 不支持（快照）
+
+    Args:
+        list_status: 上市状态，L=在市 D=退市 P=暂停上市（默认 L）
+
+    Returns:
+        JSON 列表，每条包含：symbol(代码)、name(名称)、industry(行业)、
+        market(主板/创业板/科创板)、list_date(上市日期)、is_st(是否ST)
+    """
+    try:
+        return _to_json(stock_basic_list.get_stock_basic_list(list_status))
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 

@@ -343,3 +343,23 @@ class FinanceData:
     def capital_flow(self, symbol: str) -> DataResult:
         """获取个股资金流向"""
         return self._get_service("cashflow", "stock_capital_flow").get_stock_capital_flow_realtime(symbol)
+
+    # ------------------------------------------------------------------
+    # 全市场按日期查询（PlaybookOS 消费）
+    # ------------------------------------------------------------------
+
+    def daily_market(self, trade_date: str) -> DataResult:
+        """获取全市场日线行情（OHLCV，~5000股）"""
+        return self._get_service("daily_market", "daily_market").get_daily_market(trade_date)
+
+    def daily_basic_market(self, trade_date: str) -> DataResult:
+        """获取全市场日频基本面（换手率/量比/PE/PB/市值）"""
+        return self._get_service("daily_basic", "daily_basic_market").get_daily_basic_market(trade_date)
+
+    def stk_limit(self, trade_date: str) -> DataResult:
+        """获取全市场涨跌停价"""
+        return self._get_service("stk_limit", "stk_limit").get_stk_limit(trade_date)
+
+    def stock_list(self, list_status: str = "L") -> DataResult:
+        """获取全市场股票列表（名称/行业/ST标记）"""
+        return self._get_service("stock", "stock_basic_list").get_stock_basic_list(list_status)
