@@ -446,7 +446,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             params=(
                 _param("date", required=True, description="交易日期 YYYYMMDD", example="20240408"),
             ),
-            return_fields=("symbol", "name", "pct_chg", "continuous_days", "seal_amount"),
+            return_fields=("symbol", "name", "pct_change", "continuous_days", "seal_amount"),
             service=_service("finance_data.service.pool", "zt_pool", "get_zt_pool_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.pool.history:AkshareZtPool", "get_zt_pool_history"),
@@ -462,7 +462,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             params=(
                 _param("date", required=True, description="交易日期 YYYYMMDD", example="20240408"),
             ),
-            return_fields=("symbol", "name", "pct_chg", "is_new_high", "volume_ratio"),
+            return_fields=("symbol", "name", "pct_change", "is_new_high", "volume_ratio"),
             service=_service("finance_data.service.pool", "strong_stocks", "get_strong_stocks_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.pool.history:AkshareStrongStocks", "get_strong_stocks_history"),
@@ -478,7 +478,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             params=(
                 _param("date", required=True, description="交易日期 YYYYMMDD", example="20240408"),
             ),
-            return_fields=("symbol", "name", "pct_chg", "prev_seal_time", "prev_continuous_days"),
+            return_fields=("symbol", "name", "pct_change", "prev_seal_time", "prev_continuous_days"),
             service=_service("finance_data.service.pool", "previous_zt", "get_previous_zt_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.pool.history:AksharePreviousZt", "get_previous_zt_history"),
@@ -494,7 +494,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             params=(
                 _param("date", required=True, description="交易日期 YYYYMMDD", example="20240408"),
             ),
-            return_fields=("symbol", "name", "pct_chg", "open_times", "amplitude"),
+            return_fields=("symbol", "name", "pct_change", "open_times", "amplitude"),
             service=_service("finance_data.service.pool", "zbgc_pool", "get_zbgc_pool_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.pool.history:AkshareZbgcPool", "get_zbgc_pool_history"),
@@ -519,7 +519,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.north_flow.history:TushareNorthStockHold", "get_north_stock_hold_history", available_if="tushare_token"),
             ),
-            probe=_probe({"symbol": "", "trade_date": "$RECENT", "start_date": "", "end_date": "", "exchange": ""}, required_fields=("symbol",)),
+            probe=_probe({"symbol": "", "trade_date": "$RECENT-3", "start_date": "", "end_date": "", "exchange": ""}, required_fields=("symbol",)),
             metadata=_meta(entity="stock", scope="history", data_freshness="end_of_day", update_timing="T+1_15:30", supports_history=True, source="tushare", source_priority="tushare", api_name="hk_hold", limitations=("交易所自2024年8月20日起停止发布日度数据，改为季度披露",), primary_key="symbol"),
             display_name="北向持股",
         ),
@@ -538,7 +538,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.margin.history:TushareMargin", "get_margin_history", available_if="tushare_token"),
             ),
-            probe=_probe({"trade_date": "$RECENT", "start_date": "", "end_date": "", "exchange_id": ""}, required_fields=("date",)),
+            probe=_probe({"trade_date": "$RECENT-2", "start_date": "", "end_date": "", "exchange_id": ""}, required_fields=("date",)),
             metadata=_meta(entity="market", scope="daily", data_freshness="end_of_day", update_timing="T+1_17:00", supports_history=True, history_start="20100101", source="tushare", source_priority="tushare", api_name="margin", primary_key="date"),
             display_name="两融汇总",
         ),
@@ -598,7 +598,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             params=(
                 _param("date", required=True, description="交易日期 YYYYMMDD", example="20240408"),
             ),
-            return_fields=("symbol", "name", "suspend_date", "resume_date", "reason"),
+            return_fields=("symbol", "name", "suspend_date", "resume_date", "suspend_reason"),
             service=_service("finance_data.service.suspend", "suspend", "get_suspend_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.suspend.history:AkshareSuspend", "get_suspend_history"),
@@ -688,7 +688,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start_date", required=True, description="开始日期 YYYYMMDD", example="20240401"),
                 _param("end_date", required=True, description="结束日期 YYYYMMDD", example="20240409"),
             ),
-            return_fields=("symbol", "name", "date", "inst_buy", "inst_sell", "inst_net"),
+            return_fields=("symbol", "name", "date", "inst_buy_amount", "inst_sell_amount", "inst_net_buy"),
             service=_service("finance_data.service.lhb", "lhb_inst_detail", "get_lhb_inst_detail_history"),
             providers=(
                 _provider("akshare", "finance_data.provider.akshare.lhb.inst_detail:AkshareLhbInstDetail", "get_lhb_inst_detail_history"),
@@ -707,7 +707,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
                 _param("start_date", required=False, default="", description="开始日期 YYYYMMDD", example="20260401"),
                 _param("end_date", required=False, default="", description="结束日期 YYYYMMDD", example="20260410"),
             ),
-            return_fields=("symbol", "name", "pct_chg", "lu_desc", "tag", "status", "limit_amount", "first_lu_time", "last_lu_time", "turnover", "sum_float", "free_float", "lu_limit_order", "market_type"),
+            return_fields=("symbol", "name", "pct_chg", "lu_desc", "tag", "status", "limit_amount", "first_lu_time", "last_lu_time", "turnover", "free_float", "market_type"),
             service=_service("finance_data.service.pool", "limit_list", "get_limit_list"),
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.pool.limit_list:TushareLimitList", "get_limit_list", available_if="tushare_token"),
@@ -782,7 +782,7 @@ TOOL_SPEC_REGISTRY: "OrderedDict[str, ToolSpec]" = OrderedDict(
             providers=(
                 _provider("tushare", "finance_data.provider.tushare.pool.kpl_list:TushareKplList", "get_kpl_list", available_if="tushare_token"),
             ),
-            probe=_probe({"trade_date": "$RECENT", "tag": "涨停"}, required_fields=("symbol", "name")),
+            probe=_probe({"trade_date": "$RECENT-2", "tag": "涨停"}, required_fields=("symbol", "name")),
             metadata=_meta(entity="stock", scope="daily", data_freshness="end_of_day", update_timing="T+0", supports_history=True, history_start="20200101", source="tushare", source_priority="tushare", api_name="kpl_list", primary_key="symbol"),
             display_name="开盘啦榜单",
         ),
