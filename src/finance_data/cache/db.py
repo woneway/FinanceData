@@ -102,6 +102,92 @@ def _pd_to_duckdb(dtype) -> str:
     return "VARCHAR"
 
 
+def query_df(
+    table: str,
+    *,
+    trade_date: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    date_column: str = "trade_date",
+    extra_where: str = "",
+) -> pd.DataFrame | None:
+    """Query cached data from DuckDB.
+
+    Returns a pandas DataFrame (same format as tushare API output),
+    or None if the table doesn't exist or no data matches.
+    """
+    con = get_db()
+    try:
+        con.execute(
+            "SELECT 1 FROM information_schema.tables WHERE table_name = ?",
+            [table],
+        ).fetchone()
+    except Exception:
+        return None
+
+    # Check table exists
+    if not con.execute(
+        "SELECT table_name FROM information_schema.tables WHERE table_name = ?",
+        [table],
+    ).fetchall():
+        return None
+
+    conditions: list[str] = []
+    if trade_date:
+        conditions.append(f"{date_column} = '{trade_date}'")
+    elif start_date and end_date:
+        conditions.append(f"{date_column} >= '{start_date}'")
+        conditions.append(f"{date_column} <= '{end_date}'")
+    elif start_date:
+        conditions.append(f"{date_column} >= '{start_date}'")
+    elif end_date:
+        conditions.append(f"{date_column} <= '{end_date}'")
+
+    if extra_where:
+        conditions.append(extra_where)
+
+    where = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+    try:
+        df = con.execute(f"SELECT * FROM {table}{where}").fetchdf()
+        return df if not df.empty else None
+    except Exception:
+        return None
+
+
+def get_cache_date_range(
+    table: str, date_column: str = "trade_date",
+) -> tuple[str, str] | None:
+    """Return (min_date, max_date) for a cached table, or None."""
+    con = get_db()
+    try:
+        row = con.execute(
+            f"SELECT MIN({date_column}), MAX({date_column}) FROM {table}"
+        ).fetchone()
+        if row and row[0] and row[1]:
+            return (str(row[0]), str(row[1]))
+    except Exception:
+        pass
+    return None
+
+
+def get_cached_dates(
+    table: str,
+    start_date: str,
+    end_date: str,
+    date_column: str = "trade_date",
+) -> set[str]:
+    """Return the set of distinct dates cached in [start, end]."""
+    con = get_db()
+    try:
+        rows = con.execute(
+            f"SELECT DISTINCT {date_column} FROM {table} "
+            f"WHERE {date_column} >= '{start_date}' AND {date_column} <= '{end_date}'"
+        ).fetchall()
+        return {str(r[0]) for r in rows}
+    except Exception:
+        return set()
+
+
 def count_rows(table: str) -> int:
     con = get_db()
     try:

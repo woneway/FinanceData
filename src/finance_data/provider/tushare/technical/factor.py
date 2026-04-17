@@ -3,6 +3,7 @@ import math
 
 from finance_data.interface.technical.factor import StockFactor
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -36,7 +37,10 @@ class TushareStockFactor:
             params["end_date"] = end_date
 
         try:
-            df = pro.stk_factor_pro(**params)
+            extra = f"ts_code = '{ts_code}'" if ts_code else ""
+            df = resolve("stk_factor_pro", trade_date, start_date, end_date, extra_where=extra)
+            if df is None:
+                df = pro.stk_factor_pro(**params)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "stk_factor_pro", str(e), "network") from e
         except Exception as e:

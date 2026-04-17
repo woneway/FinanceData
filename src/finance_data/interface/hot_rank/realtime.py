@@ -16,7 +16,7 @@ class HotRankEntry:
     name: str
     latest_price: float
     change_amount: float
-    pct_change: float
+    pct_chg: float
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -25,5 +25,5 @@ class HotRankEntry:
             "name": self.name,
             "latest_price": self.latest_price,
             "change_amount": self.change_amount,
-            "pct_change": self.pct_change,
+            "pct_chg": self.pct_chg,
         }

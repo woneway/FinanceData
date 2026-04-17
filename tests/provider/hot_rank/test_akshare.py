@@ -31,7 +31,7 @@ def test_get_hot_rank_returns_data_result(hot_rank_df):
     assert row["symbol"] == "300058"
     assert row["name"] == "蓝色光标"
     assert row["latest_price"] == 16.34
-    assert row["pct_change"] == 0.18
+    assert row["pct_chg"] == 0.18
 
 
 def test_get_hot_rank_empty_raises():

@@ -1,6 +1,7 @@
 """游资每日交易明细 - tushare 实现"""
 from finance_data.interface.lhb.hm import HmDetailEntry
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -30,7 +31,10 @@ class TushareHmDetail:
         if hm_name:
             kwargs["hm_name"] = hm_name
         try:
-            df = pro.hm_detail(**kwargs)
+            extra = f"hm_name = '{hm_name}'" if hm_name else ""
+            df = resolve("hm_detail", trade_date, start_date, end_date, extra_where=extra)
+            if df is None:
+                df = pro.hm_detail(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "hm_detail", str(e), "network") from e
         except Exception as e:

@@ -15,7 +15,7 @@ class SectorCapitalFlowProtocol(Protocol):
 class SectorFundFlow:
     rank: int
     name: str
-    pct_change: float
+    pct_chg: float
     main_net_inflow: float
     main_net_inflow_pct: float
     super_large_net_inflow: float
@@ -30,7 +30,7 @@ class SectorFundFlow:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "rank": self.rank, "name": self.name, "pct_change": self.pct_change,
+            "rank": self.rank, "name": self.name, "pct_chg": self.pct_chg,
             "main_net_inflow": self.main_net_inflow,
             "main_net_inflow_pct": self.main_net_inflow_pct,
             "super_large_net_inflow": self.super_large_net_inflow,

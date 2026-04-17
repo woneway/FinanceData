@@ -66,7 +66,7 @@ class AkshareLhbInstDetail:
             symbol=str(r.get("代码", "")),
             name=str(r.get("名称", "")),
             close=_flt(r.get("收盘价")),
-            pct_change=_flt(r.get("涨跌幅")),
+            pct_chg=_flt(r.get("涨跌幅")),
             inst_buy_count=_int(r.get("买方机构数")),
             inst_sell_count=_int(r.get("卖方机构数")),
             inst_buy_amount=_flt(r.get("机构买入总额")),

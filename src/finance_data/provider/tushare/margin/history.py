@@ -1,6 +1,7 @@
 """融资融券 - tushare 实现"""
 from finance_data.interface.margin.history import MarginSummary, MarginDetail
 from finance_data.interface.types import DataResult, DataFetchError
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -14,7 +15,10 @@ class TushareMargin:
     ) -> DataResult:
         pro = get_pro()
         try:
-            df = pro.margin(
+            extra = f"exchange_id = '{exchange_id}'" if exchange_id else ""
+            df = resolve("margin", trade_date, start_date, end_date, extra_where=extra)
+            if df is None:
+                df = pro.margin(
                 trade_date=trade_date,
                 start_date=start_date,
                 end_date=end_date,
@@ -61,7 +65,10 @@ class TushareMarginDetail:
     ) -> DataResult:
         pro = get_pro()
         try:
-            df = pro.margin_detail(
+            extra = f"ts_code = '{ts_code}'" if ts_code else ""
+            df = resolve("margin_detail", trade_date, start_date, end_date, extra_where=extra)
+            if df is None:
+                df = pro.margin_detail(
                 trade_date=trade_date,
                 start_date=start_date,
                 end_date=end_date,

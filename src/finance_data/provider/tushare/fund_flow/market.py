@@ -1,6 +1,7 @@
 """大盘资金流向 - tushare provider"""
 from finance_data.interface.fund_flow.market import MarketMoneyflowRow
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -23,7 +24,9 @@ class TushareMarketMoneyflow:
             params["end_date"] = end_date
 
         try:
-            df = pro.moneyflow_mkt_dc(**params)
+            df = resolve("dc_market_moneyflow", trade_date, start_date, end_date)
+            if df is None:
+                df = pro.moneyflow_mkt_dc(**params)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "moneyflow_mkt_dc", str(e), "network") from e
         except Exception as e:

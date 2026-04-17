@@ -49,7 +49,7 @@ class AkshareHotRank:
             name=str(r.get("股票名称", "")),
             latest_price=_flt(r.get("最新价")),
             change_amount=_flt(r.get("涨跌额")),
-            pct_change=_flt(r.get("涨跌幅")),
+            pct_chg=_flt(r.get("涨跌幅")),
         ).to_dict() for _, r in df.iterrows()]
 
         return DataResult(data=rows, source="akshare",

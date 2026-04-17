@@ -3,6 +3,7 @@ import datetime
 
 from finance_data.interface.hot_rank.ths_hot import ThsHotEntry
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -43,7 +44,9 @@ class TushareThsHot:
         if end_date:
             kwargs["end_date"] = end_date
         try:
-            df = pro.ths_hot(**kwargs)
+            df = resolve("ths_hot", trade_date, start_date, end_date)
+            if df is None:
+                df = pro.ths_hot(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "ths_hot", str(e), "network") from e
         except Exception as e:

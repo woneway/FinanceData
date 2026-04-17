@@ -122,7 +122,7 @@ def _parse_line(line: str) -> Optional[dict]:
         "volume": _safe_float(fields[_FIELD_INDEX["volume_hand"]]) * 100,  # 手→股
         "amount": _safe_float(fields[_FIELD_INDEX["amount_wan"]]) * 10000,  # 万元→元
         "change": _safe_float(fields[_FIELD_INDEX["change"]]),
-        "pct_change": _safe_float(fields[_FIELD_INDEX["pct_change"]]),
+        "pct_chg": _safe_float(fields[_FIELD_INDEX["pct_change"]]),
         "turnover_rate": _safe_float(fields[_FIELD_INDEX["turnover_rate"]]),
         "pe": _safe_float(fields[_FIELD_INDEX["pe"]]),
         "pb": _safe_float(fields[_FIELD_INDEX["pb"]]),

@@ -3,6 +3,7 @@ import math
 
 from finance_data.interface.fund_flow.board import BoardMoneyflowRow
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -39,7 +40,11 @@ class TushareBoardMoneyflow:
             params["content_type"] = content_type
 
         try:
-            df = pro.moneyflow_ind_dc(**params)
+            parts = [f"ts_code = '{ts_code}'" if ts_code else "", f"content_type = '{content_type}'" if content_type else ""]
+            extra = " AND ".join(p for p in parts if p)
+            df = resolve("dc_board_moneyflow", trade_date, start_date, end_date, extra_where=extra)
+            if df is None:
+                df = pro.moneyflow_ind_dc(**params)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "moneyflow_ind_dc", str(e), "network") from e
         except Exception as e:

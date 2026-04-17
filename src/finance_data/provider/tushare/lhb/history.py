@@ -3,6 +3,7 @@ import datetime
 
 from finance_data.interface.lhb.history import LhbEntry
 from finance_data.interface.types import DataResult, DataFetchError
+from finance_data.cache.resolver import fetch_cached
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -36,7 +37,9 @@ class TushareLhbDetail:
 
         for trade_date in _iter_dates(start_date, end_date):
             try:
-                df = pro.top_list(trade_date=trade_date)
+                df = fetch_cached("lhb_detail", trade_date)
+                if df is None:
+                    df = pro.top_list(trade_date=trade_date)
             except _NETWORK_ERRORS as e:
                 raise DataFetchError("tushare", "top_list", str(e), "network") from e
             except Exception as e:

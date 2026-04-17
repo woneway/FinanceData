@@ -1,6 +1,7 @@
 """开盘集合竞价 - tushare 实现"""
 from finance_data.interface.market.auction import AuctionEntry
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -35,7 +36,9 @@ class TushareAuction:
         if end_date:
             kwargs["end_date"] = end_date
         try:
-            df = pro.stk_auction(**kwargs)
+            df = resolve("stk_auction", trade_date, start_date, end_date)
+            if df is None:
+                df = pro.stk_auction(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "stk_auction", str(e), "network") from e
         except Exception as e:

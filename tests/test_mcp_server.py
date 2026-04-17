@@ -61,7 +61,7 @@ def test_tool_get_suspend_uses_service_method():
 
     parsed = json.loads(response)
     assert parsed["source"] == "akshare"
-    mock_method.assert_called_once_with("20260408")
+    mock_method.assert_called_once_with(date="20260408")
 
 
 def test_tool_get_hot_rank_uses_realtime_service_method():

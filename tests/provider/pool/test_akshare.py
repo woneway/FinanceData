@@ -184,7 +184,7 @@ def test_get_previous_zt_returns_data_result(previous_zt_df):
     assert len(result.data) == 1
     row = result.data[0]
     assert row["symbol"] == "002230"
-    assert row["pct_change"] == pytest.approx(-2.0)
+    assert row["pct_chg"] == pytest.approx(-2.0)
     assert row["prev_seal_time"] == "143512"
     assert row["prev_continuous_days"] == 2
 
@@ -279,6 +279,6 @@ def test_zt_pool_handles_nan_fields():
                return_value=df):
         result = AkshareZtPool().get_zt_pool_history("20260320")
     row = result.data[0]
-    assert row["pct_change"] == 0.0
+    assert row["pct_chg"] == 0.0
     assert row["first_seal_time"] == ""
     assert row["open_times"] == 0

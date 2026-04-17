@@ -1,6 +1,7 @@
 """全市场日频基本面 - tushare 实现"""
 from finance_data.interface.daily_basic.history import DailyBasicMarket
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import fetch_cached
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -23,7 +24,9 @@ class TushareDailyBasicMarket:
     def get_daily_basic_market(self, trade_date: str) -> DataResult:
         pro = get_pro()
         try:
-            df = pro.daily_basic(trade_date=trade_date, fields=_FIELDS)
+            df = fetch_cached("daily_basic_market", trade_date)
+            if df is None:
+                df = pro.daily_basic(trade_date=trade_date, fields=_FIELDS)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "daily_basic", str(e), "network") from e
         except Exception as e:

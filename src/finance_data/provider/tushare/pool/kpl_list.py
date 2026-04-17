@@ -1,6 +1,7 @@
 """开盘啦榜单 - tushare 实现"""
 from finance_data.interface.pool.kpl_list import KplListEntry
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -36,7 +37,9 @@ class TushareKplList:
         if end_date:
             kwargs["end_date"] = end_date
         try:
-            df = pro.kpl_list(**kwargs)
+            df = resolve("kpl_list", trade_date, start_date, end_date, extra_where=f"tag = '{tag}'")
+            if df is None:
+                df = pro.kpl_list(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "kpl_list", str(e), "network") from e
         except Exception as e:

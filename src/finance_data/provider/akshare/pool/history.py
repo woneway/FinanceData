@@ -82,7 +82,7 @@ class AkshareZtPool:
         rows = [ZtPoolEntry(
             symbol=_str(r.get("代码", "")),
             name=_str(r.get("名称", "")),
-            pct_change=_flt(r.get("涨跌幅")),
+            pct_chg=_flt(r.get("涨跌幅")),
             price=_flt(r.get("最新价")),
             amount=_flt(r.get("成交额")),
             float_mv=_flt(r.get("流通市值")),
@@ -115,7 +115,7 @@ class AkshareStrongStocks:
         rows = [StrongStockEntry(
             symbol=_str(r.get("代码", "")),
             name=_str(r.get("名称", "")),
-            pct_change=_flt(r.get("涨跌幅")),
+            pct_chg=_flt(r.get("涨跌幅")),
             price=_flt(r.get("最新价")),
             limit_price=_flt(r.get("涨停价")),
             amount=_flt(r.get("成交额")),
@@ -147,7 +147,7 @@ class AksharePreviousZt:
         rows = [PreviousZtEntry(
             symbol=_str(r.get("代码", "")),
             name=_str(r.get("名称", "")),
-            pct_change=_flt(r.get("涨跌幅")),
+            pct_chg=_flt(r.get("涨跌幅")),
             price=_flt(r.get("最新价")),
             limit_price=_flt(r.get("涨停价")),
             amount=_flt(r.get("成交额")),
@@ -178,7 +178,7 @@ class AkshareZbgcPool:
         rows = [ZbgcEntry(
             symbol=_str(r.get("代码", "")),
             name=_str(r.get("名称", "")),
-            pct_change=_flt(r.get("涨跌幅")),
+            pct_chg=_flt(r.get("涨跌幅")),
             price=_flt(r.get("最新价")),
             limit_price=_flt(r.get("涨停价")),
             amount=_flt(r.get("成交额")),

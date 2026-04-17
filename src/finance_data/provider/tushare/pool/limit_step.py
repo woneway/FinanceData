@@ -1,6 +1,7 @@
 """连板天梯 - tushare 实现"""
 from finance_data.interface.pool.limit_step import LimitStepEntry
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -19,7 +20,9 @@ class TushareLimitStep:
         if end_date:
             kwargs["end_date"] = end_date
         try:
-            df = pro.limit_step(**kwargs)
+            df = resolve("limit_step", trade_date, start_date, end_date)
+            if df is None:
+                df = pro.limit_step(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "limit_step", str(e), "network") from e
         except Exception as e:

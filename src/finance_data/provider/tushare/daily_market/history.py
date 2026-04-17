@@ -1,6 +1,7 @@
 """全市场日线行情 - tushare 实现"""
 from finance_data.interface.daily_market.history import DailyMarketBar
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import fetch_cached
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -23,7 +24,9 @@ class TushareDailyMarket:
     def get_daily_market(self, trade_date: str) -> DataResult:
         pro = get_pro()
         try:
-            df = pro.daily(trade_date=trade_date, fields=_FIELDS)
+            df = fetch_cached("daily_market", trade_date)
+            if df is None:
+                df = pro.daily(trade_date=trade_date, fields=_FIELDS)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "daily", str(e), "network") from e
         except Exception as e:

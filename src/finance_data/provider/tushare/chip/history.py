@@ -1,6 +1,7 @@
 """筹码分布 - tushare 实现"""
 from finance_data.interface.chip.history import ChipDistribution
 from finance_data.interface.types import DataResult, DataFetchError
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -26,7 +27,9 @@ class TushareChipHistory:
         if end_date:
             kwargs["end_date"] = end_date
         try:
-            df = pro.cyq_perf(**kwargs)
+            df = resolve("cyq_perf", "", start_date, end_date, extra_where=f"ts_code = '{ts_code}'")
+            if df is None:
+                df = pro.cyq_perf(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "cyq_perf", str(e), "network") from e
         except Exception as e:

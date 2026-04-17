@@ -1,6 +1,7 @@
 """同花顺涨跌停榜单 - tushare 实现"""
 from finance_data.interface.pool.limit_list import LimitListEntry
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import resolve
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -63,7 +64,9 @@ class TushareLimitList:
         if end_date:
             kwargs["end_date"] = end_date
         try:
-            df = pro.limit_list_ths(**kwargs)
+            df = resolve("limit_list_ths", trade_date, start_date, end_date, extra_where=f"limit_type = '{limit_type}'")
+            if df is None:
+                df = pro.limit_list_ths(**kwargs)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "limit_list_ths", str(e), "network") from e
         except Exception as e:

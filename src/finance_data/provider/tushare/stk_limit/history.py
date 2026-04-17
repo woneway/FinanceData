@@ -1,6 +1,7 @@
 """全市场涨跌停价 - tushare 实现"""
 from finance_data.interface.stk_limit.history import StkLimitEntry
 from finance_data.interface.types import DataFetchError, DataResult
+from finance_data.cache.resolver import fetch_cached
 from finance_data.provider.tushare.client import get_pro
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
@@ -22,7 +23,9 @@ class TushareStkLimit:
     def get_stk_limit(self, trade_date: str) -> DataResult:
         pro = get_pro()
         try:
-            df = pro.stk_limit(trade_date=trade_date, fields=_FIELDS)
+            df = fetch_cached("stk_limit", trade_date)
+            if df is None:
+                df = pro.stk_limit(trade_date=trade_date, fields=_FIELDS)
         except _NETWORK_ERRORS as e:
             raise DataFetchError("tushare", "stk_limit", str(e), "network") from e
         except Exception as e:

@@ -25,7 +25,7 @@ class ZbgcPoolProtocol(Protocol):
 class ZtPoolEntry:
     symbol: str
     name: str
-    pct_change: float
+    pct_chg: float
     price: float
     amount: float
     float_mv: float
@@ -41,7 +41,7 @@ class ZtPoolEntry:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol, "name": self.name,
-            "pct_change": self.pct_change, "price": self.price,
+            "pct_chg": self.pct_chg, "price": self.price,
             "amount": self.amount, "float_mv": self.float_mv,
             "total_mv": self.total_mv, "turnover": self.turnover,
             "seal_amount": self.seal_amount,
@@ -57,7 +57,7 @@ class ZtPoolEntry:
 class StrongStockEntry:
     symbol: str
     name: str
-    pct_change: float
+    pct_chg: float
     price: float
     limit_price: float
     amount: float
@@ -72,7 +72,7 @@ class StrongStockEntry:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol, "name": self.name,
-            "pct_change": self.pct_change, "price": self.price,
+            "pct_chg": self.pct_chg, "price": self.price,
             "limit_price": self.limit_price, "amount": self.amount,
             "float_mv": self.float_mv, "total_mv": self.total_mv,
             "turnover": self.turnover, "volume_ratio": self.volume_ratio,
@@ -85,7 +85,7 @@ class StrongStockEntry:
 class PreviousZtEntry:
     symbol: str
     name: str
-    pct_change: float
+    pct_chg: float
     price: float
     limit_price: float
     amount: float
@@ -99,7 +99,7 @@ class PreviousZtEntry:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol, "name": self.name,
-            "pct_change": self.pct_change, "price": self.price,
+            "pct_chg": self.pct_chg, "price": self.price,
             "limit_price": self.limit_price, "amount": self.amount,
             "float_mv": self.float_mv, "total_mv": self.total_mv,
             "turnover": self.turnover,
@@ -113,7 +113,7 @@ class PreviousZtEntry:
 class ZbgcEntry:
     symbol: str
     name: str
-    pct_change: float
+    pct_chg: float
     price: float
     limit_price: float
     amount: float
@@ -128,7 +128,7 @@ class ZbgcEntry:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol, "name": self.name,
-            "pct_change": self.pct_change, "price": self.price,
+            "pct_chg": self.pct_chg, "price": self.price,
             "limit_price": self.limit_price, "amount": self.amount,
             "float_mv": self.float_mv, "total_mv": self.total_mv,
             "turnover": self.turnover,

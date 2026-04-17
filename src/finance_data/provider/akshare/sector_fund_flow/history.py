@@ -64,7 +64,7 @@ class AkshareSectorCapitalFlow:
             rows.append(SectorFundFlow(
                 rank=int(row.get("序号", 0) or 0),
                 name=name,
-                pct_change=_safe_float(row.get(f"{p}涨跌幅", 0)),
+                pct_chg=_safe_float(row.get(f"{p}涨跌幅", 0)),
                 main_net_inflow=_safe_float(row.get(f"{p}主力净流入-净额", 0)),
                 main_net_inflow_pct=_safe_float(row.get(f"{p}主力净流入-净占比", 0)),
                 super_large_net_inflow=_safe_float(row.get(f"{p}超大单净流入-净额", 0)),

@@ -45,7 +45,7 @@ def test_get_sector_capital_flow_fields(mock_df):
     row = result.data[0]
     assert row["rank"] == 1
     assert row["name"] == "银行"
-    assert row["pct_change"] == 2.5
+    assert row["pct_chg"] == 2.5
     assert row["main_net_inflow"] == 1e9
     assert row["main_net_inflow_pct"] == 15.2
     assert row["top_stock"] == "工商银行"
@@ -79,7 +79,7 @@ def test_get_sector_capital_flow_3day_indicator(mock_df):
         result = AkshareSectorCapitalFlow().get_sector_capital_flow_history(
             indicator="3日", sector_type="概念资金流"
         )
-    assert result.data[0]["pct_change"] == 2.5
+    assert result.data[0]["pct_chg"] == 2.5
 
 
 def test_get_sector_capital_flow_concept_type(mock_df):

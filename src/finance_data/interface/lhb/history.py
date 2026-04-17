@@ -153,7 +153,7 @@ class LhbInstDetail:
     symbol: str
     name: str
     close: float
-    pct_change: float
+    pct_chg: float
     inst_buy_count: int
     inst_sell_count: int
     inst_buy_amount: float
@@ -169,7 +169,7 @@ class LhbInstDetail:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol, "name": self.name,
-            "close": self.close, "pct_change": self.pct_change,
+            "close": self.close, "pct_chg": self.pct_chg,
             "inst_buy_count": self.inst_buy_count, "inst_sell_count": self.inst_sell_count,
             "inst_buy_amount": self.inst_buy_amount, "inst_sell_amount": self.inst_sell_amount,
             "inst_net_buy": self.inst_net_buy, "market_amount": self.market_amount,
