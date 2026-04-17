@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import logging
+import os
 import re
 import time
 from datetime import datetime, timedelta
@@ -64,12 +65,19 @@ def _get_available_providers() -> Dict[str, bool]:
         has_xueqiu = has_login_cookie()
     except Exception:
         has_xueqiu = False
+    has_tushare_stock_minute = (
+        has_tushare
+        and os.getenv("TUSHARE_STOCK_MINUTE_PERMISSION", "").lower() in {"1", "true", "yes", "on"}
+    )
     return {
         "akshare": True,
         "tencent": True,
         "baostock": True,
         "tushare": has_tushare,
+        "tushare_token": has_tushare,
+        "tushare_stock_minute_permission": has_tushare_stock_minute,
         "xueqiu": has_xueqiu,
+        "xueqiu_cookie": has_xueqiu,
     }
 
 
@@ -93,7 +101,8 @@ def get_providers_for_tool(tool_name: str) -> List[Tuple[str, str, str]]:
     available = _get_available_providers()
     results = []
     for provider in spec.providers:
-        if available.get(provider.name, False):
+        condition = provider.available_if or provider.name
+        if available.get(condition, available.get(provider.name, False)):
             results.append((provider.name, provider.class_path, provider.method_name))
     return results
 

@@ -41,6 +41,7 @@ from finance_data.provider.kline import get_kline
 |------|------|------|
 | `TUSHARE_TOKEN` | 否 | tushare API token，不设置则跳过 tushare fallback |
 | `TUSHARE_API_URL` | 否 | 自定义 tushare API 地址（使用第三方代理时设置） |
+| `TUSHARE_STOCK_MINUTE_PERMISSION` | 否 | 设置为 `1`/`true`/`yes`/`on` 时，健康检查会启用需要 TuShare 股票分钟权限的接口，例如 `stk_auction_c` |
 
 ## 接口列表（22 个）
 
