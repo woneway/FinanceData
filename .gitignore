@@ -12,3 +12,4 @@ build/
 src/finance_data/dashboard/static/
 frontend/node_modules/
 .playwright-mcp/
+data/
