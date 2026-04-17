@@ -50,6 +50,12 @@ def _fetch_per_date(api_name: str, **extra):
     return fetcher
 
 
+_LIMIT_LIST_THS_STR_COLS = [
+    "lu_desc", "tag", "status", "first_lu_time", "last_lu_time",
+    "first_ld_time", "last_ld_time",
+]
+
+
 def _fetch_limit_list_ths(date: str):
     """Pull all 5 limit types into one table."""
     import pandas as pd
@@ -61,7 +67,19 @@ def _fetch_limit_list_ths(date: str):
             df = df.copy()
             df["limit_type"] = lt
             parts.append(df)
-    return pd.concat(parts, ignore_index=True) if parts else None
+        time.sleep(0.5)
+    if not parts:
+        return None
+    result = pd.concat(parts, ignore_index=True)
+    for col in _LIMIT_LIST_THS_STR_COLS:
+        if col in result.columns:
+            result[col] = result[col].astype(str).replace("nan", "")
+    return result
+
+
+_KPL_LIST_STR_COLS = [
+    "lu_time", "ld_time", "open_time", "last_time", "lu_desc", "status",
+]
 
 
 def _fetch_kpl_list(date: str):
@@ -75,7 +93,14 @@ def _fetch_kpl_list(date: str):
             df = df.copy()
             df["tag"] = tag
             parts.append(df)
-    return pd.concat(parts, ignore_index=True) if parts else None
+        time.sleep(0.5)
+    if not parts:
+        return None
+    result = pd.concat(parts, ignore_index=True)
+    for col in _KPL_LIST_STR_COLS:
+        if col in result.columns:
+            result[col] = result[col].astype(str).replace("nan", "")
+    return result
 
 
 PER_DATE_INTERFACES: dict[str, tuple[Callable, tuple[str, ...]]] = {
@@ -85,7 +110,7 @@ PER_DATE_INTERFACES: dict[str, tuple[Callable, tuple[str, ...]]] = {
     "stk_limit": (_fetch_per_date("stk_limit"), ("ts_code", "trade_date")),
     "stk_auction": (_fetch_per_date("stk_auction"), ("ts_code", "trade_date")),
     "stk_auction_close": (_fetch_per_date("stk_auction_c"), ("ts_code", "trade_date")),
-    "lhb_detail": (_fetch_per_date("top_list"), ("ts_code", "trade_date", "exalter")),
+    "lhb_detail": (_fetch_per_date("top_list"), ("ts_code", "trade_date")),
     "limit_list_ths": (_fetch_limit_list_ths, ("ts_code", "trade_date", "limit_type")),
     "kpl_list": (_fetch_kpl_list, ("ts_code", "trade_date", "tag")),
     "limit_step": (_fetch_per_date("limit_step"), ("ts_code", "trade_date")),

@@ -53,9 +53,10 @@ def upsert_df(
         [table],
     ).fetchall()
     if not existing:
-        con.register("_tmp_init", df.head(0))
-        con.execute(f"CREATE TABLE {table} AS SELECT * FROM _tmp_init")
-        con.unregister("_tmp_init")
+        cols_ddl = ", ".join(
+            f'"{col}" {_pd_to_duckdb(df[col].dtype)}' for col in df.columns
+        )
+        con.execute(f"CREATE TABLE {table} ({cols_ddl})")
         logger.info("Created table %s with %d columns", table, len(df.columns))
 
     # Align columns: add missing columns to existing table
