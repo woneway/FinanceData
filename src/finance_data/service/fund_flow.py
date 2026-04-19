@@ -23,7 +23,10 @@ class _BoardMoneyflowDispatcher:
     ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_board_moneyflow(trade_date, start_date, end_date, ts_code, content_type)
+                return p.get_board_moneyflow(
+                    trade_date=trade_date, start_date=start_date, end_date=end_date,
+                    ts_code=ts_code, content_type=content_type,
+                )
             except DataFetchError as e:
                 logger.warning("%s 失败: %s", type(p).__name__, e)
         raise DataFetchError("all", "get_board_moneyflow", "所有数据源均失败", "data")
@@ -41,7 +44,9 @@ class _MarketMoneyflowDispatcher:
     ) -> DataResult:
         for p in self._providers:
             try:
-                return p.get_market_moneyflow(trade_date, start_date, end_date)
+                return p.get_market_moneyflow(
+                    trade_date=trade_date, start_date=start_date, end_date=end_date,
+                )
             except DataFetchError as e:
                 logger.warning("%s 失败: %s", type(p).__name__, e)
         raise DataFetchError("all", "get_market_moneyflow", "所有数据源均失败", "data")
