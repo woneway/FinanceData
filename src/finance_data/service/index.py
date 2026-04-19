@@ -1,6 +1,6 @@
 """大盘指数 service - 统一对外入口"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.index.realtime import IndexQuoteProtocol
 from finance_data.interface.index.history import IndexHistoryProtocol
@@ -49,7 +49,7 @@ def _build_index_quote() -> _IndexQuoteDispatcher:
 def _build_index_history() -> _IndexHistoryDispatcher:
     # akshare(新浪源) 已移除：amount 始终为 0，会产生静默错误数据
     providers: list[IndexHistoryProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.index.history import TushareIndexHistory
         providers.append(TushareIndexHistory())
     # 雪球指数 K 线需要登录 cookie

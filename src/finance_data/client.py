@@ -3,12 +3,13 @@
 Usage:
     from finance_data import FinanceData
 
-    fd = FinanceData(tushare_token="xxx")
+    fd = FinanceData()
     df = fd.kline_daily("000001", start="20260401", end="20260410")
+
+配置统一从项目根目录 config.toml 读取，无需传参。
 """
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from finance_data.interface.types import DataResult
@@ -17,22 +18,10 @@ from finance_data.interface.types import DataResult
 class FinanceData:
     """金融数据统一客户端。
 
-    Args:
-        tushare_token: tushare API token（可选，不传则读 TUSHARE_TOKEN 环境变量）
-        tushare_api_url: tushare API 代理地址（可选，不传则读 TUSHARE_API_URL）
+    配置从项目根目录 config.toml 读取，无需手动传入 token。
     """
 
-    def __init__(
-        self,
-        tushare_token: str = "",
-        tushare_api_url: str = "",
-    ):
-        if tushare_token:
-            os.environ["TUSHARE_TOKEN"] = tushare_token
-        if tushare_api_url:
-            os.environ["TUSHARE_API_URL"] = tushare_api_url
-
-        # 延迟导入 service，确保环境变量已设置
+    def __init__(self):
         self._services: dict[str, Any] = {}
 
     def _get_service(self, module: str, name: str):

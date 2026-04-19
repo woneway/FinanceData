@@ -103,16 +103,6 @@ def _get_daily_tx(symbol: str, start: str, end: str, adj: str,
                          f"无可用数据源: {symbol} daily {start}-{end}", "data")
 
 class AkshareKlineHistory:
-    def get_kline_history(self, symbol: str, period: str, start: str, end: str,
-                          adj: str = "qfq") -> DataResult:
-        adj_ak = {"qfq": "qfq", "hfq": "hfq", "none": ""}.get(adj, adj)
-
-        if period == "daily":
-            return _get_daily_tx(symbol, start, end, adj, adj_ak, "get_kline_history")
-        else:
-            raise DataFetchError("akshare", "get_kline_history",
-                                 f"不支持的 period: {period}", "data")
-
     def get_daily_kline_history(self, symbol: str, start: str, end: str,
                                 adj: str = "qfq") -> DataResult:
         adj_ak = {"qfq": "qfq", "hfq": "hfq", "none": ""}.get(adj, adj)

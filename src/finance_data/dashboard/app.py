@@ -1,6 +1,5 @@
 """FastAPI dashboard application"""
 import logging
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -80,13 +79,14 @@ async def get_providers() -> list[ProviderStatus]:
         has_tushare = is_token_valid()
     except Exception:
         has_tushare = False
-    tushare_token_set = bool(os.getenv("TUSHARE_TOKEN"))
+    from finance_data.config import has_tushare_token
+    tushare_token_set = has_tushare_token()
     if has_tushare:
         tushare_reason = "token valid"
     elif tushare_token_set:
         tushare_reason = "token set but invalid"
     else:
-        tushare_reason = "TUSHARE_TOKEN not set"
+        tushare_reason = "config.toml tushare.token not set"
 
     try:
         from finance_data.provider.xueqiu.client import has_login_cookie

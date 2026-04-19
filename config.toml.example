@@ -1,0 +1,7 @@
+[tushare]
+token = ""
+api_url = ""
+stock_minute_permission = false
+
+[xueqiu]
+cookie = ""

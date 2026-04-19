@@ -7,7 +7,7 @@
 ```python
 from finance_data import FinanceData
 
-fd = FinanceData(tushare_token="xxx", tushare_api_url="http://...")
+fd = FinanceData()
 
 # 日线行情 → DataFrame
 df = fd.kline_daily("000001", start="20260401", end="20260410").to_dataframe()
@@ -27,13 +27,26 @@ except DataFetchError as e:
     print(f"source={e.source}, kind={e.kind}")
 ```
 
-token 也可通过环境变量 `TUSHARE_TOKEN` / `TUSHARE_API_URL` 设置，不传参时自动读取。
+## 配置
 
-## 环境变量
+所有配置统一从项目根目录 `config.toml` 读取（唯一事实来源）。首次使用需复制模板：
 
-- `TUSHARE_TOKEN`：tushare API token（tushare 接口必须）
-- `TUSHARE_API_URL`：tushare API 地址（可选，默认官方地址；使用第三方代理时设置）
-- `XUEQIU_COOKIE`：雪球登录 cookie 字符串（可选，4 层 fallback 自动获取，通常无需手动配置）
+```bash
+cp config.toml.example config.toml
+# 编辑 config.toml 填写 token 和 api_url
+```
+
+```toml
+[tushare]
+token = "your_token"
+api_url = "http://your-proxy:8010/"
+stock_minute_permission = false
+
+[xueqiu]
+cookie = ""  # 可选，空则自动获取
+```
+
+`config.toml` 已加入 `.gitignore`，不会提交到仓库。
 
 ## 开发
 
@@ -65,7 +78,7 @@ src/finance_data/
 ├── provider/           # 数据源实现（akshare/tushare/xueqiu/tencent）
 │   ├── akshare/        #   无需 token，上游源：新浪/腾讯/同花顺/乐估/交易所
 │   ├── tencent/        #   腾讯实时行情API（qt.gtimg.cn），无需token，65ms延迟
-│   ├── tushare/        #   需 TUSHARE_TOKEN
+│   ├── tushare/        #   需 config.toml 中 tushare.token
 │   ├── xueqiu/         #   海外可达，实时行情无需认证，K线需 cookie
 │   └── symbol.py       #   跨 provider 股票代码转换
 ├── service/            # 业务编排层：Dispatcher 管理多 provider fallback 链
@@ -79,15 +92,15 @@ src/finance_data/
 
 ### Provider 优先级
 
-`akshare`（无需 token）→ `tushare`（需 `TUSHARE_TOKEN`）→ `xueqiu`（海外可达）
+`akshare`（无需 token）→ `tushare`（需 config.toml token）→ `xueqiu`（海外可达）
 
-Service 层在模块加载时根据 token/cookie 可用性动态构建 provider 链：
+Service 层在模块加载时根据 config.toml 配置动态构建 provider 链：
 
 ```python
 def _build_kline_history():
     providers = [AkshareKlineHistory()]          # 总是可用
-    if os.getenv("TUSHARE_TOKEN"):
-        providers.append(TushareKlineHistory())  # 有 token 才加入
+    if has_tushare_token():                      # config.toml 有 token 才加入
+        providers.append(TushareKlineHistory())
     if has_login_cookie():
         providers.append(XueqiuKlineHistory())   # 有 cookie 才加入
     return _KlineHistoryDispatcher(providers=providers)
@@ -101,15 +114,14 @@ def _build_kline_history():
 
 ## MCP 配置
 
+配置已从 config.toml 读取，MCP 无需注入环境变量：
+
 ```json
 {
   "mcpServers": {
     "finance-data": {
       "command": "/Users/lianwu/ai/projects/FinanceData/.venv/bin/python",
-      "args": ["/Users/lianwu/ai/projects/FinanceData/mcp_server.py"],
-      "env": {
-        "TUSHARE_TOKEN": "your_token"
-      }
+      "args": ["/Users/lianwu/ai/projects/FinanceData/mcp_server.py"]
     }
   }
 }

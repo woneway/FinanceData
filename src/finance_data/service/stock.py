@@ -1,6 +1,6 @@
 """股票信息 service - 统一对外入口"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.stock.history import StockHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
@@ -21,9 +21,8 @@ class _StockHistoryDispatcher:
 
 
 def _build_stock_history() -> _StockHistoryDispatcher:
-    # akshare stock_info 已禁用（内部使用雪球 API 但 token 管理不可靠）
     providers: list[StockHistoryProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.stock.history import TushareStockHistory
         providers.append(TushareStockHistory())
     # 雪球作为主要数据源（无需 token，海外可达）

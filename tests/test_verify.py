@@ -64,7 +64,7 @@ def test_run_verify_with_smoke():
 
     assert report.passed is True
     smoke_results = [r for r in report.results if r.level == "smoke"]
-    assert len(smoke_results) == 5
+    assert len(smoke_results) == 4
 
 
 def test_smoke_network_failure_is_warn():

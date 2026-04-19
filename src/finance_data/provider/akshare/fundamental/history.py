@@ -142,7 +142,3 @@ class AkshareDividend:
 
         return DataResult(data=rows, source="akshare",
                           meta={"rows": len(rows), "symbol": symbol, "upstream": "ths"})
-
-
-# AkshareEarningsForecast 已禁用：依赖东财 stock_yjyg_em，无替代源。
-# 如需恢复，请参考 git history。

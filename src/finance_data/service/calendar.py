@@ -1,6 +1,6 @@
 """交易日历 service - 统一对外入口（tushare 优先）"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.calendar.history import TradeCalendarProtocol
 from finance_data.interface.types import DataFetchError, DataResult
@@ -25,7 +25,7 @@ class _TradeCalendarDispatcher:
 def _build_trade_calendar() -> _TradeCalendarDispatcher:
     # tushare 优先
     providers: list[TradeCalendarProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.calendar.history import TushareTradeCalendar
         providers.append(TushareTradeCalendar())
     providers.append(AkshareTradeCalendar())

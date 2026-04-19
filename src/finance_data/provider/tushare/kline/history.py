@@ -60,13 +60,6 @@ def _fetch_kline(symbol: str, period: str, start: str, end: str,
 
 
 class TushareKlineHistory:
-    def get_kline_history(self, symbol: str, period: str, start: str, end: str,
-                          adj: str = "qfq") -> DataResult:
-        if period not in _DAILY_FUNC:
-            raise DataFetchError("tushare", "get_kline_history",
-                                 f"不支持的 period: {period}", "data")
-        return _fetch_kline(symbol, period, start, end, adj, "get_kline_history")
-
     def get_daily_kline_history(self, symbol: str, start: str, end: str,
                                 adj: str = "qfq") -> DataResult:
         return _fetch_kline(symbol, "daily", start, end, adj, "get_daily_kline_history")

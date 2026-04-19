@@ -1,7 +1,6 @@
 """雪球 API 客户端 - 共享 session + cookie 管理"""
 import json
 import logging
-import os
 import time
 from pathlib import Path
 from threading import Lock
@@ -121,8 +120,9 @@ def _build_session() -> requests.Session:
         "Referer": "https://xueqiu.com/",
     })
 
-    # Tier 1: 环境变量
-    env_cookie = os.environ.get("XUEQIU_COOKIE", "")
+    # Tier 1: config.toml
+    from finance_data.config import get_xueqiu_cookie
+    env_cookie = get_xueqiu_cookie()
     if env_cookie:
         for item in env_cookie.split(";"):
             item = item.strip()
@@ -172,8 +172,9 @@ def refresh_session() -> requests.Session:
 
 
 def has_login_cookie() -> bool:
-    """检查是否有登录 cookie（env / 文件缓存 / 浏览器提取）"""
-    if os.environ.get("XUEQIU_COOKIE", ""):
+    """检查是否有登录 cookie（config.toml / 文件缓存 / 浏览器提取）"""
+    from finance_data.config import get_xueqiu_cookie
+    if get_xueqiu_cookie():
         return True
     cached = _load_cached_cookie()
     if cached and cached.get("cookies"):

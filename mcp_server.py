@@ -4,15 +4,12 @@ FinanceData MCP 启动入口
 使用方式：
   python mcp_server.py
 
-MCP 配置（Claude Desktop / claude.json）：
+配置从项目根目录 config.toml 读取，MCP 无需注入环境变量：
   {
     "mcpServers": {
       "finance-data": {
         "command": "python3",
-        "args": ["/path/to/FinanceData/mcp_server.py"],
-        "env": {
-          "TUSHARE_TOKEN": "your_token_here"
-        }
+        "args": ["/path/to/FinanceData/mcp_server.py"]
       }
     }
   }

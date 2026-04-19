@@ -14,3 +14,4 @@ frontend/node_modules/
 .playwright-mcp/
 data/
 TEST_REPORT.md
+config.toml

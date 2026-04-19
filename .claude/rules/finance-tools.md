@@ -65,14 +65,3 @@
 | `tool_get_dc_board_moneyflow_history` | fund_flow | 东财概念及行业板块资金流向，tushare |
 | `tool_get_dc_market_moneyflow_history` | fund_flow | 大盘资金流向（沪深整体），tushare |
 
-### 已下线接口
-
-| Tool | 原因 |
-|------|------|
-| `tool_get_kline_history` | 已拆分为 daily/weekly/monthly 三个独立工具，分钟级已下线 |
-| `tool_get_earnings_forecast_history` | 依赖东财 stock_yjyg_em，无 provider 实现 |
-| `tool_get_sector_capital_flow` | push2.eastmoney.com 域名不可达 |
-| `tool_get_sector_list` | push2.eastmoney.com 域名不可达（stock_board_industry_name_em） |
-| `tool_get_sector_rank_realtime` | 已被 tool_get_board_index_history 替代 |
-| `tool_get_sector_member` | 已被 tool_get_board_member_history 替代 |
-| `tool_get_sector_history` | 已被 tool_get_board_kline_history 替代 |

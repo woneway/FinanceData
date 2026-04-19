@@ -113,22 +113,21 @@ run("tool_get_stock_info", "tushare", TushareStockHistory().get_stock_info_histo
 
 section("2. kline — K线历史")
 
-print("  [akshare] get_kline daily (000001 20250101-20250320)...")
+print("  [akshare] get_daily_kline (000001 20250101-20250320)...")
 from finance_data.provider.akshare.kline.history import AkshareKlineHistory
-run("tool_get_kline", "akshare",
-    AkshareKlineHistory().get_kline_history,
-    "000001", "daily", "20250101", "20250320", "qfq")
+run("tool_get_kline_daily", "akshare",
+    AkshareKlineHistory().get_daily_kline_history,
+    "000001", "20250101", "20250320", "qfq")
 
-print("  [tushare] get_kline daily (000001 20250101-20250320)...")
+print("  [tushare] get_daily_kline (000001 20250101-20250320)...")
 from finance_data.provider.tushare.kline.history import TushareKlineHistory
-run("tool_get_kline", "tushare",
-    TushareKlineHistory().get_kline_history,
-    "000001", "daily", "20250101", "20250320", "qfq")
+run("tool_get_kline_daily", "tushare",
+    TushareKlineHistory().get_daily_kline_history,
+    "000001", "20250101", "20250320", "qfq")
 
 
 section("3. realtime — 实时行情")
 
-# akshare realtime 已禁用（东财源不可用，新浪源太慢）
 print("  [tushare] get_realtime_quote (000001)...")
 from finance_data.provider.tushare.realtime.realtime import TushareRealtimeQuote
 run("tool_get_stock_quote_realtime", "tushare",

@@ -1,6 +1,6 @@
 """热股排行 service - 统一对外入口"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.hot_rank.realtime import HotRankProtocol
 from finance_data.interface.hot_rank.ths_hot import ThsHotProtocol
@@ -46,7 +46,7 @@ def _build_hot_rank() -> _HotRankDispatcher:
 
 def _build_ths_hot() -> _ThsHotDispatcher:
     providers: list[ThsHotProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.hot_rank.ths_hot import TushareThsHot
         providers.append(TushareThsHot())
     return _ThsHotDispatcher(providers=providers)

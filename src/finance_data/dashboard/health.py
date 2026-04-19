@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import concurrent.futures
 import logging
-import os
 import re
 import time
 from datetime import datetime, timedelta
@@ -65,10 +64,8 @@ def _get_available_providers() -> Dict[str, bool]:
         has_xueqiu = has_login_cookie()
     except Exception:
         has_xueqiu = False
-    has_tushare_stock_minute = (
-        has_tushare
-        and os.getenv("TUSHARE_STOCK_MINUTE_PERMISSION", "").lower() in {"1", "true", "yes", "on"}
-    )
+    from finance_data.config import has_tushare_stock_minute_permission
+    has_tushare_stock_minute = has_tushare and has_tushare_stock_minute_permission()
     return {
         "akshare": True,
         "tencent": True,

@@ -21,10 +21,10 @@ class _SuspendDispatcher:
 
 
 def _build_suspend() -> _SuspendDispatcher:
-    import os
+    from finance_data.config import has_tushare_token
     from finance_data.provider.akshare.suspend.history import AkshareSuspend
     providers: list[SuspendProtocol] = [AkshareSuspend()]
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.suspend.history import TushareSuspend
         providers.append(TushareSuspend())
     return _SuspendDispatcher(providers=providers)

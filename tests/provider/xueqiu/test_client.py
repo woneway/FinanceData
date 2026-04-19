@@ -41,8 +41,8 @@ class TestSymbolConversion:
 
 
 class TestGetSession:
-    @patch.dict("os.environ", {"XUEQIU_COOKIE": "xq_a_token=abc123"}, clear=False)
-    def test_env_cookie_loaded(self):
+    @patch("finance_data.config.get_xueqiu_cookie", return_value="xq_a_token=abc123")
+    def test_env_cookie_loaded(self, _mock_config):
         session = get_session()
         assert session.cookies.get("xq_a_token") == "abc123"
 
@@ -73,8 +73,8 @@ class TestGetSession:
 
 
 class TestRefreshSession:
-    @patch.dict("os.environ", {"XUEQIU_COOKIE": "xq_a_token=new"}, clear=False)
-    def test_refresh_creates_new_session(self):
+    @patch("finance_data.config.get_xueqiu_cookie", return_value="xq_a_token=new")
+    def test_refresh_creates_new_session(self, _mock_config):
         old = get_session()
         new = refresh_session()
         assert new is not old
@@ -82,16 +82,14 @@ class TestRefreshSession:
 
 
 class TestHasLoginCookie:
-    @patch.dict("os.environ", {"XUEQIU_COOKIE": "token=abc"}, clear=False)
-    def test_returns_true(self):
+    @patch("finance_data.config.get_xueqiu_cookie", return_value="token=abc")
+    def test_returns_true(self, _mock_config):
         assert has_login_cookie() is True
 
-    @patch.dict("os.environ", {}, clear=False)
+    @patch("finance_data.config.get_xueqiu_cookie", return_value="")
     @patch("finance_data.provider.xueqiu.client._extract_browser_cookies", return_value=None)
     @patch("finance_data.provider.xueqiu.client._load_cached_cookie", return_value=None)
-    def test_returns_false(self, mock_cache, mock_browser):
-        import os
-        os.environ.pop("XUEQIU_COOKIE", None)
+    def test_returns_false(self, mock_cache, mock_browser, _mock_config):
         assert has_login_cookie() is False
 
 

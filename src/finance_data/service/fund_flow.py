@@ -1,6 +1,6 @@
 """资金流向（板块+大盘）- 业务编排层"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.fund_flow.board import BoardMoneyflowProtocol
 from finance_data.interface.fund_flow.market import MarketMoneyflowProtocol
@@ -49,7 +49,7 @@ class _MarketMoneyflowDispatcher:
 
 def _build_board_moneyflow() -> _BoardMoneyflowDispatcher:
     providers: list[BoardMoneyflowProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.fund_flow.board import TushareBoardMoneyflow
         providers.append(TushareBoardMoneyflow())
     return _BoardMoneyflowDispatcher(providers=providers)
@@ -57,7 +57,7 @@ def _build_board_moneyflow() -> _BoardMoneyflowDispatcher:
 
 def _build_market_moneyflow() -> _MarketMoneyflowDispatcher:
     providers: list[MarketMoneyflowProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.fund_flow.market import TushareMarketMoneyflow
         providers.append(TushareMarketMoneyflow())
     return _MarketMoneyflowDispatcher(providers=providers)

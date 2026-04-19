@@ -52,10 +52,8 @@ print(df.head(2))
 
 # 测试 tushare 接口（如需要）
 .venv/bin/python3 -c "
-import os
-os.environ['TUSHARE_TOKEN'] = '你的token'
-import tushare as ts
-pro = ts.pro_api()
+from finance_data.provider.tushare.client import get_pro
+pro = get_pro()
 df = pro.接口名(参数)
 print(df.columns.tolist())
 "
@@ -190,20 +188,11 @@ from finance_data.provider.types import DataResult, DataFetchError
 
 _NETWORK_ERRORS = (ConnectionError, TimeoutError, OSError)
 
-def _get_pro():
-    token = os.environ.get("TUSHARE_TOKEN", "")
-    if not token:
-        raise DataFetchError("tushare", "init", "TUSHARE_TOKEN 未设置", "auth")
-    pro = ts.pro_api(token=token)
-    api_url = os.environ.get("TUSHARE_API_URL", "")
-    if api_url:
-        pro._DataApi__token = token
-        pro._DataApi__http_url = api_url
-    return pro
+from finance_data.provider.tushare.client import get_pro
 
 def get_xxx(trade_date: str = "", start_date: str = "", end_date: str = "") -> DataResult:
     """..."""
-    pro = _get_pro()
+    pro = get_pro()
     try:
         df = pro.{api_name}(
             trade_date=trade_date,

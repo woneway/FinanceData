@@ -1,6 +1,6 @@
 """市场统计 service - 统一对外入口"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.market.realtime import MarketRealtimeProtocol
 from finance_data.interface.types import DataFetchError, DataResult
@@ -47,7 +47,7 @@ class _AuctionDispatcher:
 
 def _build_auction() -> _AuctionDispatcher:
     providers = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.market.auction import TushareAuction
         providers.append(TushareAuction())
     return _AuctionDispatcher(providers=providers)
@@ -72,7 +72,7 @@ class _AuctionCloseDispatcher:
 
 def _build_auction_close() -> _AuctionCloseDispatcher:
     providers = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.market.auction_close import TushareAuctionClose
         providers.append(TushareAuctionClose())
     return _AuctionCloseDispatcher(providers=providers)

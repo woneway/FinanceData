@@ -1,6 +1,6 @@
 """股票池 service - 统一对外入口"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.pool.history import (
     ZtPoolProtocol, StrongStocksProtocol, PreviousZtProtocol, ZbgcPoolProtocol,
@@ -89,7 +89,7 @@ class _LimitListDispatcher:
 
 def _build_limit_list() -> _LimitListDispatcher:
     providers = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.pool.limit_list import TushareLimitList
         providers.append(TushareLimitList())
     return _LimitListDispatcher(providers=providers)
@@ -133,7 +133,7 @@ class _LimitStepDispatcher:
 
 def _build_kpl_list() -> _KplListDispatcher:
     providers = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.pool.kpl_list import TushareKplList
         providers.append(TushareKplList())
     return _KplListDispatcher(providers=providers)
@@ -141,7 +141,7 @@ def _build_kpl_list() -> _KplListDispatcher:
 
 def _build_limit_step() -> _LimitStepDispatcher:
     providers = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.pool.limit_step import TushareLimitStep
         providers.append(TushareLimitStep())
     return _LimitStepDispatcher(providers=providers)

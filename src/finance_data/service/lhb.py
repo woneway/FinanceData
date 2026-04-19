@@ -4,7 +4,8 @@
 - lhb_stock_stat, lhb_active_traders, lhb_trader_stat, lhb_stock_detail: akshare 新浪源
 """
 import logging
-import os
+
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.lhb.history import (
     LhbDetailProtocol, LhbStockStatProtocol,
@@ -84,7 +85,7 @@ class _LhbStockDetailDispatcher:
 def _build_lhb_detail() -> _LhbDetailDispatcher:
     from finance_data.provider.akshare.lhb.history import AkshareLhbDetail
     providers: list[LhbDetailProtocol] = [AkshareLhbDetail()]
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.lhb.history import TushareLhbDetail
         providers.append(TushareLhbDetail())
     return _LhbDetailDispatcher(providers=providers)
@@ -161,18 +162,16 @@ class _HmDetailDispatcher:
 
 
 def _build_hm_list() -> _HmListDispatcher:
-    import os
     providers = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.lhb.hm_list import TushareHmList
         providers.append(TushareHmList())
     return _HmListDispatcher(providers=providers)
 
 
 def _build_hm_detail() -> _HmDetailDispatcher:
-    import os
     providers = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.lhb.hm_detail import TushareHmDetail
         providers.append(TushareHmDetail())
     return _HmDetailDispatcher(providers=providers)

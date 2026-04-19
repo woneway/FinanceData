@@ -117,7 +117,7 @@ class TestHealthProbes:
 
     def test_health_single_tool(self, client):
         mock_result = HealthResult(
-            tool="tool_get_kline_history",
+            tool="tool_get_kline_daily_history",
             provider="akshare",
             status="ok",
             response_time_ms=200.0,
@@ -127,7 +127,7 @@ class TestHealthProbes:
             yield mock_result
 
         with patch("finance_data.dashboard.app.run_probes", mock_probes):
-            resp = client.post("/api/health/tool_get_kline_history")
+            resp = client.post("/api/health/tool_get_kline_daily_history")
             assert resp.status_code == 200
 
     def test_health_unknown_tool(self, client):

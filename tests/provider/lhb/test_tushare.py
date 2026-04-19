@@ -49,6 +49,6 @@ def test_get_lhb_detail_empty_raises(mock_pro):
 
 
 def test_get_lhb_detail_no_token():
-    with patch.dict("os.environ", {"TUSHARE_TOKEN": ""}):
+    with patch("finance_data.provider.tushare.client.get_tushare_token", return_value=""):
         with pytest.raises((DataFetchError, Exception)):
             TushareLhbDetail().get_lhb_detail_history("20240320", "20240320")

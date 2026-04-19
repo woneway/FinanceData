@@ -1,6 +1,6 @@
 """融资融券 service - 统一对外入口"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.margin.history import MarginProtocol, MarginDetailProtocol
 from finance_data.interface.types import DataFetchError, DataResult
@@ -41,7 +41,7 @@ class _MarginDetailDispatcher:
 
 def _build_margin() -> _MarginDispatcher:
     providers: list[MarginProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.margin.history import TushareMargin
         providers.append(TushareMargin())
     return _MarginDispatcher(providers=providers)
@@ -50,7 +50,7 @@ def _build_margin() -> _MarginDispatcher:
 def _build_margin_detail() -> _MarginDetailDispatcher:
     # tushare 优先（支持日期范围+个股查询）
     providers: list[MarginDetailProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.margin.history import TushareMarginDetail
         providers.append(TushareMarginDetail())
     providers.append(AkshareMarginDetail())

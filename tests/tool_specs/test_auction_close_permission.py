@@ -12,18 +12,18 @@ def test_auction_close_documents_stock_minute_permission():
     assert "股票分钟权限" in notes
 
 
-def test_auction_close_probe_requires_stock_minute_permission(monkeypatch):
-    monkeypatch.delenv("TUSHARE_STOCK_MINUTE_PERMISSION", raising=False)
-    with patch("finance_data.provider.tushare.client.is_token_valid", return_value=True), \
+def test_auction_close_probe_requires_stock_minute_permission():
+    with patch("finance_data.config.has_tushare_stock_minute_permission", return_value=False), \
+         patch("finance_data.provider.tushare.client.is_token_valid", return_value=True), \
          patch("finance_data.provider.xueqiu.client.has_login_cookie", return_value=False):
         providers = get_providers_for_tool("tool_get_auction_close_history")
 
     assert providers == []
 
 
-def test_auction_close_probe_available_with_stock_minute_permission(monkeypatch):
-    monkeypatch.setenv("TUSHARE_STOCK_MINUTE_PERMISSION", "1")
-    with patch("finance_data.provider.tushare.client.is_token_valid", return_value=True), \
+def test_auction_close_probe_available_with_stock_minute_permission():
+    with patch("finance_data.config.has_tushare_stock_minute_permission", return_value=True), \
+         patch("finance_data.provider.tushare.client.is_token_valid", return_value=True), \
          patch("finance_data.provider.xueqiu.client.has_login_cookie", return_value=False):
         providers = get_providers_for_tool("tool_get_auction_close_history")
 

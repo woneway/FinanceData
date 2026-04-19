@@ -21,12 +21,8 @@ class _StockCapitalFlowDispatcher:
 
 
 def _build_stock_capital_flow() -> _StockCapitalFlowDispatcher:
-    # akshare 资金流向已禁用（依赖东财 stock_individual_fund_flow）
-    providers: list[StockCapitalFlowProtocol] = []
-    # 雪球作为主要数据源（无需 token，海外可达）
     from finance_data.provider.xueqiu.cashflow.realtime import XueqiuStockCapitalFlow
-    providers.append(XueqiuStockCapitalFlow())
-    return _StockCapitalFlowDispatcher(providers=providers)
+    return _StockCapitalFlowDispatcher(providers=[XueqiuStockCapitalFlow()])
 
 
 stock_capital_flow = _build_stock_capital_flow()

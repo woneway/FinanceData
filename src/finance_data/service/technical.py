@@ -1,6 +1,6 @@
 """股票技术面因子 - 业务编排层"""
 import logging
-import os
+from finance_data.config import has_tushare_token
 
 from finance_data.interface.technical.factor import StockFactorProtocol
 from finance_data.interface.types import DataFetchError, DataResult
@@ -29,7 +29,7 @@ class _StockFactorDispatcher:
 
 def _build_stock_factor() -> _StockFactorDispatcher:
     providers: list[StockFactorProtocol] = []
-    if os.getenv("TUSHARE_TOKEN"):
+    if has_tushare_token():
         from finance_data.provider.tushare.technical.factor import TushareStockFactor
         providers.append(TushareStockFactor())
     return _StockFactorDispatcher(providers=providers)

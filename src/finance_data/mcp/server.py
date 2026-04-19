@@ -1225,6 +1225,3 @@ async def tool_get_dc_market_moneyflow_history(
         {"trade_date": trade_date, "start_date": start_date,
          "end_date": end_date},
     )
-
-
-# tool_get_sector_capital_flow 已禁用（push2.eastmoney.com 域名不可达）
