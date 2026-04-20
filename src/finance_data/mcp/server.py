@@ -7,7 +7,7 @@ import logging
 from fastmcp import FastMCP
 
 from finance_data.service.stock import stock_history
-from finance_data.service.kline import daily_kline_history, weekly_kline_history, monthly_kline_history
+from finance_data.service.kline import daily_kline_history, weekly_kline_history, monthly_kline_history, minute_kline_history
 from finance_data.service.realtime import realtime_quote
 from finance_data.service.index import index_quote, index_history
 from finance_data.service.board import board_index, board_member, board_daily
@@ -1224,4 +1224,40 @@ async def tool_get_dc_market_moneyflow_history(
         "tool_get_dc_market_moneyflow_history",
         {"trade_date": trade_date, "start_date": start_date,
          "end_date": end_date},
+    )
+
+
+@mcp.tool()
+async def tool_get_kline_minute_history(
+    symbol: str,
+    period: str = "5min",
+    start: str = "20260101",
+    end: str = "",
+    adj: str = "qfq",
+) -> str:
+    """
+    获取个股历史分钟K线（5/15/30/60分钟）。
+
+    数据源: baostock（免费，无需token）
+    实时性: 收盘后更新（T+1）
+    历史查询: 支持（2020年至今）
+
+    Args:
+        symbol: 股票代码，如 "000001"
+        period: K线周期，可选 "5min" / "15min" / "30min" / "60min"
+        start: 开始日期 YYYYMMDD
+        end: 结束日期 YYYYMMDD（默认当天）
+        adj: qfq（前复权）/ hfq（后复权）/ none
+
+    Returns:
+        JSON 列表，每条包含 date(日期)、time(HHmmss)、period、
+        open、high、low、close、volume(股)、amount(元)
+
+    Note:
+        每日数据量：5min=48条, 15min=16条, 30min=8条, 60min=4条。
+        建议控制日期范围避免返回过多数据。
+    """
+    return _invoke_tool_json(
+        "tool_get_kline_minute_history",
+        {"symbol": symbol, "period": period, "start": start, "end": end, "adj": adj},
     )

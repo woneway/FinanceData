@@ -2,6 +2,7 @@
 
 日线: tushare + akshare(腾讯源)
 周线/月线: tushare
+分钟(5/15/30/60min): baostock
 """
 import logging
 from finance_data.config import has_tushare_token
@@ -11,6 +12,7 @@ from finance_data.interface.kline.history import (
     MonthlyKlineHistoryProtocol,
     WeeklyKlineHistoryProtocol,
 )
+from finance_data.interface.kline.minute import MinuteKlineHistoryProtocol
 from finance_data.interface.types import DataFetchError, DataResult
 from finance_data.provider.akshare.kline.history import AkshareKlineHistory
 
@@ -83,6 +85,26 @@ def _build_monthly() -> _MonthlyKlineDispatcher:
     return _MonthlyKlineDispatcher(providers=providers)
 
 
+class _MinuteKlineDispatcher:
+    def __init__(self, providers: list[MinuteKlineHistoryProtocol]):
+        self._providers = providers
+
+    def get_minute_kline_history(self, symbol: str, period: str, start: str, end: str,
+                                 adj: str = "qfq") -> DataResult:
+        for p in self._providers:
+            try:
+                return p.get_minute_kline_history(symbol, period, start, end, adj)
+            except DataFetchError as e:
+                logger.warning(f"{type(p).__name__} minute 失败: {e}")
+        raise DataFetchError("all", "get_minute_kline_history", "所有数据源均失败", "data")
+
+
+def _build_minute() -> _MinuteKlineDispatcher:
+    from finance_data.provider.baostock.kline.minute import BaostockMinuteKline
+    return _MinuteKlineDispatcher(providers=[BaostockMinuteKline()])
+
+
 daily_kline_history = _build_daily()
 weekly_kline_history = _build_weekly()
 monthly_kline_history = _build_monthly()
+minute_kline_history = _build_minute()

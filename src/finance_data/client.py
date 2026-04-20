@@ -66,6 +66,18 @@ class FinanceData:
             symbol, start=start, end=end, adj=adj,
         )
 
+    def kline_minute(
+        self, symbol: str, period: str = "5min",
+        start: str = "20240101", end: str = "", adj: str = "qfq",
+    ) -> DataResult:
+        """获取个股历史分钟K线（5min/15min/30min/60min）"""
+        import datetime
+        if not end:
+            end = datetime.date.today().strftime("%Y%m%d")
+        return self._get_service("kline", "minute_kline_history").get_minute_kline_history(
+            symbol, period=period, start=start, end=end, adj=adj,
+        )
+
     def kline_monthly(
         self, symbol: str, start: str = "20240101", end: str = "", adj: str = "qfq",
     ) -> DataResult:

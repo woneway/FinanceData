@@ -13,7 +13,7 @@
 7. **校验**：`python -c "from finance_data.provider.metadata.validator import run_validation_report; print(run_validation_report())"`
 8. **更新 CLAUDE.md**：更新接口计数
 
-## 当前接口（47 个）
+## 当前接口（48 个）
 
 | Tool | 领域 | 说明 |
 |------|------|------|
@@ -22,6 +22,7 @@
 | `tool_get_kline_daily_history` | kline | 个股历史日线行情，tushare+akshare(腾讯) |
 | `tool_get_kline_weekly_history` | kline | 个股历史周线行情（每日更新），tushare |
 | `tool_get_kline_monthly_history` | kline | 个股历史月线行情（每日更新），tushare |
+| `tool_get_kline_minute_history` | kline | 个股历史分钟K线（5/15/30/60min），baostock |
 | `tool_get_stock_quote_realtime` | quote | 实时行情（价格/涨跌/量能/PE/PB/市值/换手率/量比/涨跌停价），xueqiu+tencent |
 | `tool_get_index_quote_realtime` | index | 大盘指数实时行情，akshare(新浪)+xueqiu |
 | `tool_get_index_kline_history` | index | 大盘指数历史 K线，tushare+xueqiu |

@@ -1,6 +1,6 @@
 # FinanceData
 
-金融数据服务，支持 MCP（AI Agent）和 Python library 两种接入方式。47 个接口覆盖 14 个领域。
+金融数据服务，支持 MCP（AI Agent）和 Python library 两种接入方式。48 个接口覆盖 14 个领域。
 
 ## Python Library 使用
 
