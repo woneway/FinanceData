@@ -112,6 +112,35 @@ def _build_kline_history():
 
 排查东财接口不可用时：先 `curl --noproxy '*'` 测试直连，再 `curl -x http://127.0.0.1:7890` 测试代理。
 
+## OpenSpec 流程
+
+本项目所有结构性变更必须走 OpenSpec change，禁止直接 commit feature。OpenSpec 与 `.claude/skills/tool-acceptance` 是同一验收流程的两种描述：前者负责制品归档，后者负责逐层验收执行；最终产物都汇聚到 `acceptance.md`。
+
+四个阶段对应纪律（详见 `openspec/config.yaml` rules 段）：
+
+| 阶段 | 命令 | 必做事项 |
+|---|---|---|
+| Propose | `openspec new change <slug>` | 写 proposal、specs 增量、design、tasks；涉及新数据源时同步起草 upstream-alignment.md |
+| Apply | 按 tasks.md 顺序实现 | 按序执行任务、每组任务跑相关测试；遵循 `.claude/rules/finance-coding.md` 的「接口对接铁律」；偏离 spec 时先同步 markdown |
+| Verify | 运行 tool-acceptance skill | 写 acceptance.md（Completeness/Correctness/Coherence + 三类风险显式列出） |
+| Archive | `openspec archive <slug>` | 必须有 acceptance.md；涉及新数据源必须有 upstream-alignment.md；spec delta 必须与现网代码一致 |
+
+模板路径：
+
+- `openspec/templates/acceptance.template.md`
+- `openspec/templates/upstream-alignment.template.md`
+
+### 新加一个接口的标准流程（8 步）
+
+1. `openspec new change <slug>` 生成脚手架
+2. 用 `openspec/templates/upstream-alignment.template.md` 起草 upstream-alignment.md：定位官方文档、真实调用 API、确认字段 / 单位 / 更新时效
+3. 写 spec delta：行为契约 + Given/When/Then，挂到合适 spec（如 `kline-history`）
+4. 写 design：source-of-truth 映射表（provider × 参数 → 上游接口）
+5. 写 tasks：每条追溯 requirement，含正常 / 边界 / 后台可见性 / 回归 / 文档
+6. 实现：在 `mcp/tools/<domain>.py` 加 ToolSpec + `@mcp.tool`，service 层加方法，provider 加适配；东财 akshare 必须调 `ensure_eastmoney_no_proxy()`
+7. 跑 pytest + tool-acceptance skill 逐层（provider / service / CLI / HTTP / MCP / Web）
+8. 用 `openspec/templates/acceptance.template.md` 写 acceptance.md → `openspec archive <slug>`
+
 ## MCP 配置
 
 配置已从 config.toml 读取，MCP 无需注入环境变量：

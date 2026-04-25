@@ -43,3 +43,20 @@ rules:
     - 每个任务都必须能追溯到至少一个 requirement 或 scenario。
     - 任务应拆成小而可审查的单元，并写清验证方式。
     - 必须包含正常路径、边界场景、后台可见性、回归覆盖和文档更新任务。
+  apply:
+    - 必须按 tasks.md 顺序执行任务，禁止跳跃或合并任务。
+    - 每完成一组逻辑任务后必须运行相关 pytest 或集成测试，并记录命令与结果。
+    - 实现一旦偏离 proposal、specs 或 design，必须先同步对应 markdown 制品，再继续后续任务。
+    - 涉及上游金融数据接口接入时，必须遵循 .claude/rules/finance-coding.md 中的「接口对接铁律」：先获取官方文档、真实调用 API 验证字段名、打印样本行验证单位、端到端调用确认关键字段非零。
+    - provider/service/CLI/HTTP/MCP/Web 任一交付层的修改，必须在对应交付层加测试或在 acceptance.md 中显式记录未覆盖原因。
+  verify:
+    - 必须以 acceptance.md 为产物，按 Completeness、Correctness、Coherence 三维输出验收结论，且每章节给出具体证据，禁止只写「已完成」。
+    - 必须显式列出三类风险：未测试场景、spec drift、上游未对齐项；即使为空也必须写「无」。
+    - 验收过程必须复用 .claude/skills/tool-acceptance 的逐层验收流程，OpenSpec verify 与该 skill 是同一流程的两种描述。
+    - Correctness 章节必须列出实际执行的测试命令清单，便于复现。
+    - 涉及前端管理后台的变更，必须用 Playwright 做真实页面交互验证，并把覆盖范围写入 acceptance.md。
+  archive:
+    - 归档前必须确保 acceptance.md 存在且通过 verify 三维检查。
+    - proposal 中声明涉及新数据源或新上游接口的 change，归档时必须额外提供 upstream-alignment.md，覆盖调用方式、字段、单位、复权、历史范围、更新时间和状态七个维度。
+    - 归档时必须确认 spec delta 与现网代码行为一致；不一致时必须先修代码或先修 spec，禁止假装一致。
+    - 项目特有的 acceptance 与 upstream-alignment artifact 必须使用 openspec/templates/ 下的对应模板作为起点，保留全部 H2 章节。
