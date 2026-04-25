@@ -10,6 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
     "akshare>=1.0.0",
     "tushare>=1.4.0",
+    "baostock>=0.9.1",
     "pydantic>=2.0.0",
     "fastmcp>=0.1.0",
     "pandas>=2.0.0",
