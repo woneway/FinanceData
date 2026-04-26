@@ -94,11 +94,22 @@ src/finance_data/
 ├── service/            # 业务编排层：Dispatcher 管理多 provider fallback 链
 │   └── <domain>.py     #   每个领域一个 service
 ├── tool_specs/         # ToolSpec 统一注册表（CLI/HTTP/Health 自动派生）
-│   └── registry.py
+│   └── registry/       #   按 domain 拆分的 ToolSpec 子模块（合计 48 个 ToolSpec）
+│       ├── __init__.py #     按 _DOMAIN_ORDER 拼接为 TOOL_SPEC_REGISTRY OrderedDict
+│       ├── _factories.py  #   _param/_provider/_service/_probe/_meta 工厂 helper
+│       └── <domain>.py × 14
 ├── dashboard/          # 健康监控看板（FastAPI + React）
 └── mcp/
-    └── server.py       #   MCP tool 定义，调用 service 层
+    ├── _app.py         #   FastMCP 单例 mcp + helpers (_to_json / _invoke_tool_json)
+    ├── tools/          #   按 domain 拆分的 @mcp.tool 函数（合计 48 个 MCP tool）
+    │   └── <domain>.py × 14
+    └── server.py       #   aggregator：触发 tools 注册 + re-export service 与 tool 函数
 ```
+
+> **拆分约束**（由 `tests/mcp/test_tools_layout.py` 守护）：
+> - `mcp/tools/<domain>.py` 中函数顺序 = `tool_specs/registry/<domain>.py` 中 SPECS 顺序
+> - `mcp/server.py` 中 14 个 tools 子模块 import 顺序 = `tool_specs/registry/__init__.py` 中 `_DOMAIN_ORDER` 顺序
+> - 任一新增 / 重命名 tool 必须同时改 `mcp/tools/<domain>.py` + `tool_specs/registry/<domain>.py` 同 domain
 
 ### Provider 优先级
 
