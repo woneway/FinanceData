@@ -44,9 +44,19 @@ stock_minute_permission = false
 
 [xueqiu]
 cookie = ""  # 可选，空则自动获取
+
+[cache]
+enabled = true  # DuckDB 缓存开关；false 等价于历史的 FINANCE_DATA_CACHE=0
+
+[proxy]
+no_proxy_hosts = ["eastmoney.com", ".eastmoney.com"]  # 必须绕代理直连的 hosts
 ```
 
 `config.toml` 已加入 `.gitignore`，不会提交到仓库。
+
+**Breaking 迁移指引**（自 cleanup-config-and-proxy-leftovers 起）：
+- `FINANCE_DATA_CACHE=0` 环境变量不再生效，改用 `[cache] enabled = false`
+- `_proxy.py` 内不再硬编码 hosts，改读 `[proxy] no_proxy_hosts`，缺省自动含东财域名
 
 ## 开发
 

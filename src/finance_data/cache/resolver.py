@@ -36,9 +36,9 @@ from finance_data.cache.db import get_cache_date_range, get_cached_dates, query_
 logger = logging.getLogger(__name__)
 
 def _is_cache_enabled() -> bool:
-    """Check if DuckDB cache is enabled. Disable with FINANCE_DATA_CACHE=0."""
-    import os
-    return os.environ.get("FINANCE_DATA_CACHE", "1") not in ("0", "false", "no")
+    """Check if DuckDB cache is enabled. Disable with `[cache] enabled = false` in config.toml."""
+    from finance_data.config import is_cache_enabled
+    return is_cache_enabled()
 
 # Today's date as YYYYMMDD — only cache T-1 and earlier.
 _today: str = ""

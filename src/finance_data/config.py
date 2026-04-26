@@ -44,3 +44,21 @@ def has_tushare_stock_minute_permission() -> bool:
         return bool(_load().get("tushare", {}).get("stock_minute_permission", False))
     except (FileNotFoundError, KeyError):
         return False
+
+
+def is_cache_enabled() -> bool:
+    """config.toml 中 cache.enabled 是否开启（缺省 True，与历史 FINANCE_DATA_CACHE=1 等价）"""
+    try:
+        return bool(_load().get("cache", {}).get("enabled", True))
+    except (FileNotFoundError, KeyError):
+        return True
+
+
+def get_no_proxy_hosts() -> list[str]:
+    """config.toml 中 proxy.no_proxy_hosts 列表（缺省含东财域名）"""
+    default = ["eastmoney.com", ".eastmoney.com"]
+    try:
+        hosts = _load().get("proxy", {}).get("no_proxy_hosts", default)
+        return list(hosts) if hosts else default
+    except (FileNotFoundError, KeyError):
+        return default

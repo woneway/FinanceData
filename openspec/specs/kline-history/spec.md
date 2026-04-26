@@ -76,13 +76,6 @@ TBD - created by archiving change consolidate-kline-history-specs. Update Purpos
 - **THEN** 系统 MUST 返回明确的错误，告知数据源不可用
 - **AND** MUST NOT 静默回退到任何未验收的 provider
 
-### Requirement: 涉及东财上游的周期 K 线 fallback 必须配置代理绕过
-系统在使用东财上游（akshare 中以 `_em` 结尾或 `stock_zh_a_hist` 等）作为周线 / 月线 fallback 时 MUST 在 provider 模块层强制绕过本地代理，以避免本地 HTTP 代理拦截东财直连。
-
-#### Scenario: 东财 fallback 在模块加载时绕过代理
-- **WHEN** 周线或月线 fallback provider 模块被加载
-- **THEN** 模块 MUST 在执行任何东财调用前完成代理绕过设置
-
 ### Requirement: 各周期 K 线必须在 Web 管理后台暴露源级状态
 系统 MUST 在 Web 管理后台展示每个周期 K 线的 service 可用性与 provider 级健康度，使维护方可以分别识别主源与 fallback 状态。
 

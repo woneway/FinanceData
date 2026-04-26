@@ -5,3 +5,13 @@ stock_minute_permission = false
 
 [xueqiu]
 cookie = ""
+
+[cache]
+# DuckDB 本地缓存层开关（缺省 true）
+# 设为 false 等价于历史的 FINANCE_DATA_CACHE=0 环境变量。
+enabled = true
+
+[proxy]
+# 必须绕过本地代理直连的 hosts 列表（缺省含东财域名）
+# 东财源（akshare 的 _em 后缀函数和 stock_zh_a_hist 等）需绕代理才能稳定访问。
+no_proxy_hosts = ["eastmoney.com", ".eastmoney.com"]

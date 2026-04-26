@@ -4,7 +4,7 @@
 TBD - created by archiving change retroactive-config-toml-consolidation. Update Purpose after archive.
 ## Requirements
 ### Requirement: 项目配置必须以 config.toml 为唯一事实来源
-系统 MUST 将 `config.toml`（位于项目根目录）作为所有运行时配置的唯一事实来源。配置项 MUST NOT 同时存在「环境变量」与「config.toml」两个等价入口。已有的环境变量配置 MUST 在 1e0ae0b 后被迁移；任何残余的 `os.environ.get()` 读取 MUST 进入清理 backlog。
+系统 MUST 将 `config.toml`（位于项目根目录）作为所有运行时配置的唯一事实来源。配置项 MUST NOT 同时存在「环境变量」与「config.toml」两个等价入口。`os.environ.get("FINANCE_DATA_*")` 在本 change 后 MUST NOT 出现在 src/ 代码中；任何外部依赖（如 akshare 内部读 `no_proxy` 环境变量）的写入仍允许，但**初始来源**必须可追溯到 `config.toml` 与 `config.py` helper。
 
 #### Scenario: 新配置项必须落 config.toml
 - **WHEN** 项目需要新增运行时配置（如 token / cookie / 开关）
@@ -16,6 +16,11 @@ TBD - created by archiving change retroactive-config-toml-consolidation. Update 
 - **WHEN** 维护方扫描代码发现仍有 `os.environ.get("FINANCE_DATA_*")` 或类似读取
 - **THEN** 必须开 OpenSpec change 把该读取迁移到 config.toml
 - **AND** 不允许长期容忍残留
+
+#### Scenario: cache 与 proxy 配置已迁出环境变量
+- **WHEN** 维护方扫描 `src/finance_data/` 下的 `os.environ.get`
+- **THEN** MUST NOT 找到 `FINANCE_DATA_CACHE` 读取
+- **AND** `provider/akshare/_proxy.py` 内的初始 hosts 列表 MUST 来自 `config.py` helper（而非硬编码字符串）
 
 ### Requirement: 敏感配置不得进入 git
 系统 MUST 在 `.gitignore` 中排除 `config.toml`；MUST 提供 `config.toml.example` 作为模板（含字段名 + 占位值，无真实密钥）。
@@ -42,7 +47,7 @@ TBD - created by archiving change retroactive-config-toml-consolidation. Update 
 - **THEN** 底层 `_load()` MUST 仅读盘一次（当前实现：`@lru_cache(maxsize=1)`）
 
 ### Requirement: 可选配置必须有明确的缺省语义
-系统 MUST 为可选配置（如 `xueqiu.cookie` / `tushare.stock_minute_permission`）提供明确缺省值与缺省行为：缺失时 helper 返回空字符串 / `False`，service 层据此降级而不抛错。
+系统 MUST 为可选配置提供明确缺省值与缺省行为：缺失时 helper 返回空字符串 / `False` / 项目级默认列表，service 层与 provider 层据此降级而不抛错。
 
 #### Scenario: cookie 缺失时 xueqiu 仍可启动
 - **WHEN** `config.toml` 中无 `[xueqiu]` 段或 `cookie = ""`
@@ -54,6 +59,15 @@ TBD - created by archiving change retroactive-config-toml-consolidation. Update 
 - **WHEN** `config.toml` 中无 `tushare.stock_minute_permission` 或值为 `false`
 - **THEN** `has_tushare_stock_minute_permission()` MUST 返回 `False`
 - **AND** 涉及该权限的 tushare 接口 MUST 在 service 层标记为「不可用」或在 ToolSpec `available_if` 处过滤
+
+#### Scenario: cache 开关缺失时默认启用
+- **WHEN** `config.toml` 中无 `[cache]` 段或 `enabled` 字段缺失
+- **THEN** `is_cache_enabled()` MUST 返回 `True`
+- **AND** 行为与历史 `FINANCE_DATA_CACHE=1` 一致
+
+#### Scenario: proxy hosts 列表缺失时回退到东财默认
+- **WHEN** `config.toml` 中无 `[proxy]` 段或 `no_proxy_hosts` 为空
+- **THEN** `get_no_proxy_hosts()` MUST 返回包含 `eastmoney.com` 与 `.eastmoney.com` 的默认列表
 
 ### Requirement: tushare token 缺失时 service 层必须显式降级
 系统 MUST 在 `has_tushare_token()` 返回 `False` 时让所有依赖 tushare 的 service 层 dispatcher 不把 tushare provider 加入默认链；MUST NOT 在调用时才抛 `auth` 错误。
