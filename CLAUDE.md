@@ -10,22 +10,27 @@ from finance_data import FinanceData
 fd = FinanceData()
 
 # 日线行情 → DataFrame
-df = fd.kline_daily("000001", start="20260401", end="20260410").to_dataframe()
+df = fd.kline_daily_history("000001", start="20260401", end="20260410").to_dataframe()
 
 # 板块成分
-members = fd.board_member("银行").to_dataframe()
+members = fd.board_member_history("银行").to_dataframe()
 
 # 实时行情
-quote = fd.quote("000001")
+quote = fd.stock_quote_realtime("000001")
 print(quote.data[0]["price"])
 
 # 异常处理
 from finance_data import DataFetchError
 try:
-    fd.capital_flow("000001")
+    fd.capital_flow_realtime("000001")
 except DataFetchError as e:
     print(f"source={e.source}, kind={e.kind}")
 ```
+
+> **命名规则**：客户端方法名严格 = MCP tool 名去掉 `tool_get_` 前缀（含 `_history` /
+> `_realtime` / `_snapshot` / `_daily` scope 后缀）。旧名（如 `fd.kline_daily` /
+> `fd.quote`）仍可调用但发出 `DeprecationWarning`，请新代码使用新名。完整映射见
+> `client.py:_DEPRECATED_ALIASES`。
 
 ## 配置
 

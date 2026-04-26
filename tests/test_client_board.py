@@ -11,7 +11,7 @@ def test_finance_data_board_member_passes_trade_date():
     with patch("importlib.import_module") as import_module:
         import_module.return_value = MagicMock(board_member=mock_service)
         fd = FinanceData()
-        fd.board_member(
+        fd.board_member_history(
             board_name="人工智能",
             idx_type="概念板块",
             trade_date="20260414",
